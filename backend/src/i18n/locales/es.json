@@ -1,0 +1,105 @@
+{
+  "exceptions": {
+    "invalidCredentials": "Credenciales no válidas",
+    "unknownLevel": "desconocido",
+    "userNotFound": "Usuario no encontrado",
+    "userInactive": "Usuario inactivo",
+    "invalidRefreshToken": "Refresh token no válido",
+    "invalidToken": "Token de autenticación no válido o expirado",
+    "tankNotFound": "Tanque con ID {{id}} no encontrado",
+    "sensorNotFound": "Sensor con ID {{id}} no encontrado",
+    "alertNotFound": "Alerta con ID {{id}} no encontrada",
+    "onlyActiveCanBeAcknowledged": "Solo las alertas activas pueden ser reconocidas",
+    "alertAlreadyResolved": "La alerta ya está resuelta",
+    "emptyIdList": "La lista de IDs de alertas no puede estar vacía",
+    "bulkLimitExceeded": "Máximo de 100 alertas por operación en lote",
+    "logoutSuccess": "Sesión cerrada con éxito",
+    "offlineCheckExecuted": "Verificación de sensores sin conexión ejecutada",
+    "batteryCheckExecuted": "Verificación de batería baja ejecutada",
+    "maintenanceCheckExecuted": "Verificación de mantenimientos ejecutada",
+    "sensorErrorCheckExecuted": "Verificación de errores de sensores ejecutada",
+    "notificationTestOk": "Prueba de notificación enviada con éxito por el canal {{channel}}",
+    "notificationTestFail": "Fallo al enviar la prueba por el canal {{channel}}",
+    "invalidIngestCredential": "Credencial de ingesta no válida",
+    "invalidDeviceCredential": "Credencial del dispositivo no válida",
+    "deviceNotProvisioned": "Dispositivo sin credencial aprovisionada",
+    "tankIdRequired": "tankId es obligatorio para crear un nuevo dispositivo",
+    "sensorIdAlreadyExists": "Ya existe un sensor con este sensorId",
+    "tankCodeExists": "Ya existe un tanque con el código {{tankCode}}",
+    "tankHasSensors": "Este tanque todavía tiene {{count}} sonda(s). Muévalas o elimínelas primero, o deje el tanque inactivo.",
+    "tankDimensionsInvalid": "La altura y el diámetro del tanque deben ser mayores que cero",
+    "strappingTableInvalid": "La tabla de aforo necesita al menos 2 filas, con niveles crecientes dentro de la altura del tanque y volúmenes que nunca disminuyen",
+    "tankThresholdsOrder": "Los límites deben seguir el orden: mínimo ≤ bajo < alto ≤ rebose",
+    "tankThresholdAboveHeight": "Ningún límite puede quedar por encima de la altura del tanque",
+    "notAuthenticated": "Usuario no autenticado",
+    "emailAlreadyRegistered": "Este correo ya está registrado",
+    "batchLimitExceeded": "Máximo de {{max}} mensajes por lote",
+    "commandRequestNotFound": "Solicitud de comando {{requestId}} no encontrada",
+    "invalidCommand": "Comando inválido: {{command}}",
+    "updateConfigNeedsParameters": "UPDATE_CONFIG requiere parámetros",
+    "invalidDateParam": "Parámetro '{{name}}' inválido (use ISO 8601, p. ej. 2026-01-01T00:00:00Z)",
+    "readingNotFound": "Lectura con ID {{id}} no encontrada",
+    "unsupportedReportFormat": "Formato no soportado: {{format}}",
+    "startAfterEnd": "La fecha inicial no puede ser posterior a la fecha final",
+    "reportPeriodTooLong": "Período máximo: {{days}} días",
+    "reportTankLimit": "Máximo de {{max}} tanques por informe",
+    "reportSensorLimit": "Máximo de {{max}} sensores por informe",
+    "reportPeriodRequired": "El período es obligatorio para este tipo de informe",
+    "emptySensorIdList": "La lista de IDs de sensores no puede estar vacía",
+    "sensorBulkLimitExceeded": "Máximo de {{max}} sensores por operación en lote",
+    "sensorsNotFound": "Sensores no encontrados: {{ids}}",
+    "tankCodeNotFound": "Tanque con código {{tankCode}} no encontrado",
+    "invalidReportPeriod": "period debe ser daily, day o night",
+    "invalidReportDate": "date debe ser una fecha válida AAAA-MM-DD",
+    "invalidStartHour": "startHour debe ser una hora entera de 0 a 23",
+    "invalidTimeZone": "Zona horaria desconocida: {{tz}}"
+  },
+  "alertTypes": {
+    "high_level": {
+      "title": "Nivel Alto Detectado",
+      "message": "El nivel del tanque alcanzó {{level}} {{levelUnit}}, cerca del límite máximo de {{threshold}} {{levelUnit}}"
+    },
+    "low_level": {
+      "title": "Nivel Bajo Detectado",
+      "message": "El nivel del tanque alcanzó {{level}} {{levelUnit}}, por debajo del límite mínimo de {{threshold}} {{levelUnit}}"
+    },
+    "overflow_risk": {
+      "title": "Riesgo de Desbordamiento",
+      "message": "¡Riesgo crítico de desbordamiento! Nivel actual: {{level}} {{levelUnit}}, límite: {{threshold}} {{levelUnit}}",
+      "predictiveTitle": "Previsión de Desbordamiento",
+      "predictiveMessage": "Tanque {{tank}}: desbordamiento estimado en {{eta}} al ritmo actual (+{{rate}} {{rateUnit}}, confianza {{confidence}}%)."
+    },
+    "sensor_offline": {
+      "title": "Sensor sin Conexión",
+      "message": "El sensor dejó de enviar datos. Verificar conectividad y alimentación."
+    },
+    "battery_low": {
+      "title": "Batería Baja",
+      "message": "Nivel de batería crítico. Reemplazar la batería inmediatamente."
+    },
+    "sensor_error": {
+      "title": "Error del Sensor",
+      "message": "El sensor reporta errores. Verificar configuración y calibración."
+    },
+    "maintenance_due": {
+      "title": "Mantenimiento Vencido",
+      "message": "El mantenimiento preventivo del tanque/sensor está vencido."
+    },
+    "calibration_due": {
+      "title": "Calibración Vencida",
+      "message": "La calibración del sensor está vencida."
+    },
+    "communication_error": {
+      "title": "Error de Comunicación",
+      "message": "Fallo de comunicación con el sensor."
+    },
+    "power_failure": {
+      "title": "Fallo de Energía",
+      "message": "Fallo de energía detectado en el sensor."
+    },
+    "unknown": {
+      "title": "Alerta del Sistema",
+      "message": "Alerta del tipo {{type}} detectada en el tanque {{tankId}}"
+    }
+  }
+}

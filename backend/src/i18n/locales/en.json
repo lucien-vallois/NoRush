@@ -1,0 +1,105 @@
+{
+  "exceptions": {
+    "invalidCredentials": "Invalid credentials",
+    "unknownLevel": "unknown",
+    "userNotFound": "User not found",
+    "userInactive": "User is inactive",
+    "invalidRefreshToken": "Invalid refresh token",
+    "invalidToken": "Invalid or expired authentication token",
+    "tankNotFound": "Tank with ID {{id}} not found",
+    "sensorNotFound": "Sensor with ID {{id}} not found",
+    "alertNotFound": "Alert with ID {{id}} not found",
+    "onlyActiveCanBeAcknowledged": "Only active alerts can be acknowledged",
+    "alertAlreadyResolved": "Alert is already resolved",
+    "emptyIdList": "The alert ID list cannot be empty",
+    "bulkLimitExceeded": "Maximum of 100 alerts per bulk operation",
+    "logoutSuccess": "Logout successful",
+    "offlineCheckExecuted": "Offline sensor check executed",
+    "batteryCheckExecuted": "Low battery check executed",
+    "maintenanceCheckExecuted": "Maintenance check executed",
+    "sensorErrorCheckExecuted": "Sensor error check executed",
+    "notificationTestOk": "Notification test sent successfully via channel {{channel}}",
+    "notificationTestFail": "Failed to send test via channel {{channel}}",
+    "invalidIngestCredential": "Invalid ingestion credential",
+    "invalidDeviceCredential": "Invalid device credential",
+    "deviceNotProvisioned": "Device has no provisioned credential",
+    "tankIdRequired": "tankId is required to create a new device",
+    "sensorIdAlreadyExists": "A sensor with this sensorId already exists",
+    "tankCodeExists": "A tank with code {{tankCode}} already exists",
+    "tankHasSensors": "This tank still has {{count}} gauge(s). Move or remove them first, or set the tank to inactive.",
+    "tankDimensionsInvalid": "Tank height and diameter must be greater than zero",
+    "strappingTableInvalid": "Strapping table must have at least 2 rows, levels increasing and within the tank height, and volumes that never decrease",
+    "tankThresholdsOrder": "Limits must follow the order: minimum ≤ low < high ≤ overflow",
+    "tankThresholdAboveHeight": "No limit can be above the tank height",
+    "notAuthenticated": "User is not authenticated",
+    "emailAlreadyRegistered": "This e-mail is already registered",
+    "batchLimitExceeded": "Maximum of {{max}} messages per batch",
+    "commandRequestNotFound": "Command request {{requestId}} not found",
+    "invalidCommand": "Invalid command: {{command}}",
+    "updateConfigNeedsParameters": "UPDATE_CONFIG requires parameters",
+    "invalidDateParam": "Invalid '{{name}}' parameter (use ISO 8601, e.g. 2026-01-01T00:00:00Z)",
+    "readingNotFound": "Reading with ID {{id}} not found",
+    "unsupportedReportFormat": "Unsupported format: {{format}}",
+    "startAfterEnd": "The start date cannot be after the end date",
+    "reportPeriodTooLong": "Maximum period: {{days}} days",
+    "reportTankLimit": "Maximum of {{max}} tanks per report",
+    "reportSensorLimit": "Maximum of {{max}} sensors per report",
+    "reportPeriodRequired": "A period is required for this report type",
+    "emptySensorIdList": "The sensor ID list cannot be empty",
+    "sensorBulkLimitExceeded": "Maximum of {{max}} sensors per bulk operation",
+    "sensorsNotFound": "Sensors not found: {{ids}}",
+    "tankCodeNotFound": "Tank with code {{tankCode}} not found",
+    "invalidReportPeriod": "period must be daily, day or night",
+    "invalidReportDate": "date must be a valid YYYY-MM-DD date",
+    "invalidStartHour": "startHour must be a whole hour from 0 to 23",
+    "invalidTimeZone": "Unknown time zone: {{tz}}"
+  },
+  "alertTypes": {
+    "high_level": {
+      "title": "High Level Detected",
+      "message": "Tank level reached {{level}} {{levelUnit}}, near the maximum limit of {{threshold}} {{levelUnit}}"
+    },
+    "low_level": {
+      "title": "Low Level Detected",
+      "message": "Tank level reached {{level}} {{levelUnit}}, below the minimum limit of {{threshold}} {{levelUnit}}"
+    },
+    "overflow_risk": {
+      "title": "Overflow Risk",
+      "message": "Critical overflow risk! Current level: {{level}} {{levelUnit}}, limit: {{threshold}} {{levelUnit}}",
+      "predictiveTitle": "Overflow Forecast",
+      "predictiveMessage": "Tank {{tank}}: overflow estimated in {{eta}} at the current rate (+{{rate}} {{rateUnit}}, confidence {{confidence}}%)."
+    },
+    "sensor_offline": {
+      "title": "Sensor Offline",
+      "message": "Sensor stopped sending data. Check connectivity and power supply."
+    },
+    "battery_low": {
+      "title": "Low Battery",
+      "message": "Critical battery level. Replace the battery immediately."
+    },
+    "sensor_error": {
+      "title": "Sensor Error",
+      "message": "Sensor is reporting errors. Check configuration and calibration."
+    },
+    "maintenance_due": {
+      "title": "Maintenance Overdue",
+      "message": "Preventive maintenance for the tank/sensor is overdue."
+    },
+    "calibration_due": {
+      "title": "Calibration Due",
+      "message": "Sensor calibration is due."
+    },
+    "communication_error": {
+      "title": "Communication Error",
+      "message": "Communication failure with the sensor."
+    },
+    "power_failure": {
+      "title": "Power Failure",
+      "message": "Sensor power failure detected."
+    },
+    "unknown": {
+      "title": "System Alert",
+      "message": "Alert of type {{type}} detected on tank {{tankId}}"
+    }
+  }
+}

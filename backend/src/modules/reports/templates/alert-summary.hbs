@@ -1,0 +1,115 @@
+<div class="header">
+    <h1 class="title">{{metadata.title}}</h1>
+    <p class="subtitle">Período: {{formatDate metadata.period.start}} - {{formatDate metadata.period.end}}</p>
+</div>
+
+<div class="metadata">
+    <h3>Informações do Relatório</h3>
+    <p><strong>Gerado em:</strong> {{formatDate metadata.generatedAt}}</p>
+    <p><strong>Total de Alertas:</strong> {{summary.totalAlerts}}</p>
+    <p><strong>Alertas Ativos:</strong> {{summary.activeAlerts}}</p>
+    <p><strong>Alertas Críticos:</strong> {{summary.criticalAlerts}}</p>
+    {{#if metadata.filters.tankIds}}
+        <p><strong>Tanques Filtrados:</strong> {{metadata.filters.tankIds.length}}</p>
+    {{/if}}
+</div>
+
+<div class="summary">
+    <div class="summary-item">
+        <div class="summary-value">{{summary.totalAlerts}}</div>
+        <div class="summary-label">Total de Alertas</div>
+    </div>
+    <div class="summary-item">
+        <div class="summary-value">{{summary.resolvedAlerts}}</div>
+        <div class="summary-label">Resolvidos</div>
+    </div>
+    <div class="summary-item">
+        <div class="summary-value">{{summary.activeAlerts}}</div>
+        <div class="summary-label">Ativos</div>
+    </div>
+    <div class="summary-item">
+        <div class="summary-value">{{formatNumber summary.avgResolutionTimeHours 1}}h</div>
+        <div class="summary-label">Tempo Médio de Resolução</div>
+    </div>
+</div>
+
+<h3>Distribuição por Tipo</h3>
+<table class="table">
+    <thead>
+        <tr>
+            <th>Tipo de Alerta</th>
+            <th>Quantidade</th>
+            <th>Percentual</th>
+        </tr>
+    </thead>
+    <tbody>
+        {{#each summary.distribution.byType}}
+            <tr>
+                <td>{{@key}}</td>
+                <td>{{this}}</td>
+                <td>{{formatNumber (divide this ../summary.totalAlerts) 1}}%</td>
+            </tr>
+        {{/each}}
+    </tbody>
+</table>
+
+<h3>Distribuição por Severidade</h3>
+<table class="table">
+    <thead>
+        <tr>
+            <th>Severidade</th>
+            <th>Quantidade</th>
+            <th>Percentual</th>
+        </tr>
+    </thead>
+    <tbody>
+        {{#each summary.distribution.bySeverity}}
+            <tr>
+                <td>
+                    <span class="status-badge severity-{{@key}}">{{@key}}</span>
+                </td>
+                <td>{{this}}</td>
+                <td>{{formatNumber (divide this ../summary.totalAlerts) 1}}%</td>
+            </tr>
+        {{/each}}
+    </tbody>
+</table>
+
+<h3>Lista Detalhada de Alertas</h3>
+<table class="table">
+    <thead>
+        <tr>
+            <th>Tipo</th>
+            <th>Severidade</th>
+            <th>Título</th>
+            <th>Status</th>
+            <th>Tanque</th>
+            <th>Sensor</th>
+            <th>Criado em</th>
+            <th>Resolvido em</th>
+        </tr>
+    </thead>
+    <tbody>
+        {{#each data}}
+            <tr>
+                <td>{{type}}</td>
+                <td>
+                    <span class="status-badge severity-{{severity}}">{{severity}}</span>
+                </td>
+                <td>{{title}}</td>
+                <td>
+                    <span class="status-badge status-{{status}}">{{status}}</span>
+                </td>
+                <td>{{tankName}}</td>
+                <td>{{sensorName}}</td>
+                <td>{{formatDate (date createdAt)}}</td>
+                <td>{{#if resolvedAt}}{{formatDate (date resolvedAt)}}{{else}}-{{/if}}</td>
+            </tr>
+        {{/each}}
+    </tbody>
+</table>
+
+<div class="footer">
+    <p>Relatório gerado automaticamente pelo Sistema Flowback IoT</p>
+    <p>© 2024 Flowback IoT Platform</p>
+</div>
