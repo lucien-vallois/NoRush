@@ -1,0 +1,49 @@
+{
+  "id": "signalfire-sentinel-float-stick",
+  "name": "SignalFire Sentinel Float Stick (Sentinel-FS-3BIS) via SignalFire Buffered Modbus Gateway",
+  "source": "SignalFire Telemetry, Interface Manual - Tank Level Float Stick System, Rev 1.1 (2016-08-03), pages 9-10. Gateway addressing: SignalFire App Note - Getting Started with Modbus (2020-03-31).",
+  "notes": [
+    "Read at the gateway, using the Slave ID configured in the node with SignalFire Toolkit (nodes ship as ID 1; IDs 241-255 are reserved for gateways, which ship as 247).",
+    "The gateway buffers the last check-in of each node (typically every 1-5 minutes). A request it cannot answer from the buffer returns a Modbus exception.",
+    "Single-float sticks return 0 for the interface level. Every reading becomes 999.9999 when the node cannot talk to the stick; the communication status then holds the cause.",
+    "Float word order is not stated in the manual; the adapter detects it from the span register (stick length in inches) unless wordOrder is set.",
+    "The node status registers (49988-49999) depend on gateway firmware; when the gateway rejects that block the adapter keeps going without battery, signal and timeout data."
+  ],
+  "function": "holding",
+  "blocks": [
+    { "address": 1000, "count": 18 },
+    { "address": 9987, "count": 12, "optional": true }
+  ],
+  "values": {
+    "span": { "address": 1000, "type": "float32", "unit": "in" },
+    "productLevel": { "address": 1002, "type": "float32", "unit": "in" },
+    "interfaceLevel": { "address": 1004, "type": "float32", "unit": "in" },
+    "temperature": { "address": 1006, "type": "float32", "unit": "degC" },
+    "commStatus": { "address": 1016, "type": "float32" },
+    "slaveIdReadback": { "address": 9993, "type": "uint16" },
+    "signal": { "address": 9994, "type": "int16" },
+    "batteryMv": { "address": 9995, "type": "uint16" },
+    "minutesToTimeout": { "address": 9996, "type": "uint16" },
+    "deviceType": { "address": 9998, "type": "uint16" }
+  },
+  "map": {
+    "level": "productLevel",
+    "interface": "interfaceLevel",
+    "temperature": "temperature",
+    "batteryMv": "batteryMv",
+    "signal": "signal",
+    "minutesToTimeout": "minutesToTimeout",
+    "commStatus": "commStatus"
+  },
+  "expect": {
+    "deviceType": 52
+  },
+  "errorValue": 999.9999,
+  "commStatusCodes": {
+    "1": "no data received from the float stick",
+    "2": "only partial data received from the float stick",
+    "3": "checksum error talking to the float stick",
+    "4": "float stick reported an internal error"
+  },
+  "wordOrderProbe": { "value": "span", "min": 6, "max": 1200 }
+}

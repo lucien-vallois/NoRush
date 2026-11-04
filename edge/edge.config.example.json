@@ -1,0 +1,37 @@
+{
+  "norush": {
+    "url": "https://norush.example.com",
+    "timeoutMs": 10000
+  },
+  "gateway": {
+    "type": "tcp",
+    "host": "192.168.1.50",
+    "port": 502,
+    "timeoutMs": 5000
+  },
+  "pollIntervalSeconds": 60,
+  "heartbeatSeconds": 60,
+  "forceReadingSeconds": 600,
+  "buffer": {
+    "path": "norush-edge-buffer.jsonl",
+    "maxEntries": 20000
+  },
+  "gauges": [
+    {
+      "sensorId": "FS-24117",
+      "unitId": 11,
+      "tokenEnv": "NORUSH_TOKEN_FS_24117",
+      "profile": "signalfire-sentinel-float-stick",
+      "floats": 2,
+      "wordOrder": "auto"
+    },
+    {
+      "sensorId": "FS-24118",
+      "unitId": 12,
+      "tokenFile": "tokens/FS-24118.token",
+      "profile": "signalfire-sentinel-float-stick",
+      "floats": 2,
+      "wordOrder": "auto"
+    }
+  ]
+}
