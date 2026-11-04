@@ -1,0 +1,55 @@
+name: NoRush quality
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: norush-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      PUPPETEER_SKIP_DOWNLOAD: "true"
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: "22"
+          cache: npm
+      - run: npm ci --no-audit --no-fund
+      - run: npm run check
+
+  local-integration:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      PUPPETEER_SKIP_DOWNLOAD: "true"
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: "22"
+          cache: npm
+      - run: npm ci --no-audit --no-fund
+      - run: npm run setup:demo
+      - run: docker compose up -d --wait postgres mqtt rabbitmq redis
+      - run: npm run build --workspace=backend
+      - run: npm run seed
+      - name: Start local API
+        run: |
+          mkdir -p output
+          node backend/dist/main.js > output/backend-ci.log 2>&1 &
+      - run: npm run smoke
+      - run: npm run smoke:telemetry
+      - name: Show diagnostics on failure
+        if: failure()
+        run: |
+          tail -n 100 output/backend-ci.log || true
+          docker compose logs --tail=50 postgres mqtt rabbitmq
+      - name: Stop demonstration services
+        if: always()
+        run: docker compose down
