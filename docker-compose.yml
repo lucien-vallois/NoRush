@@ -1,0 +1,207 @@
+services:
+  # Banco de Dados PostgreSQL
+  postgres:
+    image: timescale/timescaledb:latest-pg15
+    container_name: flowback-postgres
+    environment:
+      POSTGRES_DB: flowback_iot
+      POSTGRES_USER: flowback_user
+      POSTGRES_PASSWORD: secure_password
+    # shared_preload é obrigatório p/ TimescaleDB mesmo em datadir já existente
+    command: postgres -c shared_preload_libraries=timescaledb
+    ports:
+      - "127.0.0.1:${DOCKER_DB_PORT:-5432}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - flowback-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U flowback_user -d flowback_iot"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # MQTT Broker (Eclipse Mosquitto)
+  mqtt:
+    image: eclipse-mosquitto:2.0
+    container_name: flowback-mqtt
+    ports:
+      - "127.0.0.1:${DOCKER_MQTT_PORT:-1883}:1883"
+      - "127.0.0.1:9001:9001" # WebSocket
+    volumes:
+      - ./docker/mosquitto/config:/mosquitto/config:ro
+      - ./docker/mosquitto/data:/mosquitto/data
+      - ./docker/mosquitto/log:/mosquitto/log
+    environment:
+      - MOSQUITTO_CONFIG=/mosquitto/config/mosquitto.conf
+    networks:
+      - flowback-network
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "mosquitto_sub",
+          "-t",
+          "$$SYS/#",
+          "-C",
+          "1",
+          "-h",
+          "localhost",
+          "-p",
+          "1883",
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    restart: unless-stopped
+
+  # Message Broker RabbitMQ
+  rabbitmq:
+    image: rabbitmq:3-management-alpine
+    container_name: flowback-rabbitmq
+    environment:
+      RABBITMQ_DEFAULT_USER: flowback
+      RABBITMQ_DEFAULT_PASS: flowback_dev
+      RABBITMQ_DEFAULT_VHOST: /
+    ports:
+      - "127.0.0.1:${DOCKER_RABBITMQ_PORT:-5672}:5672"
+      - "127.0.0.1:15672:15672"
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    networks:
+      - flowback-network
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Redis (Cache opcional)
+  redis:
+    image: redis:7-alpine
+    container_name: flowback-redis
+    ports:
+      - "127.0.0.1:${DOCKER_REDIS_PORT:-6379}:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - flowback-network
+    command: redis-server --appendonly yes
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Backend API
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    container_name: flowback-backend
+    environment:
+      # Local demonstration: TypeORM creates the demo schema. Not a production deployment.
+      - NODE_ENV=development
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_NAME=flowback_iot
+      - DB_USER=flowback_user
+      - DB_PASS=secure_password
+      - MQTT_HOST=mqtt
+      - MQTT_PORT=1883
+      - RABBITMQ_HOST=rabbitmq
+      - RABBITMQ_PORT=5672
+      - RABBITMQ_USER=flowback
+      - RABBITMQ_PASS=flowback_dev
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - JWT_SECRET=${JWT_SECRET:?Run npm run setup:demo first}
+      - JWT_REFRESH_SECRET=${JWT_REFRESH_SECRET:?Run npm run setup:demo first}
+      - IOT_INGEST_KEY=${IOT_INGEST_KEY:?Run npm run setup:demo first}
+      - CORS_ORIGIN=http://localhost:3001,http://127.0.0.1:3001
+    ports:
+      - "127.0.0.1:3000:3000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      mqtt:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - flowback-network
+    volumes:
+      - ./backend/logs:/app/logs
+    restart: unless-stopped
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "fetch('http://localhost:3000/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))",
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Frontend Dashboard
+  frontend:
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+      args:
+        VITE_API_URL: ${VITE_API_URL:-http://localhost:3000}
+        VITE_WS_URL: ${VITE_WS_URL:-ws://localhost:3000}
+    container_name: flowback-frontend
+    ports:
+      - "127.0.0.1:3001:80"
+    depends_on:
+      - backend
+    networks:
+      - flowback-network
+    restart: unless-stopped
+
+  # PgAdmin (Interface web para PostgreSQL - opcional)
+  pgadmin:
+    profiles: [tools]
+    image: dpage/pgadmin4:latest
+    container_name: flowback-pgadmin
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@flowback.com
+      PGADMIN_DEFAULT_PASSWORD: admin123
+      PGADMIN_CONFIG_SERVER_MODE: "False"
+    ports:
+      - "127.0.0.1:5050:80"
+    depends_on:
+      - postgres
+    networks:
+      - flowback-network
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+
+  # Portainer (Gerenciamento de containers - opcional)
+  portainer:
+    profiles: [tools]
+    image: portainer/portainer-ce:latest
+    container_name: flowback-portainer
+    ports:
+      - "127.0.0.1:9000:9000"
+      - "127.0.0.1:9443:9443"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - portainer_data:/data
+    networks:
+      - flowback-network
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+  rabbitmq_data:
+  redis_data:
+  pgadmin_data:
+  portainer_data:
+
+networks:
+  flowback-network:
+    driver: bridge

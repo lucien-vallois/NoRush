@@ -1,0 +1,15 @@
+.git
+**/node_modules
+**/dist
+**/coverage
+**/*.log
+**/*.tsbuildinfo
+.env
+.env.*
+output
+.playwright-cli
+firmware
+docs
+docker/mosquitto/data
+docker/mosquitto/log
+

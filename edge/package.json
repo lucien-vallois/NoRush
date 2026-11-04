@@ -1,0 +1,23 @@
+{
+  "name": "norush-edge",
+  "version": "0.1.0",
+  "description": "On-site adapter: polls tank gauges over Modbus (RTU/TCP) at the pad and sends readings to a NoRush server with each gauge's device credential",
+  "type": "module",
+  "private": true,
+  "license": "MIT",
+  "engines": {
+    "node": ">=20"
+  },
+  "bin": {
+    "norush-edge": "src/cli.js"
+  },
+  "scripts": {
+    "build": "node src/cli.js --help",
+    "start": "node src/cli.js run",
+    "check": "node src/cli.js check",
+    "test": "node --test test/*.test.js"
+  },
+  "dependencies": {
+    "modbus-serial": "8.0.25"
+  }
+}

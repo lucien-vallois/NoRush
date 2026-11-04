@@ -1,0 +1,36 @@
+{
+  "name": "norush-operations",
+  "version": "0.1.0",
+  "description": "Open-source remote tank gauging: total level and oil/water interface for flowback and production tanks",
+  "license": "MIT",
+  "private": true,
+  "engines": {
+    "node": ">=22.20"
+  },
+  "workspaces": [
+    "backend",
+    "frontend",
+    "edge"
+  ],
+  "scripts": {
+    "setup:demo": "node scripts/setup-demo.mjs",
+    "build": "npm run build --workspaces",
+    "test": "npm run test --workspace=backend -- --runInBand && npm run test --workspace=frontend && npm run test --workspace=edge",
+    "check": "npm run build && npm run test",
+    "dev": "concurrently --kill-others --names API,WEB \"npm run start:dev --workspace=backend\" \"npm run dev --workspace=frontend\"",
+    "demo": "npm run build --workspace=backend && concurrently --kill-others --names API,WEB \"npm run start:prod --workspace=backend\" \"npm run dev --workspace=frontend\"",
+    "seed": "npm run seed --workspace=backend",
+    "simulate": "node --env-file-if-exists=.env backend/test/iot-simulation.js mqtt",
+    "smoke": "node --env-file-if-exists=.env scripts/smoke.mjs",
+    "smoke:telemetry": "node --env-file-if-exists=.env frontend/test/ws-smoke.mjs",
+    "screenshots": "node --env-file-if-exists=.env scripts/screenshots.mjs",
+    "infra:up": "docker compose up -d postgres mqtt rabbitmq redis",
+    "docker:build": "docker compose build",
+    "docker:up": "docker compose up -d",
+    "docker:down": "docker compose down",
+    "edge": "npm run start --workspace=edge --"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.0"
+  }
+}

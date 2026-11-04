@@ -1,0 +1,41 @@
+# Mosquitto ACL Configuration for Flowback IoT Platform
+# Access Control List for MQTT topics
+
+# Allow all users to read system topics
+topic read $SYS/#
+
+# Sensor data topics - sensors can publish, applications can subscribe
+topic sensors/data
+
+# Sensor-specific topics
+topic sensors/+/data
+topic sensors/+/status
+topic sensors/+/commands
+
+# Alert topics
+topic alerts/#
+topic alerts/critical
+topic alerts/warning
+topic alerts/info
+
+# Gateway status topics
+topic gateway/#
+topic gateway/status
+topic gateway/health
+
+# Command topics - bidirectional
+topic commands/#
+topic commands/sensor/+
+topic commands/gateway/+
+
+# Application-specific topics
+topic app/#
+topic app/dashboard
+topic app/mobile
+topic app/notifications
+
+# Admin topics (restricted)
+# topic admin/#
+
+# Deny all other topics by default
+# topic deny #
