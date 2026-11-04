@@ -1,0 +1,30 @@
+{
+  "result": "PASS",
+  "checks": 13,
+  "passed": [
+    "wrong login displays an actionable error",
+    "operator login and dashboard selection",
+    "tank detail uses native modality and closes with Escape",
+    "sensor search filters the table",
+    "historical chart renders actual SVG data",
+    "oil/water interface sensor displays its series",
+    "search and recognition of an isolated synthetic alert",
+    "resolution modal persists operator notes",
+    "alert pagination advances and returns",
+    "six routes fit a 390px viewport without page overflow",
+    "mobile navigation opens and closes with Escape",
+    "light and dark theme controls work",
+    "logout returns to login"
+  ],
+  "responsive": [
+    "/dashboard",
+    "/tanks",
+    "/sensors",
+    "/readings",
+    "/alerts",
+    "/profile"
+  ],
+  "javascriptErrors": [],
+  "retainedSyntheticAlert": "f722f380-19f2-477a-b956-703526f79a72",
+  "utc": "2026-11-01T22:18:10.63Z"
+}

@@ -1,0 +1,31 @@
+
+> norush-operations@1.0.0 smoke
+> node --env-file-if-exists=.env scripts/smoke.mjs
+
+PASS measured API/database health and security headers
+PASS anonymous API request is denied
+PASS malformed login is rejected at the HTTP boundary
+PASS wrong password returns 401
+PASS operator login returns a public profile
+PASS tank dimensions and capacities are available
+PASS sensor overview and online denominator are consistent
+PASS forecast freshness is explicit and stale ETAs are suspended
+PASS paginated alert response has numeric counts
+PASS invalid pagination is rejected
+PASS operator cannot access administrator users
+PASS refresh issues a working access token
+PASS refresh token cannot be used as an access token
+PASS anonymous realtime handshake is rejected
+PASS authenticated realtime handshake succeeds
+PASS HTTP telemetry is persisted and delivered over authenticated WebSocket
+PASS out-of-range telemetry is rejected without persistence
+PASS continuous aggregate includes the latest telemetry bucket
+PASS synthetic alert creation, recognition and resolution preserve actor and notes
+{
+  "result": "PASS",
+  "checks": 19,
+  "utc": "2026-11-01T22:05:42.218Z",
+  "api": "http://localhost:3000",
+  "data": "local simulated telemetry",
+  "retainedSyntheticAlert": "0a7d710d-73ff-4ac6-92a4-7f1792b8747f"
+}

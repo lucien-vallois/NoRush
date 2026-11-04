@@ -1,0 +1,18 @@
+
+> norush-operations@1.0.0 smoke:telemetry
+> node --env-file-if-exists=.env frontend/test/ws-smoke.mjs
+
+[ws-smoke] socket conectado (AU6s7skqtBduhQLXAAAS)
+[ws-smoke] spawn: node test/iot-simulation.js (cwd=<repo>/backend)
+[ws-smoke] timeout de coleta de eventos (30000ms)
+[ws-smoke] --- contagens por evento ---
+[ws-smoke] reading  : 124
+[ws-smoke] forecast : 0
+[ws-smoke] alert    : 33
+[ws-smoke] anomaly  : 0
+[ws-smoke] --- primeiro payload recebido (por tipo) ---
+[ws-smoke] reading  : {"sensorId":"SENSOR-005","tankId":"73cec02b-3e14-45a4-8a6f-6664a896c628","level":1.374,"volume":11050.456000000002,"timestamp":"2026-11-01T22:13:44.299Z"}
+[ws-smoke] forecast : —
+[ws-smoke] alert    : {"sensorId":"SENSOR-010","tankId":"9d3d126b-9c84-4b77-98f2-be7fd0ee7357","reason":"Nível alto: 4.47m >= 4.2m","level":4.47,"timestamp":"2026-11-01T22:13:44.511Z
+[ws-smoke] anomaly  : —
+[ws-smoke] OK — 124 readings (mínimo 5). alert=33 anomaly=0 forecast=0 (forecast pode ser 0: cron de 5min)

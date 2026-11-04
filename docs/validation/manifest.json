@@ -1,0 +1,376 @@
+{
+  "recordedUtc": "2026-11-01T22:20:54.2484479Z",
+  "baseGitHead": "1fb52ed65f9014c7d56c1d5aa41234e933882af0",
+  "sourceState": "uncommitted working tree",
+  "backendUnitTests": 56,
+  "frontendUnitTests": 10,
+  "apiChecks": 19,
+  "browserChecks": 13,
+  "mqttReadings": 124,
+  "mqttAlertEvents": 33,
+  "dockerImages": "NOT_RUN",
+  "remoteCI": "NOT_RUN",
+  "fieldHardware": "NOT_RUN",
+  "files": [
+    {
+      "path": ".dockerignore",
+      "sha256": "995d1e196172517285b4fbeee91c5d640a27fcf7a982ebc330f3a00224e953a5"
+    },
+    {
+      "path": ".github/workflows/quality.yml",
+      "sha256": "b17f27b65d9ce109d07cef0795fb154938d47844f22dde2f6b56e0dd98080fc3"
+    },
+    {
+      "path": ".gitignore",
+      "sha256": "a3e6eefec196cc5055a2a912732669b6447cca0a7962d6af704d86266fc43c29"
+    },
+    {
+      "path": "backend/Dockerfile",
+      "sha256": "1bfb8d46e254bd7fa885d447bf46058d8cb324ed3605ea25da5f1931a9816484"
+    },
+    {
+      "path": "backend/package.json",
+      "sha256": "e461bb814fb93a55fe3ab86d0c2f3dc89360b3a97d8565191f29883c9171d1c5"
+    },
+    {
+      "path": "backend/README.md",
+      "sha256": "5c91188fec9cc0968aec6c1a2e4579de573542148c79f3dddc76546031a9d2b3"
+    },
+    {
+      "path": "backend/src/app.controller.spec.ts",
+      "sha256": "2893d33c944bfd2cec63742be09534df4fa208885f1cee66ae3b63bab21b36c4"
+    },
+    {
+      "path": "backend/src/app.controller.ts",
+      "sha256": "1c36684395cb55dcf1e2f685e8fd9eceda8c47a8b9b1ddcf1f357a41013922a3"
+    },
+    {
+      "path": "backend/src/app.module.ts",
+      "sha256": "ad6f793097a085519e771bd303a7debdf2e3f77a1087169c843ae785d530789d"
+    },
+    {
+      "path": "backend/src/app.service.ts",
+      "sha256": "f245953347cf09de8ba765d45c8fcd1e74901e810e61ad298a2cf6bf0232745b"
+    },
+    {
+      "path": "backend/src/config/database.config.ts",
+      "sha256": "4c9add745e1f450809e2ab8451532d355690dd02bf808dcd4d8d8eeed4288b54"
+    },
+    {
+      "path": "backend/src/config/jwt.config.spec.ts",
+      "sha256": "ab945fd0cdbe5884d90b1afdcd0c54b68e5c234da2e43eca13f02c4a15f83aa3"
+    },
+    {
+      "path": "backend/src/config/jwt.config.ts",
+      "sha256": "981f86acd10c4949eba0f5ba858df22ecfd47bdb497b1062eb3206b8def84626"
+    },
+    {
+      "path": "backend/src/main.ts",
+      "sha256": "bc4f42a570297ef5e7fceb187198371b397e125bba8dc7f757fdb234700070db"
+    },
+    {
+      "path": "backend/src/modules/alerts/dto/alert-filters.dto.spec.ts",
+      "sha256": "83c3273b8abfacf289addf36446aa92243d42db84b6bcd3995b5fed44b21fba1"
+    },
+    {
+      "path": "backend/src/modules/alerts/dto/alert-filters.dto.ts",
+      "sha256": "e3ef31aa3031d7fcef4288c95da8cad3292d5293a7e56306831cecf1a1dd616d"
+    },
+    {
+      "path": "backend/src/modules/auth/auth.controller.ts",
+      "sha256": "0464513bcedbdfddd6517d9d94b664d6f133b56770a9974e8def1730383851dd"
+    },
+    {
+      "path": "backend/src/modules/auth/auth.dto.spec.ts",
+      "sha256": "f40fe6b06abf9976e5520feb990a884b1b686952536453c7b3f339a89d012a52"
+    },
+    {
+      "path": "backend/src/modules/auth/auth.dto.ts",
+      "sha256": "f63aafb95ab5ec9cc78cbae1bce34ffb39f48da24f2fbec8bba270d29bf9d900"
+    },
+    {
+      "path": "backend/src/modules/auth/auth.service.spec.ts",
+      "sha256": "c8336a1f4dabb616ca51330f757c5d1ef1a59b78aed1382d6318d42e439bcc8e"
+    },
+    {
+      "path": "backend/src/modules/auth/auth.service.ts",
+      "sha256": "269127eae0608b82560bbe7a01b76cd894004a2f223123dccd316731191082b8"
+    },
+    {
+      "path": "backend/src/modules/auth/strategies/jwt.strategy.ts",
+      "sha256": "dde69b5ed8e8ada05e4ccbbdb545a62ba28b85bf65561218812a704d8ddfaac3"
+    },
+    {
+      "path": "backend/src/modules/auth/user.service.ts",
+      "sha256": "2b285621fdb7de6b48688a996e8478788acaf2a0225277c390f1ac3356b4c707"
+    },
+    {
+      "path": "backend/src/modules/iot-gateway/http.service.ts",
+      "sha256": "961643ee86a7e4af230b79fd785037d68ebc2e4ba002b926f0cd3eaf3ee45fef"
+    },
+    {
+      "path": "backend/src/modules/iot-gateway/iot-gateway.service.ts",
+      "sha256": "2616cd73869850c667e545427ff67426a1e40375a088839861605e460f77d1a1"
+    },
+    {
+      "path": "backend/src/modules/iot-gateway/message-processor.service.spec.ts",
+      "sha256": "4488612b51162a49b3f227e04ff4792649707cf06254be933228d6ace7749d75"
+    },
+    {
+      "path": "backend/src/modules/iot-gateway/message-processor.service.ts",
+      "sha256": "7990bb95b7e05324521943c9935e0fd3de338a91b07e12487b98186f50e3a5d7"
+    },
+    {
+      "path": "backend/src/modules/iot-gateway/mqtt.service.ts",
+      "sha256": "37ddefd8171d44342154312641a2e39abed7c5f7ece65dd05b2762751d94674e"
+    },
+    {
+      "path": "backend/src/modules/predictions/predictions.service.spec.ts",
+      "sha256": "5f0a2c6d5ea4e72a3e89fedd5f1e252cfc256efe234592cae982792d24034c2b"
+    },
+    {
+      "path": "backend/src/modules/predictions/predictions.service.ts",
+      "sha256": "071dfabe46a4dd4969500872c9966d24cb13ffc663023fee0a20edc734c852d4"
+    },
+    {
+      "path": "backend/src/modules/reports/services/pdf-report.service.ts",
+      "sha256": "1cb1edda0930101a36f436146f1ff075e2c9d81f45e1d177aa32db5dec793193"
+    },
+    {
+      "path": "backend/src/modules/timescale/timescale.service.ts",
+      "sha256": "273b128af5fbcf5919508b67713fa4c779f698069b551bf252330d9d4f28b656"
+    },
+    {
+      "path": "backend/src/modules/websocket/websocket.gateway.spec.ts",
+      "sha256": "3096de176559622a6ce9efaabba8ce27ac8b8f7a5cc74f20f341f9f60d185053"
+    },
+    {
+      "path": "backend/src/modules/websocket/websocket.gateway.ts",
+      "sha256": "6cad0679417541e6a397509d15db46a790decf6fb8a5e60cc0fa59d7c666261e"
+    },
+    {
+      "path": "backend/src/modules/websocket/websocket.module.ts",
+      "sha256": "9a3c92781620521884cbde424afd5d71336d7e8dd85c9fb1a89560e8310b72cb"
+    },
+    {
+      "path": "backend/src/scripts/backfill.ts",
+      "sha256": "266ca16413525ce5d98a46e0ec2f16151e381f95578f1780e8f27ce5181f52e7"
+    },
+    {
+      "path": "backend/test/iot-simulation.js",
+      "sha256": "d346b0b84caf828ea50e34e0450fbec4bfa97d180a1fc1140fba6f5cc67b3210"
+    },
+    {
+      "path": "DEMO.md",
+      "sha256": "51bca96897764e78fa0682ddcb0f30eb45f33b692064a6f155ca7dbd38e17362"
+    },
+    {
+      "path": "docker-compose.yml",
+      "sha256": "c27f36a5fe672d2d74a30fa6fa27230c715709ebec1f25bff36088db70003faa"
+    },
+    {
+      "path": "docs/PORTFOLIO.md",
+      "sha256": "9676f09f6df3f6a40403cb29928839d83c3abe5de695ffa1b8fbcdf65918d7a5"
+    },
+    {
+      "path": "docs/screenshots/alerts-desktop.png",
+      "sha256": "80086c5464b0139d5b0c1bed0ef0d68c3a88ce34e7cd30c9abc003cfe9409a98"
+    },
+    {
+      "path": "docs/screenshots/dashboard-dark.png",
+      "sha256": "abfcbb7f04cfc5f0160eb59bfdd9a5395f5e32cca8d0ed106d91ee2c95e69ac1"
+    },
+    {
+      "path": "docs/screenshots/dashboard-desktop.png",
+      "sha256": "ae99b80e55d2ba2477dbc3dc5f74823a81a0db7dcf098e497a73cf82142bfd8d"
+    },
+    {
+      "path": "docs/screenshots/dashboard-mobile.png",
+      "sha256": "422f6190e997c635cd8524c8f7ed71309b6e9bca6f0de2e1500a92858ec4ce9c"
+    },
+    {
+      "path": "docs/screenshots/login-desktop.png",
+      "sha256": "b0824ee7b29a46409b19f4a2585d7a928289aad140f859d955f5af90a315403e"
+    },
+    {
+      "path": "docs/screenshots/readings-desktop.png",
+      "sha256": "2b949fe7cdbb694d191ac4c380cf69b9a2db539ed7309fbd96da7668210b1591"
+    },
+    {
+      "path": "docs/screenshots/sensors-desktop.png",
+      "sha256": "a93f888a591457508bc080a1c5fa5eddfaed29292fa7af94338a13ca09404e3a"
+    },
+    {
+      "path": "docs/screenshots/tanks-desktop.png",
+      "sha256": "2df3e27a23a9f0a82d8267c182c275ae29ce2c73be0f0d107be83405747e69e4"
+    },
+    {
+      "path": "docs/VALIDATION.md",
+      "sha256": "eb08bad159176c29350af7d44312481644d61f45cae8c61e59ce90dff6ce1b88"
+    },
+    {
+      "path": "docs/validation/api-smoke.txt",
+      "sha256": "800a5ccd0bfcddacc4a10d1932c4704c4d8b749e438fffed55b234b784d1aba4"
+    },
+    {
+      "path": "docs/validation/browser-review.json",
+      "sha256": "c9ec17accf54fd940a15782d4dfae8c332f6dd833ff10fa9ac5c02484d27a7eb"
+    },
+    {
+      "path": "docs/validation/mqtt-smoke.txt",
+      "sha256": "fd39d38afd7a8f29b053461452e9145e0799c405055a7d27dd402796dcaad179"
+    },
+    {
+      "path": "docs/validation/quality-check.txt",
+      "sha256": "6a483f5ebe8899ea05aef4dde4bcd5e555e77babf58f9c2a865672ab57c58a74"
+    },
+    {
+      "path": "docs/validation/units-review.json",
+      "sha256": "19a31d5b966d77f411206d81698e61814bd38229cba994d2648368fda3d39c80"
+    },
+    {
+      "path": "env.example",
+      "sha256": "9ad64e8f954e33322e91e5b68e969992d490de00a156fbe3493a6a448d08cad3"
+    },
+    {
+      "path": "frontend/Dockerfile",
+      "sha256": "e0d1af09dff9c18a21254c1a8b4ba8476460cd224d73263a56e1d18675b69d96"
+    },
+    {
+      "path": "frontend/index.html",
+      "sha256": "958eada4281cbbade0dd39fd91560859a6bbcfb348d0b87d4c5e0f8115c3c128"
+    },
+    {
+      "path": "frontend/nginx.conf",
+      "sha256": "11dbc84719d3fddb84e684168f556d48fed7a0cdc581eda8ed3c47413408a23c"
+    },
+    {
+      "path": "frontend/package.json",
+      "sha256": "0a8b3caf1b5e9e55f79c9cccaa052886459f5ff0f1cbbb732bbf81bddcdba4d4"
+    },
+    {
+      "path": "frontend/public/norush.svg",
+      "sha256": "6aab5eb405dd573b96d84fbe906a28e7290871b2aab588c40d8c38de73b7e5af"
+    },
+    {
+      "path": "frontend/src/App.tsx",
+      "sha256": "e30eb9cbab191f908151dc448e1f507fc2a57ab2981dca0a0f9923dd0c8034ac"
+    },
+    {
+      "path": "frontend/src/components/common/Brand.tsx",
+      "sha256": "2c7bfe3d1ecf11d0b642d19f90d9fc3bbc36514d579fbb279363aa7332aec702"
+    },
+    {
+      "path": "frontend/src/components/dashboard/PredictionsPanel.tsx",
+      "sha256": "21ecae7ee0d0d030ec6e975a81a1e3a9a754ca9fd68e2b012bd6d9c01347da30"
+    },
+    {
+      "path": "frontend/src/components/layout/Header.tsx",
+      "sha256": "4bb0b1eb755a15cf60ee7741c8f8098015eeb09bf9b02860ddf73169f1cd0ce1"
+    },
+    {
+      "path": "frontend/src/components/layout/Layout.tsx",
+      "sha256": "39358897b094a7d65217db767f2ba0b8c9220c5529673af48d2bc8fe762439c4"
+    },
+    {
+      "path": "frontend/src/components/layout/Sidebar.tsx",
+      "sha256": "c211871d8a67f39b4abaaed66aa35923331ee944cd96acc2a8f7e40a5c9abf7e"
+    },
+    {
+      "path": "frontend/src/components/readings/TimeseriesChart.tsx",
+      "sha256": "551e8982c308f7ce06874fdab51b1a34abda468775fea0d85fe4ba47e7fc5d19"
+    },
+    {
+      "path": "frontend/src/components/tanks/TankCard.tsx",
+      "sha256": "5201341950fc61e1e76e8b76e2a731146ddfc0c72ba31f2aed0de1782c877212"
+    },
+    {
+      "path": "frontend/src/components/tanks/TankDetailDrawer.tsx",
+      "sha256": "6171751eabd15945370d902847a80a0e158210f8fd3de9d7722e1ab5c7ac08e8"
+    },
+    {
+      "path": "frontend/src/contexts/AuthContext.tsx",
+      "sha256": "162ed038cd93536623f63eca04a378c91111b4937c078d1b9865cec283f7fbff"
+    },
+    {
+      "path": "frontend/src/contexts/WebSocketContext.tsx",
+      "sha256": "5e72defcf02162dc35c73ea672d0f134d8520599e03065365ebb3469c00889fe"
+    },
+    {
+      "path": "frontend/src/index.css",
+      "sha256": "6b7d3d7d90e7fe3b70dd625458009569ba562b8650d4b9736924a61718c836e8"
+    },
+    {
+      "path": "frontend/src/pages/Alerts.tsx",
+      "sha256": "300cfad442608dc4dc0a41ba2dafbfe18bb3bb8110461a17b780d93eba5da630"
+    },
+    {
+      "path": "frontend/src/pages/Dashboard.tsx",
+      "sha256": "a0873e9beacac0d087102d0917c60257c307de354c064e7912c52babbe80180a"
+    },
+    {
+      "path": "frontend/src/pages/Login.tsx",
+      "sha256": "df1730100e99cb9bb3880c2edca529049c9c3b398fea36fe716d0c628c11b9be"
+    },
+    {
+      "path": "frontend/src/pages/Readings.tsx",
+      "sha256": "cd0882fe02a55fba8b2d17d8b8b8cb1adb2ff5ee66db1c8c81f55d83602253e7"
+    },
+    {
+      "path": "frontend/src/pages/Tanks.tsx",
+      "sha256": "51dedfe1805ca8868e8c89c3abaef9fd0a7d19b6f3878f806607a287e557a425"
+    },
+    {
+      "path": "frontend/src/services/api.ts",
+      "sha256": "0fa6d3ee2a5f808094cedc063f16e47b9b5e583ad5718b9f6af83d683d52c575"
+    },
+    {
+      "path": "frontend/src/types/index.ts",
+      "sha256": "e7916e7c9a5c3bed107e8367256fc4b119a63dd8a22be8f793aff9ea1d4a12f2"
+    },
+    {
+      "path": "frontend/src/utils/format.ts",
+      "sha256": "1a7092233c21067674929a1fbe3533ad649ffa7f5db32b05c4d06e978f9ddb6b"
+    },
+    {
+      "path": "frontend/src/utils/telemetry.ts",
+      "sha256": "1e822477a777237ea9e37f8ce6278fc64871a0e4708aea51bf7464f26c8fc8a5"
+    },
+    {
+      "path": "frontend/test/browser-smoke.js",
+      "sha256": "26b9cd8a2a4b39995ff9e7bbc3966bf1a6d6dbb068db18281156be9b059ed7e5"
+    },
+    {
+      "path": "frontend/test/telemetry.test.mjs",
+      "sha256": "c7442e3bb71b7690ccd91819b66ee67b5fae340e5d32d51ced1fae8ccf0579dc"
+    },
+    {
+      "path": "frontend/test/ws-smoke.mjs",
+      "sha256": "7af22cfb776bd6a39bd5e8ce89adf71d5e392df7ca69721f6ef4cdfb5aef6c86"
+    },
+    {
+      "path": "package-lock.json",
+      "sha256": "83d041f2891e4a8f34c995cbe6ccd637ad3ba1881208627113d4f6b90181984b"
+    },
+    {
+      "path": "package.json",
+      "sha256": "7f40cfff2855d3064380ff8ac7533cc247942fb9f404721cddee2b95848f7fe3"
+    },
+    {
+      "path": "README.md",
+      "sha256": "a24604b5adda65a8adc8d7d5c4e132dff610f0393d48e8de026989d8c72938ca"
+    },
+    {
+      "path": "scripts/setup-demo.mjs",
+      "sha256": "b6221887e978af10213d9c2b1f4b10aecf133caf0ddb366e1f02170050522f69"
+    },
+    {
+      "path": "scripts/smoke.mjs",
+      "sha256": "bdca2c4b14956e6da7e804891cc9a027fff559bc6d2de16726344ea5228b4d6c"
+    }
+  ],
+  "deletedFiles": [
+    "backend/test/app.e2e-spec.ts",
+    "backend/test/jest-e2e.json"
+  ]
+}
