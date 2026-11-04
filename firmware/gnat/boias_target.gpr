@@ -1,0 +1,67 @@
+--  Build para ALVO ARM Cortex-M (STM32L432 / STM32L072).
+--
+--  REQUER toolchain cruzada que NAO esta instalada neste ambiente:
+--    * Alire (alr)  -> https://alire.ada.dev
+--    * gnat_arm_elf (runtime light, sem heap)
+--    * opcional: gnatprove (prova formal SPARK)
+--
+--  Instalacao sugerida:
+--    alr get boias_firmware
+--    alr toolchain --select gnat_arm_elf
+--
+--  Depois:
+--    gprbuild -P firmware/gnat/boias_target.gpr
+--
+--  Este arquivo nao e' compilado no build host. Ver README.md.
+
+project Boias_Target is
+
+   for Languages use ("Ada", "C");
+   for Source_Dirs use
+     ("../src/app",
+      "../src/hal",
+      "../src/bsp/stm32l4",   -- trocar para stm32l0 na Boia B
+      "../c/sx1262",
+      "../c/mag_sensor");
+   for Object_Dir use "../build/target/obj";
+   for Exec_Dir   use "../build/target";
+   for Main       use ("main.adb");
+   for Target     use "arm-eabi";
+
+   --  Runtime Ada sem heap: obrigatorio para STM32L072 (20 KB RAM).
+   for Runtime ("Ada") use "light";
+
+   package Compiler is
+      for Default_Switches ("Ada") use
+        ("-gnat2012",
+         "-gnata",
+         "-gnatVa",
+         "-gnatwa",
+         "-Os",
+         "-ffunction-sections",
+         "-fdata-sections",
+         "-mcpu=cortex-m4",
+         "-mthumb");
+      for Default_Switches ("C") use
+        ("-Os",
+         "-ffunction-sections",
+         "-fdata-sections",
+         "-mcpu=cortex-m4",
+         "-mthumb",
+         "-std=c11",
+         "-Wall",
+         "-Wextra");
+   end Compiler;
+
+   package Binder is
+      for Default_Switches ("Ada") use ("-E");
+   end Binder;
+
+   package Linker is
+      for Default_Switches ("Ada") use
+        ("-Wl,--gc-sections",
+         "-nostartfiles",
+         "-T", "stm32l432.ld");
+   end Linker;
+
+end Boias_Target;

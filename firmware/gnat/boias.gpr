@@ -1,0 +1,40 @@
+--  Build HOST (simulador). Compila com o GNAT nativo instalado.
+--
+--    gprbuild -P firmware/gnat/boias.gpr
+--    ./firmware/build/host/test_main.exe
+--
+--  Os corpos do HAL usados aqui sao os de src/bsp/sim. Para o alvo,
+--  usar boias_target.gpr (troca o Source_Dir do BSP).
+
+project Boias is
+
+   for Languages use ("Ada");
+   for Source_Dirs use
+     ("../src/app",
+      "../src/hal",
+      "../src/bsp/sim",
+      "../tests");
+   for Object_Dir use "../build/host/obj";
+   for Exec_Dir   use "../build/host";
+   for Main       use ("test_main.adb");
+
+   package Compiler is
+      for Default_Switches ("Ada") use
+        ("-gnat2012",   -- Ada 2012: maxima portabilidade entre toolchains
+         "-gnata",      -- assertions / contratos em runtime
+         "-gnatVa",     -- validity checks (valores nao inicializados)
+         "-gnatwa",     -- todos os warnings
+         "-gnatwe",     -- warnings como erros
+         "-g",
+         "-O1");
+   end Compiler;
+
+   package Binder is
+      for Default_Switches ("Ada") use ("-E");
+   end Binder;
+
+   package Builder is
+      for Default_Switches ("Ada") use ("-j0");
+   end Builder;
+
+end Boias;
