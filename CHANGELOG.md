@@ -32,6 +32,10 @@ Software prototype, exercised with simulated gauges and against a vendor's publi
 - Alert rows show the reading and limit in the selected units (they were always in meters).
 - API errors are translated (English, Portuguese, Spanish by `Accept-Language`), and device validation errors are in English.
 - All packages are MIT-licensed and versioned 0.1.0.
+- Bulk acknowledge/resolve alert routes were unreachable (declared after the `:id` routes, so `bulk` matched `:id`); they now come first and are covered by the smoke suite.
+- Reading sort fields are validated against a whitelist before entering `ORDER BY`, and numeric query filters (`limit`, level/volume/quality ranges) are converted as numbers instead of failing validation.
+- Logout revokes the session: the user's token version is bumped and previously issued access and refresh tokens are refused immediately, including the realtime WebSocket.
+- `/iot/test/*` endpoints are admin-only and refused outright in production.
 
 ### Docs
 
