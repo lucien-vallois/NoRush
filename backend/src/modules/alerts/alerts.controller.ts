@@ -251,6 +251,44 @@ export class AlertsController {
     return this.localized(await this.alertsService.findById(id), lang, units);
   }
 
+  // Rotas literais ("bulk/...") precisam ser declaradas antes de ":id/...",
+  // senão o Express casa "bulk" como :id e elas ficam inalcançáveis.
+  @Post('bulk/acknowledge')
+  @HttpCode(HttpStatus.OK)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Acknowledge multiple alerts' })
+  @ApiResponse({ status: 200, description: 'Alerts acknowledged successfully', type: [Alert] })
+  async bulkAcknowledge(
+    @Body() body: { alertIds: string[]; notes?: string },
+    @CurrentUser() user: User,
+    @CurrentLang() lang: string,
+    @CurrentUnits() units: UnitPreference,
+  ): Promise<Alert[]> {
+    return this.localizedList(
+      await this.alertsService.bulkAcknowledge(body.alertIds, user.id),
+      lang,
+      units,
+    );
+  }
+
+  @Post('bulk/resolve')
+  @HttpCode(HttpStatus.OK)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Resolve multiple alerts' })
+  @ApiResponse({ status: 200, description: 'Alerts resolved successfully', type: [Alert] })
+  async bulkResolve(
+    @Body() body: { alertIds: string[]; resolutionNotes?: string },
+    @CurrentUser() user: User,
+    @CurrentLang() lang: string,
+    @CurrentUnits() units: UnitPreference,
+  ): Promise<Alert[]> {
+    return this.localizedList(
+      await this.alertsService.bulkResolve(body.alertIds, user.id, body.resolutionNotes),
+      lang,
+      units,
+    );
+  }
+
   @Post(':id/acknowledge')
   @HttpCode(HttpStatus.OK)
   @ApiBearerAuth()
@@ -288,42 +326,6 @@ export class AlertsController {
   ): Promise<Alert> {
     return this.localized(
       await this.alertsService.resolveAlert(id, user.id, body?.resolutionNotes),
-      lang,
-      units,
-    );
-  }
-
-  @Post('bulk/acknowledge')
-  @HttpCode(HttpStatus.OK)
-  @ApiBearerAuth()
-  @ApiOperation({ summary: 'Acknowledge multiple alerts' })
-  @ApiResponse({ status: 200, description: 'Alerts acknowledged successfully', type: [Alert] })
-  async bulkAcknowledge(
-    @Body() body: { alertIds: string[]; notes?: string },
-    @CurrentUser() user: User,
-    @CurrentLang() lang: string,
-    @CurrentUnits() units: UnitPreference,
-  ): Promise<Alert[]> {
-    return this.localizedList(
-      await this.alertsService.bulkAcknowledge(body.alertIds, user.id),
-      lang,
-      units,
-    );
-  }
-
-  @Post('bulk/resolve')
-  @HttpCode(HttpStatus.OK)
-  @ApiBearerAuth()
-  @ApiOperation({ summary: 'Resolve multiple alerts' })
-  @ApiResponse({ status: 200, description: 'Alerts resolved successfully', type: [Alert] })
-  async bulkResolve(
-    @Body() body: { alertIds: string[]; resolutionNotes?: string },
-    @CurrentUser() user: User,
-    @CurrentLang() lang: string,
-    @CurrentUnits() units: UnitPreference,
-  ): Promise<Alert[]> {
-    return this.localizedList(
-      await this.alertsService.bulkResolve(body.alertIds, user.id, body.resolutionNotes),
       lang,
       units,
     );
