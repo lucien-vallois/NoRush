@@ -16,6 +16,7 @@ describe('Authentication', () => {
     validatePassword: jest.fn(),
     findById: jest.fn(),
     updateLastLogin: jest.fn(),
+    incrementTokenVersion: jest.fn(),
   };
   const user = {
     id: 'operator-id',
@@ -23,6 +24,7 @@ describe('Authentication', () => {
     name: 'Operator',
     role: UserRole.OPERATOR,
     isActive: true,
+    tokenVersion: 0,
   };
   let auth: AuthService;
   beforeEach(() => {
@@ -105,5 +107,27 @@ describe('Authentication', () => {
     await expect(
       auth.refreshToken({ refreshToken: foreign }),
     ).rejects.toBeInstanceOf(UnauthorizedException);
+  });
+  it('revokes the whole session on logout', async () => {
+    const tokens = await auth.login({ email: user.email, password: 'test' });
+    await auth.logout(user.id);
+    expect(users.incrementTokenVersion).toHaveBeenCalledWith(user.id);
+
+    // Versão no banco andou: access e refresh da sessão anterior morrem
+    users.findById.mockResolvedValue({ ...user, tokenVersion: 1 });
+    expect(await auth.validateToken(tokens.accessToken)).toBeNull();
+    await expect(
+      auth.refreshToken({ refreshToken: tokens.refreshToken }),
+    ).rejects.toBeInstanceOf(UnauthorizedException);
+  });
+  it('keeps the current session valid when the version matches', async () => {
+    const tokens = await auth.login({ email: user.email, password: 'test' });
+    expect(await auth.validateToken(tokens.accessToken)).toEqual(user);
+    const next = await auth.refreshToken({ refreshToken: tokens.refreshToken });
+    expect(jwt.decode(next.accessToken)).toMatchObject({
+      sub: user.id,
+      tokenUse: 'access',
+      tokenVersion: 0,
+    });
   });
 });

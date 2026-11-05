@@ -9,6 +9,7 @@ interface JwtPayload {
   sub: string;
   email: string;
   role: string;
+  tokenVersion?: number;
   iat?: number;
   exp?: number;
   iss?: string;
@@ -48,6 +49,11 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
 
     if (!user.isActive) {
       throw new UnauthorizedException({ code: 'userInactive' });
+    }
+
+    // Sessão revogada (logout): recusa o access token até ele expirar
+    if ((payload.tokenVersion ?? 0) !== (user.tokenVersion ?? 0)) {
+      throw new UnauthorizedException({ code: 'invalidToken' });
     }
 
     return user;

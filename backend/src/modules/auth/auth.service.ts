@@ -73,6 +73,11 @@ export class AuthService {
         throw new UnauthorizedException({ code: 'userInactive' });
       }
 
+      // Sessão revogada (logout): a versão do token ficou para trás
+      if ((payload.tokenVersion ?? 0) !== (user.tokenVersion ?? 0)) {
+        throw new UnauthorizedException({ code: 'invalidRefreshToken' });
+      }
+
       // Gera novos tokens
       const tokens = await this.generateTokens(user);
       const { passwordHash, ...userResponse } = user;
@@ -96,6 +101,7 @@ export class AuthService {
       sub: user.id,
       email: user.email,
       role: user.role,
+      tokenVersion: user.tokenVersion ?? 0,
     };
 
     const accessToken = this.jwtService.sign(
@@ -138,18 +144,21 @@ export class AuthService {
       });
       if (payload.tokenUse !== 'access') return null;
       const user = await this.userService.findById(payload.sub);
-      return user?.isActive ? user : null;
+      if (!user?.isActive) return null;
+      // Sessão revogada (logout): recusa o access token até ele expirar
+      if ((payload.tokenVersion ?? 0) !== (user.tokenVersion ?? 0)) {
+        return null;
+      }
+      return user;
     } catch (error) {
       return null;
     }
   }
 
   async logout(userId: string): Promise<void> {
-    // Em uma implementação mais avançada, você poderia:
-    // 1. Adicionar o token a uma blacklist
-    // 2. Invalidar sessões ativas
-    // 3. Limpar cache de permissões
-
+    // Revoga a sessão: incrementa a versão do usuário e todos os tokens
+    // (access e refresh) emitidos antes ficam inválidos imediatamente.
+    await this.userService.incrementTokenVersion(userId);
     this.logger.log(`Logout realizado para usuário: ${userId}`);
   }
 

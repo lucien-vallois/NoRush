@@ -32,6 +32,11 @@ export class User {
   @Column({ default: true })
   isActive: boolean;
 
+  // Incrementado no logout: tokens de sessões anteriores (access e refresh)
+  // carregam a versão antiga e são rejeitados até expirarem sozinhos.
+  @Column({ type: 'int', default: 0 })
+  tokenVersion: number;
+
   @Column({ nullable: true })
   lastLoginAt: Date;
 

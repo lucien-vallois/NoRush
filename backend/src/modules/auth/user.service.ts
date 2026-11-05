@@ -81,6 +81,7 @@ export class UserService {
         'name',
         'role',
         'isActive',
+        'tokenVersion',
         'lastLoginAt',
         'createdAt',
         'updatedAt',
@@ -136,6 +137,10 @@ export class UserService {
     await this.userRepository.update(id, {
       lastLoginAt: new Date(),
     });
+  }
+
+  async incrementTokenVersion(id: string): Promise<void> {
+    await this.userRepository.increment({ id }, 'tokenVersion', 1);
   }
 
   async validatePassword(
