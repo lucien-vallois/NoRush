@@ -12,6 +12,8 @@ How to run the NoRush server for real: empty database, no demo accounts, real ga
 | `norush-edge` | A PC at each pad | Reads the gauge gateway and sends readings over HTTPS. |
 | MQTT broker | Optional | Only needed for devices that publish MQTT themselves. `norush-edge` uses HTTPS. |
 
+Every `v*` tag publishes container images to GHCR: `ghcr.io/lucien-vallois/norush-server` (API) and `ghcr.io/lucien-vallois/norush-console` (console), tagged with the version and `latest`. The instructions below assume the repository; adapt paths if you run those images instead.
+
 ## 1. Environment
 
 Create the API's `.env` from `env.example` and set at least:
