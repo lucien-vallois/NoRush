@@ -1,5 +1,18 @@
-import { IsOptional, IsUUID, IsDateString, IsNumber, Min, Max, IsBoolean } from 'class-validator';
+import { IsOptional, IsUUID, IsDateString, IsNumber, Min, Max, IsBoolean, IsIn } from 'class-validator';
+import { Type } from 'class-transformer';
 import { ApiPropertyOptional } from '@nestjs/swagger';
+
+// Whitelist usada tanto na validação quanto na ordenação do serviço —
+// o sortBy é interpolado no ORDER BY, então não pode aceitar valor livre.
+export const READING_SORT_COLUMNS = [
+  'timestamp',
+  'level',
+  'volume',
+  'quality',
+  'createdAt',
+] as const;
+
+export const READING_SORT_ORDERS = ['ASC', 'DESC'] as const;
 
 export class ReadingFiltersDto {
   @ApiPropertyOptional({
@@ -38,6 +51,7 @@ export class ReadingFiltersDto {
     description: 'Nível mínimo',
     example: 1.0,
   })
+  @Type(() => Number)
   @IsOptional()
   @IsNumber()
   @Min(0)
@@ -47,6 +61,7 @@ export class ReadingFiltersDto {
     description: 'Nível máximo',
     example: 4.0,
   })
+  @Type(() => Number)
   @IsOptional()
   @IsNumber()
   @Min(0)
@@ -56,6 +71,7 @@ export class ReadingFiltersDto {
     description: 'Volume mínimo (litros)',
     example: 500,
   })
+  @Type(() => Number)
   @IsOptional()
   @IsNumber()
   @Min(0)
@@ -65,6 +81,7 @@ export class ReadingFiltersDto {
     description: 'Volume máximo (litros)',
     example: 3000,
   })
+  @Type(() => Number)
   @IsOptional()
   @IsNumber()
   @Min(0)
@@ -74,6 +91,7 @@ export class ReadingFiltersDto {
     description: 'Qualidade mínima (0-100%)',
     example: 80,
   })
+  @Type(() => Number)
   @IsOptional()
   @IsNumber()
   @Min(0)
@@ -101,6 +119,7 @@ export class ReadingFiltersDto {
     example: 100,
     default: 100,
   })
+  @Type(() => Number)
   @IsOptional()
   @IsNumber()
   @Min(1)
@@ -112,6 +131,7 @@ export class ReadingFiltersDto {
     example: 1,
     default: 1,
   })
+  @Type(() => Number)
   @IsOptional()
   @IsNumber()
   @Min(1)
@@ -120,16 +140,18 @@ export class ReadingFiltersDto {
   @ApiPropertyOptional({
     description: 'Ordenação',
     example: 'timestamp',
-    enum: ['timestamp', 'level', 'volume', 'quality', 'createdAt'],
+    enum: READING_SORT_COLUMNS,
   })
   @IsOptional()
-  sortBy?: 'timestamp' | 'level' | 'volume' | 'quality' | 'createdAt' = 'timestamp';
+  @IsIn(READING_SORT_COLUMNS)
+  sortBy?: (typeof READING_SORT_COLUMNS)[number] = 'timestamp';
 
   @ApiPropertyOptional({
     description: 'Direção da ordenação',
     example: 'DESC',
-    enum: ['ASC', 'DESC'],
+    enum: READING_SORT_ORDERS,
   })
   @IsOptional()
-  sortOrder?: 'ASC' | 'DESC' = 'DESC';
+  @IsIn(READING_SORT_ORDERS)
+  sortOrder?: (typeof READING_SORT_ORDERS)[number] = 'DESC';
 }

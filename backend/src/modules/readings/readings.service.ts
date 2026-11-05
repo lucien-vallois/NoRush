@@ -6,7 +6,7 @@ import { Reading } from '../../entities/reading.entity';
 import { Sensor } from '../../entities/sensor.entity';
 import { Tank } from '../../entities/tank.entity';
 import { CreateReadingDto } from './dto/create-reading.dto';
-import { ReadingFiltersDto } from './dto/reading-filters.dto';
+import { ReadingFiltersDto, READING_SORT_COLUMNS, READING_SORT_ORDERS } from './dto/reading-filters.dto';
 
 @Injectable()
 export class ReadingsService {
@@ -566,9 +566,13 @@ export class ReadingsService {
       queryBuilder.andWhere('reading.isProcessed = true');
     }
 
-    // Ordenação
-    const sortBy = filters.sortBy || 'timestamp';
-    const sortOrder = filters.sortOrder || 'DESC';
+    // Ordenação — o valor entra no SQL, então aceita apenas a whitelist do DTO
+    const requested = filters.sortBy;
+    const sortBy =
+      requested && (READING_SORT_COLUMNS as readonly string[]).includes(requested)
+        ? requested
+        : 'timestamp';
+    const sortOrder = filters.sortOrder === 'ASC' ? 'ASC' : 'DESC';
 
     queryBuilder.orderBy(`reading.${sortBy}`, sortOrder);
 
