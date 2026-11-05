@@ -22,6 +22,9 @@ import { MessageProcessorService } from './message-processor.service';
 // Controllers
 import { IotGatewayController } from './iot-gateway.controller';
 
+// Guards
+import { DevOnlyGuard } from '../../common/guards/dev-only.guard';
+
 @Module({
   imports: [
     ConfigModule,
@@ -54,6 +57,7 @@ import { IotGatewayController } from './iot-gateway.controller';
     MqttService,
     HttpService,
     MessageProcessorService,
+    DevOnlyGuard,
   ],
   exports: [IotGatewayService, MessageProcessorService],
 })

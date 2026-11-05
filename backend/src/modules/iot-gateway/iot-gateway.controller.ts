@@ -9,6 +9,7 @@ import {
   HttpStatus,
   Query,
   Logger,
+  UseGuards,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -23,6 +24,9 @@ import { HttpService } from './http.service';
 import { SensorMessageDto, SensorCommandDto } from './dto/sensor-message.dto';
 import { HeartbeatDto } from '../devices/dto/provision-device.dto';
 import { Public } from '../../common/decorators/public.decorator';
+import { Roles } from '../../common/decorators/roles.decorator';
+import { UserRole } from '../../entities/user.entity';
+import { DevOnlyGuard } from '../../common/guards/dev-only.guard';
 
 const DEVICE_TOKEN_HEADER = 'x-device-token';
 
@@ -177,13 +181,18 @@ export class IotGatewayController {
     return this.iotGateway.restartConnections();
   }
 
+  // Rotas de teste: admin apenas, e bloqueadas em produção.
   @Post('test/simulate')
+  @Roles(UserRole.ADMIN)
+  @UseGuards(DevOnlyGuard)
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
     summary: 'Simular dados de sensor (Teste)',
-    description: 'Gerar dados simulados para teste do sistema (apenas desenvolvimento)',
+    description:
+      'Gerar dados simulados para teste do sistema (apenas desenvolvimento; recusado em produção)',
   })
   @ApiResponse({ status: 200, description: 'Simulação executada com sucesso' })
+  @ApiResponse({ status: 403, description: 'Somente admin, e nunca em produção' })
   @ApiQuery({ name: 'sensorId', description: 'ID do sensor para simulação' })
   @ApiQuery({ name: 'protocol', enum: ['mqtt', 'http'], description: 'Protocolo a usar' })
   @ApiQuery({ name: 'count', description: 'Número de mensagens a simular', required: false })
@@ -200,9 +209,11 @@ export class IotGatewayController {
   }
 
   @Get('test/echo')
+  @Roles(UserRole.ADMIN)
+  @UseGuards(DevOnlyGuard)
   @ApiOperation({
     summary: 'Echo test endpoint',
-    description: 'Endpoint de teste para verificar conectividade do gateway',
+    description: 'Endpoint de teste para verificar conectividade do gateway (apenas desenvolvimento)',
   })
   @ApiResponse({ status: 200, description: 'Echo realizado com sucesso' })
   @ApiQuery({ name: 'message', description: 'Mensagem para echo', required: false })

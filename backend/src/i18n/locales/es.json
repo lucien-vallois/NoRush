@@ -52,7 +52,8 @@
     "invalidReportPeriod": "period debe ser daily, day o night",
     "invalidReportDate": "date debe ser una fecha válida AAAA-MM-DD",
     "invalidStartHour": "startHour debe ser una hora entera de 0 a 23",
-    "invalidTimeZone": "Zona horaria desconocida: {{tz}}"
+    "invalidTimeZone": "Zona horaria desconocida: {{tz}}",
+    "testEndpointsDisabled": "Los endpoints de prueba solo están disponibles en desarrollo"
   },
   "alertTypes": {
     "high_level": {
