@@ -308,6 +308,69 @@ try {
       });
     },
   );
+  await check(
+    "bulk acknowledge and resolve reach their routes and act on every alert",
+    async () => {
+      const admin = await request("/auth/login", {
+        body: { email: "admin@flowback.com", password: "admin123" },
+      });
+      const created = await Promise.all(
+        [1, 2].map((n) =>
+          request("/alerts", {
+            token: admin.accessToken,
+            status: 201,
+            body: {
+              type: "sensor_error",
+              severity: "low",
+              title: `Bulk smoke ${n}`,
+              message:
+                "Ocorrência sintética do teste de integração local. Nenhum incidente de campo.",
+              tankId: sensor.tankId,
+              metadata: { source: "norush-smoke", simulated: true },
+            },
+          }),
+        ),
+      );
+      // Regressão: ":id/acknowledge" era casado antes de "bulk/acknowledge"
+      // e essas rotas devolviam 404 de alerta inexistente
+      const acknowledged = await request("/alerts/bulk/acknowledge", {
+        token,
+        status: 200,
+        body: { alertIds: created.map((alert) => alert.id) },
+      });
+      assert(acknowledged.every((alert) => alert.status === "acknowledged"));
+      const resolved = await request("/alerts/bulk/resolve", {
+        token,
+        status: 200,
+        body: {
+          alertIds: created.map((alert) => alert.id),
+          resolutionNotes: "Bulk smoke resolvido pelo teste local.",
+        },
+      });
+      assert(resolved.every((alert) => alert.status === "resolved"));
+    },
+  );
+  await check(
+    "logout revokes the session: old access and refresh tokens die",
+    async () => {
+      const fresh = await request("/auth/login", {
+        body: { email: "operador@flowback.com", password: "operador123" },
+      });
+      await request("/auth/logout", {
+        token: fresh.accessToken,
+        status: 200,
+        body: {},
+      });
+      await request("/auth/profile", {
+        token: fresh.accessToken,
+        status: 401,
+      });
+      await request("/auth/refresh", {
+        body: { refreshToken: fresh.refreshToken },
+        status: 401,
+      });
+    },
+  );
   console.log(
     JSON.stringify(
       {
