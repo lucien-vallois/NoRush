@@ -23,6 +23,7 @@ import { Roles } from '../../common/decorators/roles.decorator';
 import { User, UserRole } from '../../entities/user.entity';
 import { I18nService } from '../../i18n/i18n.service';
 import { CurrentLang } from '../../i18n/current-lang.decorator';
+import { AllowInDemo } from '../../common/decorators/allow-in-demo.decorator';
 import type { AuthenticatedUser } from './strategies/jwt.strategy';
 
 @ApiTags('Autenticação')
@@ -59,6 +60,7 @@ export class AuthController {
   }
 
   @Post('logout')
+  @AllowInDemo()
   @HttpCode(HttpStatus.OK)
   @ApiBearerAuth()
   @ApiOperation({

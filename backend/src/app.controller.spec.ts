@@ -1,4 +1,5 @@
 import { ServiceUnavailableException } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 
@@ -12,11 +13,24 @@ describe('API health', () => {
     gateway.getStats.mockReturnValue({
       mqtt: { enabled: true, connected: true },
     });
-    service = new AppService(dataSource as never, gateway as never);
+    service = new AppService(
+      dataSource as never,
+      gateway as never,
+      new ConfigService({}),
+    );
     controller = new AppController(service);
   });
   it('identifies the application', () =>
     expect(controller.getHello()).toBe('NoRush Operations API'));
+  it('tells the console whether this is a read-only demo', () => {
+    expect(controller.getMeta().demoReadOnly).toBe(false);
+    const demo = new AppService(
+      dataSource as never,
+      gateway as never,
+      new ConfigService({ DEMO_READ_ONLY: 'true' }),
+    );
+    expect(new AppController(demo).getMeta().demoReadOnly).toBe(true);
+  });
   it('checks the database and MQTT rather than reporting fixed status', async () => {
     expect((await controller.health()).components).toEqual({
       api: 'up',

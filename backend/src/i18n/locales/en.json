@@ -32,6 +32,7 @@
     "tankThresholdsOrder": "Limits must follow the order: minimum ≤ low < high ≤ overflow",
     "tankThresholdAboveHeight": "No limit can be above the tank height",
     "notAuthenticated": "User is not authenticated",
+    "demoReadOnly": "This is a read-only public demo: setup changes are disabled. Alerts can still be acknowledged and resolved.",
     "emailAlreadyRegistered": "This e-mail is already registered",
     "batchLimitExceeded": "Maximum of {{max}} messages per batch",
     "commandRequestNotFound": "Command request {{requestId}} not found",

@@ -24,6 +24,7 @@ import { CreateAlertDto } from './dto/create-alert.dto';
 import { AlertFiltersDto } from './dto/alert-filters.dto';
 import { Alert, AlertStatus, AlertSeverity, AlertType } from '../../entities/alert.entity';
 import { Roles } from '../../common/decorators/roles.decorator';
+import { AllowInDemo } from '../../common/decorators/allow-in-demo.decorator';
 import { UserRole } from '../../entities/user.entity';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { User } from '../../entities/user.entity';
@@ -254,6 +255,7 @@ export class AlertsController {
   // Rotas literais ("bulk/...") precisam ser declaradas antes de ":id/...",
   // senão o Express casa "bulk" como :id e elas ficam inalcançáveis.
   @Post('bulk/acknowledge')
+  @AllowInDemo()
   @HttpCode(HttpStatus.OK)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Acknowledge multiple alerts' })
@@ -272,6 +274,7 @@ export class AlertsController {
   }
 
   @Post('bulk/resolve')
+  @AllowInDemo()
   @HttpCode(HttpStatus.OK)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Resolve multiple alerts' })
@@ -290,6 +293,7 @@ export class AlertsController {
   }
 
   @Post(':id/acknowledge')
+  @AllowInDemo()
   @HttpCode(HttpStatus.OK)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Acknowledge alert' })
@@ -311,6 +315,7 @@ export class AlertsController {
   }
 
   @Post(':id/resolve')
+  @AllowInDemo()
   @HttpCode(HttpStatus.OK)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Resolve alert' })

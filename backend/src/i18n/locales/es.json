@@ -32,6 +32,7 @@
     "tankThresholdsOrder": "Los límites deben seguir el orden: mínimo ≤ bajo < alto ≤ rebose",
     "tankThresholdAboveHeight": "Ningún límite puede quedar por encima de la altura del tanque",
     "notAuthenticated": "Usuario no autenticado",
+    "demoReadOnly": "Esta es una demo pública de solo lectura: los cambios de configuración están desactivados. Las alertas aún se pueden reconocer y resolver.",
     "emailAlreadyRegistered": "Este correo ya está registrado",
     "batchLimitExceeded": "Máximo de {{max}} mensajes por lote",
     "commandRequestNotFound": "Solicitud de comando {{requestId}} no encontrada",

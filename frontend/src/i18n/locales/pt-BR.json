@@ -57,7 +57,9 @@
     "units": "Alternar unidades (ft/bbl ⇄ m/L)",
     "unitsImperial": "Imperial (ft · bbl) — clique para métrico",
     "unitsMetric": "Métrico (m · L) — clique para imperial",
-    "gaugeReport": "Relatório de medição"
+    "gaugeReport": "Relatório de medição",
+    "skipToContent": "Ir para o conteúdo",
+    "demoReadOnly": "Demo pública, somente leitura: navegue por todas as telas com hastes simuladas. Alterações de cadastro estão desativadas; alertas podem ser reconhecidos e resolvidos."
   },
   "login": {
     "heroEyebrow": "IIoT industrial / Petróleo e Gás",

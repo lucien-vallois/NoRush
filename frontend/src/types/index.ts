@@ -329,6 +329,14 @@ export interface TankForecast {
   predictedAt: string;
 }
 
+/** GET /meta: public facts the console reads before and after sign-in. */
+export interface ApiMeta {
+  service: string;
+  version: string | null;
+  /** DEMO_READ_ONLY on the API: setup changes are refused. */
+  demoReadOnly: boolean;
+}
+
 // WebSocket types
 export interface SystemHealth {
   status: "ok" | "degraded";

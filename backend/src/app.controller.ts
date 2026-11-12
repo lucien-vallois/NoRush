@@ -12,6 +12,13 @@ export class AppController {
     return this.appService.getHello();
   }
 
+  /** Public facts the console needs before sign-in. */
+  @Get('meta')
+  @Public()
+  getMeta() {
+    return this.appService.getMeta();
+  }
+
   @Get('health')
   @Public()
   async health() {

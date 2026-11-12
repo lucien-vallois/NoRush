@@ -57,7 +57,9 @@
     "units": "Toggle units (ft/bbl ⇄ m/L)",
     "unitsImperial": "Imperial (ft · bbl) — click for metric",
     "unitsMetric": "Metric (m · L) — click for imperial",
-    "gaugeReport": "Gauge report"
+    "gaugeReport": "Gauge report",
+    "skipToContent": "Skip to content",
+    "demoReadOnly": "Public demo, read-only: browse every screen with simulated gauges. Setup changes are disabled; alerts can be acknowledged and resolved."
   },
   "login": {
     "heroEyebrow": "Industrial IoT / Oil & Gas",

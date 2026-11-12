@@ -40,6 +40,7 @@ import { LanguageMiddleware } from './i18n/language.middleware';
 // Guards
 import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
 import { RolesGuard } from './common/guards/roles.guard';
+import { DemoReadOnlyGuard } from './common/guards/demo-read-only.guard';
 
 // Config
 import { databaseConfig } from './config/database.config';
@@ -115,6 +116,8 @@ import { resolve } from 'node:path';
       provide: APP_GUARD,
       useClass: RolesGuard,
     },
+    // Last: only refuses writes once the caller is known (DEMO_READ_ONLY)
+    { provide: APP_GUARD, useClass: DemoReadOnlyGuard },
   ],
 })
 export class AppModule implements NestModule {

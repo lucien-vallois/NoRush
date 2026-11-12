@@ -57,7 +57,9 @@
     "units": "Cambiar unidades (ft/bbl ⇄ m/L)",
     "unitsImperial": "Imperial (ft · bbl) — clic para métrico",
     "unitsMetric": "Métrico (m · L) — clic para imperial",
-    "gaugeReport": "Reporte de medición"
+    "gaugeReport": "Reporte de medición",
+    "skipToContent": "Ir al contenido",
+    "demoReadOnly": "Demo pública, solo lectura: recorra todas las pantallas con medidores simulados. Los cambios de configuración están desactivados; las alertas se pueden reconocer y resolver."
   },
   "login": {
     "heroEyebrow": "IIoT industrial / Petróleo y gas",

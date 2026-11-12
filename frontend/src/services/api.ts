@@ -380,6 +380,11 @@ class ApiService {
     return response.data;
   }
 
+  async getMeta(): Promise<import("../types").ApiMeta> {
+    const response = await this.api.get("/meta");
+    return response.data;
+  }
+
   // Prediction methods
   async getPredictions(): Promise<TankForecast[]> {
     const response = await this.api.get<TankForecast[]>("/predictions");
