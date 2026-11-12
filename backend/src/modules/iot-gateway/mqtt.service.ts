@@ -10,6 +10,11 @@ import { MqttConfig, mqttConfig } from '../../config/mqtt.config';
 import { MessageProcessorService } from './message-processor.service';
 import { SensorMessageDto } from './dto/sensor-message.dto';
 
+export type CommandResponseHandler = (
+  sensorId: string,
+  response: unknown,
+) => void;
+
 @Injectable()
 export class MqttService implements OnModuleInit, OnModuleDestroy {
   private readonly logger = new Logger(MqttService.name);
@@ -18,15 +23,26 @@ export class MqttService implements OnModuleInit, OnModuleDestroy {
   private reconnectAttempts = 0;
   private maxReconnectAttempts = 10;
   private isConnected = false;
+  private messagesReceived = 0;
+  private readonly enabled: boolean;
+  private readonly commandResponseHandlers: CommandResponseHandler[] = [];
 
   constructor(
     private configService: ConfigService,
     private messageProcessor: MessageProcessorService,
   ) {
     this.config = mqttConfig(this.configService);
+    // MQTT_ENABLED=false: HTTP-only deployments (e.g. a hosted demo without a
+    // broker) skip the connection instead of retrying and logging forever.
+    this.enabled =
+      this.configService.get<string>('MQTT_ENABLED', 'true') !== 'false';
   }
 
   async onModuleInit() {
+    if (!this.enabled) {
+      this.logger.log('MQTT disabled (MQTT_ENABLED=false): HTTP ingestion only');
+      return;
+    }
     await this.connect();
   }
 
@@ -75,7 +91,7 @@ export class MqttService implements OnModuleInit, OnModuleDestroy {
       });
 
       this.client.on('message', (topic, message) => {
-        this.onMessage(topic, message);
+        void this.onMessage(topic, message);
       });
 
       this.client.on('reconnect', () => {
@@ -175,6 +191,7 @@ export class MqttService implements OnModuleInit, OnModuleDestroy {
   }
 
   private async onMessage(topic: string, message: Buffer): Promise<void> {
+    this.messagesReceived++;
     try {
       const messageStr = message.toString();
 
@@ -194,7 +211,7 @@ export class MqttService implements OnModuleInit, OnModuleDestroy {
       } else if (topic.includes('/status')) {
         await this.handleSensorStatus(data);
       } else if (topic.includes('/commands/')) {
-        await this.handleCommandResponse(data);
+        this.handleCommandResponse(data?.sensorId, data);
       } else {
         this.logger.warn(`Tópico não reconhecido: ${topic}`);
       }
@@ -230,7 +247,7 @@ export class MqttService implements OnModuleInit, OnModuleDestroy {
     } else if (topic.endsWith('/status')) {
       await this.handleSensorStatus(data);
     } else if (topic.endsWith('/commands/responses')) {
-      await this.handleCommandResponse(data);
+      this.handleCommandResponse(topicSensorId, data);
     } else {
       this.logger.warn(`Tópico de dispositivo não reconhecido: ${topic}`);
     }
@@ -306,9 +323,20 @@ export class MqttService implements OnModuleInit, OnModuleDestroy {
     this.logger.debug('Status do sensor recebido:', data);
   }
 
-  private async handleCommandResponse(data: any): Promise<void> {
-    // Implementar lógica para respostas de comandos
-    this.logger.debug('Resposta de comando recebida:', data);
+  /** Registers a listener for device answers to commands (DeviceCommandsService). */
+  onCommandResponse(handler: CommandResponseHandler): void {
+    this.commandResponseHandlers.push(handler);
+  }
+
+  private handleCommandResponse(sensorId: unknown, data: unknown): void {
+    if (typeof sensorId !== 'string') {
+      this.logger.warn('Command response without a sensorId ignored');
+      return;
+    }
+    this.logger.debug(`Command response from ${sensorId}`);
+    for (const handler of this.commandResponseHandlers) {
+      handler(sensorId, data);
+    }
   }
 
   // Método público para publicar mensagens
@@ -350,16 +378,6 @@ export class MqttService implements OnModuleInit, OnModuleDestroy {
     });
   }
 
-  // Método para enviar comandos para sensores
-  async sendCommand(sensorId: string, command: any): Promise<void> {
-    const topic = `sensors/${sensorId}/commands`;
-    await this.publish(topic, {
-      ...command,
-      timestamp: new Date().toISOString(),
-      from: this.config.clientId,
-    });
-  }
-
   // Comando no contrato por dispositivo: devices/{sensorId}/commands.
   // A boia escuta o próprio tópico e responde em devices/{sensorId}/commands/responses.
   async sendDeviceCommand(sensorId: string, command: any): Promise<void> {
@@ -371,16 +389,26 @@ export class MqttService implements OnModuleInit, OnModuleDestroy {
     });
   }
 
-  // Método para verificar status da conexão
   getConnectionStatus(): {
+    enabled: boolean;
     connected: boolean;
     reconnectAttempts: number;
-    lastError?: string;
+    messagesReceived: number;
   } {
     return {
+      enabled: this.enabled,
       connected: this.isConnected,
       reconnectAttempts: this.reconnectAttempts,
+      messagesReceived: this.messagesReceived,
     };
+  }
+
+  /** Drops the broker connection and connects again right away. */
+  reconnect(): boolean {
+    if (!this.enabled || !this.client) return false;
+    this.logger.log('Reconnecting to the MQTT broker on request');
+    this.client.reconnect();
+    return true;
   }
 
   // Método para simulação de dados (para testes)

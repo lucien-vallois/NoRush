@@ -337,7 +337,8 @@ export interface SystemHealth {
   components: {
     api: "up" | "down";
     database: "up" | "down";
-    mqtt: "up" | "down";
+    /** "disabled": HTTP-only deployment (MQTT_ENABLED=false). */
+    mqtt: "up" | "down" | "disabled";
   };
 }
 

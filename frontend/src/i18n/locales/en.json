@@ -149,6 +149,7 @@
     "serviceMqtt": "MQTT",
     "serviceUp": "Connected",
     "serviceDown": "Unavailable",
+    "serviceDisabled": "Off (HTTP only)",
     "serviceUnchecked": "Not checked",
     "lastEvent": "Last event: {{sensor}} at {{time}}",
     "channelOpen": "Channel open · waiting for a reading event",

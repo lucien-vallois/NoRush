@@ -37,6 +37,8 @@
     "commandRequestNotFound": "Solicitud de comando {{requestId}} no encontrada",
     "invalidCommand": "Comando inválido: {{command}}",
     "updateConfigNeedsParameters": "UPDATE_CONFIG requiere parámetros",
+    "mqttUnavailable": "El broker MQTT no está conectado; el comando no se envió",
+    "commandRequestIdInUse": "La solicitud de comando {{requestId}} ya existe",
     "invalidDateParam": "Parámetro '{{name}}' inválido (use ISO 8601, p. ej. 2026-01-01T00:00:00Z)",
     "readingNotFound": "Lectura con ID {{id}} no encontrada",
     "unsupportedReportFormat": "Formato no soportado: {{format}}",

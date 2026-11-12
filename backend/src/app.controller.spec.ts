@@ -9,7 +9,9 @@ describe('API health', () => {
   let controller: AppController;
   beforeEach(() => {
     dataSource.query.mockReset().mockResolvedValue([{ '?column?': 1 }]);
-    gateway.getStats.mockReturnValue({ mqtt: { connected: true } });
+    gateway.getStats.mockReturnValue({
+      mqtt: { enabled: true, connected: true },
+    });
     service = new AppService(dataSource as never, gateway as never);
     controller = new AppController(service);
   });
@@ -24,8 +26,18 @@ describe('API health', () => {
     expect(dataSource.query).toHaveBeenCalledWith('SELECT 1');
   });
   it('reports degraded MQTT while HTTP and database remain available', async () => {
-    gateway.getStats.mockReturnValue({ mqtt: { connected: false } });
+    gateway.getStats.mockReturnValue({
+      mqtt: { enabled: true, connected: false },
+    });
     expect((await controller.health()).status).toBe('degraded');
+  });
+  it('reports MQTT as disabled, not down, on an HTTP-only deployment', async () => {
+    gateway.getStats.mockReturnValue({
+      mqtt: { enabled: false, connected: false },
+    });
+    const health = await controller.health();
+    expect(health.status).toBe('ok');
+    expect(health.components.mqtt).toBe('disabled');
   });
   it('returns service unavailable when the database fails without leaking the error', async () => {
     dataSource.query.mockRejectedValue(

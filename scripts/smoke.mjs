@@ -91,7 +91,7 @@ try {
     assert.equal(response.headers.get("x-content-type-options"), "nosniff");
     const health = await response.json();
     assert.equal(health.components.database, "up");
-    assert(["up", "down"].includes(health.components.mqtt));
+    assert(["up", "down", "disabled"].includes(health.components.mqtt));
   });
   await check("anonymous API request is denied", () =>
     request("/tanks", { status: 401 }),

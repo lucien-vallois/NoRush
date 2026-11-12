@@ -10,7 +10,9 @@ describe('Telemetry ingestion boundaries', () => {
     create: jest.fn((value: unknown) => value),
     insert: jest.fn(),
   };
-  const queue = { emit: jest.fn() };
+  const queue = {
+    emit: jest.fn((_pattern: string, _payload: any) => ({ subscribe: jest.fn() })),
+  };
   const emitter = {
     emitReading: jest.fn(),
     emitAlert: jest.fn(),

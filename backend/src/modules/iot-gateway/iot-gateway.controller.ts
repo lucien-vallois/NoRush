@@ -9,6 +9,7 @@ import {
   HttpStatus,
   Query,
   Logger,
+  ParseArrayPipe,
   UseGuards,
 } from '@nestjs/common';
 import {
@@ -21,6 +22,7 @@ import {
 } from '@nestjs/swagger';
 import { IotGatewayService } from './iot-gateway.service';
 import { HttpService } from './http.service';
+import { DeviceCommandsService } from './device-commands.service';
 import { SensorMessageDto, SensorCommandDto } from './dto/sensor-message.dto';
 import { HeartbeatDto } from '../devices/dto/provision-device.dto';
 import { Public } from '../../common/decorators/public.decorator';
@@ -38,6 +40,7 @@ export class IotGatewayController {
   constructor(
     private readonly iotGateway: IotGatewayService,
     private readonly httpService: HttpService,
+    private readonly deviceCommands: DeviceCommandsService,
   ) {}
 
   /**
@@ -82,7 +85,19 @@ export class IotGatewayController {
   @ApiResponse({ status: 200, description: 'Lote processado com sucesso' })
   @ApiResponse({ status: 400, description: 'Dados inválidos ou lote muito grande' })
   @ApiBody({ type: [SensorMessageDto], description: 'Array de mensagens de sensores' })
-  async receiveBatchData(@Body() messages: SensorMessageDto[]) {
+  async receiveBatchData(
+    // Validates every item against SensorMessageDto: the global
+    // ValidationPipe does not check the elements of a plain array body.
+    @Body(
+      new ParseArrayPipe({
+        items: SensorMessageDto,
+        whitelist: true,
+      }),
+    )
+    messages: SensorMessageDto[],
+    @Headers(DEVICE_TOKEN_HEADER) deviceToken?: string,
+  ) {
+    messages.forEach((message) => this.applyDeviceHeader(message, deviceToken));
     return this.httpService.processBatchSensorData(messages);
   }
 
@@ -105,58 +120,66 @@ export class IotGatewayController {
   }
 
   @Post('sensors/commands')
-  @HttpCode(HttpStatus.OK)
+  @Roles(UserRole.ADMIN, UserRole.MAINTENANCE)
+  @HttpCode(HttpStatus.ACCEPTED)
   @ApiOperation({
-    summary: 'Enviar comando para sensor',
-    description: 'Endpoint para enviar comandos de controle para sensores específicos',
+    summary: 'Send a command to a device',
+    description:
+      'Publishes the command on devices/{sensorId}/commands (MQTT). The device answers on devices/{sensorId}/commands/responses; poll the status with the returned requestId. Commands act on the gauge only, never on field equipment.',
   })
-  @ApiResponse({ status: 200, description: 'Comando enviado com sucesso' })
-  @ApiResponse({ status: 400, description: 'Comando inválido' })
+  @ApiResponse({ status: 202, description: 'Published; PENDING until the device answers' })
+  @ApiResponse({ status: 400, description: 'Unknown command or missing parameters' })
+  @ApiResponse({ status: 503, description: 'MQTT broker not connected' })
   @ApiBody({ type: SensorCommandDto })
   async sendCommand(@Body() command: SensorCommandDto) {
-    return this.httpService.sendCommandToSensor(command);
+    return this.deviceCommands.send(command);
   }
 
   @Get('sensors/commands/:requestId')
+  @Roles(UserRole.ADMIN, UserRole.MAINTENANCE)
   @ApiOperation({
-    summary: 'Verificar status de comando',
-    description: 'Consultar o status de execução de um comando enviado para um sensor',
+    summary: 'Command status',
+    description:
+      'PENDING until the device answers, then SUCCESS or FAILED as reported by the device; TIMEOUT after 60 s without an answer.',
   })
-  @ApiResponse({ status: 200, description: 'Status obtido com sucesso' })
-  @ApiResponse({ status: 404, description: 'Request ID não encontrado' })
-  @ApiParam({ name: 'requestId', description: 'ID da requisição do comando' })
-  async getCommandStatus(@Param('requestId') requestId: string) {
-    return this.httpService.getCommandStatus(requestId);
+  @ApiResponse({ status: 200, description: 'Command status' })
+  @ApiResponse({ status: 404, description: 'Unknown or expired requestId' })
+  @ApiParam({ name: 'requestId', description: 'requestId returned when the command was sent' })
+  getCommandStatus(@Param('requestId') requestId: string) {
+    return this.deviceCommands.status(requestId);
   }
 
   @Get('sensors/:sensorId/status')
   @ApiOperation({
-    summary: 'Obter status de sensor',
-    description: 'Consultar informações de status e conectividade de um sensor específico',
+    summary: 'Gauge connectivity',
+    description:
+      'Last transmission, battery, signal and firmware as last reported by the gauge. Connected means a report in the last 5 minutes.',
   })
-  @ApiResponse({ status: 200, description: 'Status obtido com sucesso' })
-  @ApiParam({ name: 'sensorId', description: 'ID do sensor' })
+  @ApiResponse({ status: 200, description: 'Gauge status' })
+  @ApiResponse({ status: 404, description: 'Unknown sensorId' })
+  @ApiParam({ name: 'sensorId', description: 'Device ID, e.g. SENSOR-001' })
   async getSensorStatus(@Param('sensorId') sensorId: string) {
     return this.httpService.getSensorStatus(sensorId);
   }
 
   @Get('gateway/stats')
   @ApiOperation({
-    summary: 'Estatísticas do Gateway IoT',
-    description: 'Obter estatísticas detalhadas do funcionamento do gateway IoT',
+    summary: 'Ingestion counters',
+    description: 'MQTT, HTTP and processing counters since the API started.',
   })
-  @ApiResponse({ status: 200, description: 'Estatísticas obtidas com sucesso' })
-  async getGatewayStats() {
+  @ApiResponse({ status: 200, description: 'Counters' })
+  getGatewayStats() {
     return this.iotGateway.getStats();
   }
 
   @Get('gateway/config')
+  @Roles(UserRole.ADMIN)
   @ApiOperation({
-    summary: 'Configuração do Gateway IoT',
-    description: 'Obter configuração atual do gateway IoT',
+    summary: 'Effective ingestion settings (admin)',
+    description: 'Broker address, topics, endpoints and auth mode, without credentials.',
   })
-  @ApiResponse({ status: 200, description: 'Configuração obtida com sucesso' })
-  async getGatewayConfig() {
+  @ApiResponse({ status: 200, description: 'Settings' })
+  getGatewayConfig() {
     return this.iotGateway.getConfiguration();
   }
 
@@ -171,13 +194,14 @@ export class IotGatewayController {
   }
 
   @Post('gateway/restart')
+  @Roles(UserRole.ADMIN)
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
-    summary: 'Reiniciar conexões do Gateway',
-    description: 'Forçar reinicialização das conexões do gateway IoT',
+    summary: 'Reconnect to the MQTT broker (admin)',
+    description: 'Drops the broker connection and reconnects right away.',
   })
-  @ApiResponse({ status: 200, description: 'Reinicialização solicitada com sucesso' })
-  async restartGateway() {
+  @ApiResponse({ status: 200, description: 'Reconnection started (false when MQTT is disabled)' })
+  restartGateway() {
     return this.iotGateway.restartConnections();
   }
 

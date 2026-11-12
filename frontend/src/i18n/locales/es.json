@@ -149,6 +149,7 @@
     "serviceMqtt": "MQTT",
     "serviceUp": "Conectado",
     "serviceDown": "No disponible",
+    "serviceDisabled": "Apagado (solo HTTP)",
     "serviceUnchecked": "Sin comprobar",
     "lastEvent": "Último evento: {{sensor}} a las {{time}}",
     "channelOpen": "Canal abierto · esperando evento de lectura",

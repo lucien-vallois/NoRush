@@ -43,6 +43,9 @@ interface ProcessedMessage {
 @Injectable()
 export class MessageProcessorService {
   private readonly logger = new Logger(MessageProcessorService.name);
+  private readonly counters = { processed: 0, accepted: 0, totalMs: 0 };
+  private lastQueueWarningAt = 0;
+  private readonly derivedEventsEnabled: boolean;
 
   constructor(
     @InjectRepository(Sensor)
@@ -58,9 +61,36 @@ export class MessageProcessorService {
     private alertProcessor: AlertProcessorService,
     private wsEmitter: WsEmitterService,
     private deviceCredentials: DeviceCredentialsService,
-  ) {}
+  ) {
+    this.derivedEventsEnabled =
+      this.configService.get<string>('RABBITMQ_ENABLED', 'true') !== 'false';
+  }
 
+  /** Every reading (MQTT or HTTP) goes through here. */
   async processSensorMessage(
+    message: SensorMessageDto,
+  ): Promise<ProcessedMessage> {
+    const startedAt = Date.now();
+    const result = await this.validateAndStore(message);
+    this.counters.processed++;
+    if (result.isValid) this.counters.accepted++;
+    this.counters.totalMs += Date.now() - startedAt;
+    return result;
+  }
+
+  getStats() {
+    const { processed, accepted, totalMs } = this.counters;
+    return {
+      totalProcessed: processed,
+      accepted,
+      rejected: processed - accepted,
+      // null until something was processed: 0% would read as "all failing"
+      successRate: processed ? (accepted / processed) * 100 : null,
+      averageProcessingTimeMs: processed ? totalMs / processed : null,
+    };
+  }
+
+  private async validateAndStore(
     message: SensorMessageDto,
   ): Promise<ProcessedMessage> {
     const startTime = Date.now();
@@ -126,7 +156,7 @@ export class MessageProcessorService {
       await this.updateSensorStatus(sensor, message);
 
       // 10. Publicar mensagem para processamento adicional
-      await this.publishToQueue(sensor, reading, message);
+      this.publishToQueue(sensor, reading, message);
 
       // 11. Push em tempo real via WebSocket
       this.wsEmitter.emitReading({
@@ -461,11 +491,12 @@ export class MessageProcessorService {
     await this.sensorRepository.update(sensor.id, updates);
   }
 
-  private async publishToQueue(
+  private publishToQueue(
     sensor: Sensor,
     reading: Reading,
     originalMessage: SensorMessageDto,
-  ): Promise<void> {
+  ): void {
+    if (!this.derivedEventsEnabled) return;
     try {
       const { authToken, ...telemetry } = originalMessage;
       const queueMessage = {
@@ -485,11 +516,20 @@ export class MessageProcessorService {
         processedAt: new Date(),
       };
 
-      await this.rabbitmqClient.emit('sensor.data.processed', queueMessage);
-
-      this.logger.debug(
-        `Mensagem publicada na fila para sensor ${sensor.sensorId}`,
-      );
+      // emit() is fire-and-forget (a hot Observable, not a Promise): the
+      // reading is already stored, so a broker outage is logged, never fatal,
+      // and at most once per minute so an absent broker does not flood logs.
+      this.rabbitmqClient
+        .emit('sensor.data.processed', queueMessage)
+        .subscribe({
+          error: (error: unknown) => {
+            if (Date.now() - this.lastQueueWarningAt < 60_000) return;
+            this.lastQueueWarningAt = Date.now();
+            this.logger.warn(
+              `Derived events not published (RabbitMQ): ${String(error)}`,
+            );
+          },
+        });
     } catch (error) {
       this.logger.error(
         `Erro ao publicar mensagem na fila para sensor ${sensor.sensorId}:`,

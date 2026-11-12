@@ -777,13 +777,15 @@ export default function Dashboard() {
                       {t(service.labelKey)}
                     </p>
                     <p
-                      className={`mt-1 text-[10px] ${status === "up" ? "text-primary" : "text-amber-600 dark:text-amber-400"}`}
+                      className={`mt-1 text-[10px] ${status === "up" ? "text-primary" : status === "disabled" ? "text-muted-foreground" : "text-amber-600 dark:text-amber-400"}`}
                     >
                       {status === "up"
                         ? t("dashboard.serviceUp")
                         : status === "down"
                           ? t("dashboard.serviceDown")
-                          : t("dashboard.serviceUnchecked")}
+                          : status === "disabled"
+                            ? t("dashboard.serviceDisabled")
+                            : t("dashboard.serviceUnchecked")}
                     </p>
                   </div>
                 </div>

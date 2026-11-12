@@ -18,6 +18,7 @@ import { IotGatewayService } from './iot-gateway.service';
 import { MqttService } from './mqtt.service';
 import { HttpService } from './http.service';
 import { MessageProcessorService } from './message-processor.service';
+import { DeviceCommandsService } from './device-commands.service';
 
 // Controllers
 import { IotGatewayController } from './iot-gateway.controller';
@@ -57,6 +58,7 @@ import { DevOnlyGuard } from '../../common/guards/dev-only.guard';
     MqttService,
     HttpService,
     MessageProcessorService,
+    DeviceCommandsService,
     DevOnlyGuard,
   ],
   exports: [IotGatewayService, MessageProcessorService],

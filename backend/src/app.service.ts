@@ -21,16 +21,18 @@ export class AppService {
     } catch {
       /* Expose availability, never connection details. */
     }
-    const mqtt = this.gateway.getStats().mqtt.connected;
+    const { enabled, connected } = this.gateway.getStats().mqtt;
+    // MQTT_ENABLED=false (HTTP-only deployment) is a choice, not an outage.
+    const mqtt = !enabled ? 'disabled' : connected ? 'up' : 'down';
     return {
-      status: database && mqtt ? 'ok' : 'degraded',
+      status: database && mqtt !== 'down' ? 'ok' : 'degraded',
       service: 'norush-api',
       timestamp: new Date().toISOString(),
       uptime: Math.floor(process.uptime()),
       components: {
         api: 'up',
         database: database ? 'up' : 'down',
-        mqtt: mqtt ? 'up' : 'down',
+        mqtt,
       },
     };
   }
