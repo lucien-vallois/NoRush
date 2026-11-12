@@ -177,17 +177,21 @@ Every alert, from the moment it is raised until someone resolves it.
 
 ![Alert center](screenshots/alerts-desktop.png)
 
-| Alert | Raised when |
-| --- | --- |
-| High level / Low level | The level crosses the tank's high or low limit |
-| Overflow risk | The forecast reaches the overflow limit soon |
-| Sensor offline | A gauge stops reporting |
-| Battery low | A gauge reports a low battery |
-| Sensor error / Communication error | The gauge or the link reports a fault |
+| Alert | Raised when | Severity |
+| --- | --- | --- |
+| Overflow risk | The level reaches the overflow limit, or the forecast reaches it within 6 hours | Critical (High for a forecast more than 2 h away) |
+| Low level, at the minimum limit | The level drops to the minimum (low-low) limit | High |
+| High level | The level reaches the high limit | Medium |
+| Low level | The level drops to the low limit | Medium |
+| Sensor offline | A gauge stops reporting | High |
+| Battery low | A gauge reports a low battery | Medium |
+| Sensor error / Communication error | The gauge or the link reports a fault | High |
+
+A level past an outer limit also trips the inner one (past overflow, both overflow and high are raised). While an alert is pending or acknowledged, the same condition does not open a new one; once it is resolved, the next crossing does.
 
 Search by title or message, and filter by status (Pending, Acknowledged, Resolved, False positive) and severity (Critical, High, Medium, Low). Twelve alerts per page.
 
-- **Acknowledge:** "I have seen it." It records who acknowledged it and when.
+- **Acknowledge:** "I have seen it." It records who acknowledged it and when, with an optional note through the API.
 - **Resolve:** opens a box to write what you checked and what you did. The note is tied to your account. Resolving an alert is a record; it does not change anything at the tank.
 
 New alerts also pop up at the bottom of the screen while you are signed in.

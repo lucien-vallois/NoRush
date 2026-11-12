@@ -1,5 +1,31 @@
 # Changelog
 
+## Unreleased
+
+### Fixed
+
+- **Level alarms.** The low limit never raised an alarm on its own, the minimum (low-low) alarm was rated less severe than the low one and was muted by its cooldown, a level past the overflow limit was announced in real time as "high level", and low-level alerts always stored the minimum limit as their threshold. Both evaluation paths now share one rule set, ordered overflow > minimum > high > low.
+- **Alert flood.** A condition that stays active (a level past a limit, a gauge offline) no longer opens a new alert every cooldown while the previous one is pending or acknowledged. Maintenance and calibration alerts need a due date that has passed, instead of firing for every tank or gauge without a schedule.
+- **Invented gateway data.** `GET /iot/sensors/:id/status` returned random connectivity, battery and signal; it now reads the gauge's last report. Device commands were never published and turned "SUCCESS" at random; they now go out on `devices/{id}/commands` and report what the device answers, or a timeout. Gateway counters count real traffic, and the 5-minute health check no longer warns about a 0% success rate on an idle gateway.
+- **Notification channels.** The e-mail, SMS, push and Slack placeholders logged "sent" after a fake delay; they now say they are placeholders, and their status reports `delivers: false`.
+- **Reports.** The catalog offered PDF for six report types while only the alert summary has a layout (the others crashed with a 500); PDF output is a real binary buffer with Puppeteer 22+.
+- **Acknowledgment notes** sent to the API are kept (they were dropped).
+- The batch ingestion route validates every reading and accepts the `X-Device-Token` header.
+
+### Added
+
+- **Per-session sign-out.** Logout ends only the current session (its access and refresh tokens and WebSocket); `POST /auth/logout/all` signs out everywhere. Migration `1799000002000-AddRevokedSessions`.
+- **Hosted demo** ([guide](docs/deploy-railway.md)): `DATABASE_URL`/`PG*` support, plain-view fallback without TimescaleDB, `DEMO_AUTO_SEED`, `MQTT_ENABLED=false` and `RABBITMQ_ENABLED=false` for an HTTP-only host, `TRUST_PROXY`, a continuous HTTPS simulator worker, and `npm start` for the console.
+- **Read-only demo mode** (`DEMO_READ_ONLY=true`): writes are refused except sign-in/out, device ingestion and alert acknowledgment/resolution; the console shows a banner (`GET /meta`).
+- Admin-only gateway configuration and broker reconnection; commands limited to admin and maintenance.
+
+### Engineering
+
+- `npm run check` runs ESLint on the API and the console before building and testing (5,109 reported problems to 0). The console's lint setup works and TypeScript runs in strict mode.
+- Production audit from 45 vulnerabilities (3 critical) to 25 (0 critical): unused packages removed, Puppeteer 25, bcrypt 6, SheetJS 0.20.3 from its official registry. The rest needs major upgrades (NestJS, Vite, TypeORM, React Router).
+- Prettier applied to the API, LF line endings pinned with `.gitattributes`, and `.git-blame-ignore-revs` for the formatting commit.
+- Unit tests: 114 → 146 on the API.
+
 ## 0.1.0: first public release
 
 Software prototype, exercised with simulated gauges and against a vendor's published Modbus register layout. Not yet run against a live gauge gateway.

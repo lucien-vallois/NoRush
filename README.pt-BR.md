@@ -1,5 +1,10 @@
 # NoRush · Medição Remota de Tanques
 
+[![Quality](https://github.com/lucien-vallois/NoRush/actions/workflows/quality.yml/badge.svg)](https://github.com/lucien-vallois/NoRush/actions/workflows/quality.yml)
+[![Release](https://img.shields.io/github/v/release/lucien-vallois/NoRush)](https://github.com/lucien-vallois/NoRush/releases)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+![Node.js 22.20+](https://img.shields.io/badge/node-%E2%89%A522.20-339933?logo=node.js&logoColor=white)
+
 **Medição remota de nível de óleo e da interface óleo/água em tanques de flowback e produção.** O operador acompanha os tanques do pad pelo console, sem subir no tanque, abrir a escotilha (thief hatch) ou descer o stick com pasta reveladora de água.
 
 [English](README.md)
@@ -160,7 +165,7 @@ Os agregados incluem a cauda recente com `materialized_only=false`; a inicializa
 ## Verificação
 
 ```powershell
-npm run check             # builds de backend/frontend e testes unitários
+npm run check             # lint, builds de backend/frontend e testes unitários
 npm run smoke             # API e banco reais locais; cria leitura e alerta sintéticos
 npm run smoke:telemetry   # MQTT → processamento → banco → WebSocket autenticado
 ```
@@ -189,6 +194,7 @@ Para instalar o servidor de verdade (migrations, primeiro admin, HTTPS, sem dado
 - [Backend](backend/README.md)
 - [Pesquisa de hardware próprio — em standby](docs/indice-documentacao.md)
 - [Firmware — em standby](firmware/README.md)
+- [Demo hospedada no Railway](docs/deploy-railway.pt-BR.md): API, console, worker do simulador e modo somente leitura para demo pública
 - [Índice completo da documentação](docs/README.md)
 - [Como contribuir](CONTRIBUTING.md) · [Segurança](SECURITY.md)
 
@@ -200,7 +206,8 @@ dispositivo provisionadas via API admin (`device`/`hybrid`), com rotação,
 revogação e binding de tópico MQTT — o contrato para hardware real está em
 [docs/integracao-hardware.md](docs/integracao-hardware.md). Certificados por
 dispositivo (mTLS), ACLs por tópico no broker, provisionamento industrial,
-TLS ponta a ponta terminado no firmware, revogação/rotação de sessões,
+TLS ponta a ponta terminado no firmware, rotação de refresh token com
+detecção de reuso (o logout já encerra uma sessão, ou todas com `/auth/logout/all`),
 observabilidade de longo prazo, testes de falha em campo e o primeiro teste
 do `norush-edge` contra um gateway de verdade ainda exigem trabalho específico.
 
@@ -208,7 +215,7 @@ Os canais de notificação da API (e-mail, SMS, push e Slack) são esboços: mon
 
 As previsões não substituem alarmes, intertravamentos ou procedimentos de operação. Não há alegação de certificação ATEX, IECEx ou SIL, validação de LoRaWAN em campo, redução de incidentes medida ou aplicação móvel entregue.
 
-O catálogo de relatórios herdado contém tipos adicionais ainda sem template PDF; o modelo disponível é o resumo de alertas. A validação registrada delimita os formatos efetivamente exercitados.
+Todos os tipos da API de relatórios exportam para Excel; PDF existe só para o resumo de alertas, e o catálogo só o oferece ali. A validação registrada delimita os formatos efetivamente exercitados.
 
 O Compose e os Dockerfiles foram preparados para empacotamento local; sua validação é registrada separadamente do build nativo.
 

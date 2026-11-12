@@ -7,6 +7,7 @@
 | [User guide](user-guide.md) | Operators, supervisors and admins using the console: every screen, roles, alerts, forecasts | English |
 | [norush-edge](../edge/README.md) | Connecting gauges at the pad: install, commissioning, troubleshooting, register profiles | English |
 | [Production install](production-install.md) | Running the server for real: environment, migrations, first admin, HTTPS, backups | English |
+| [Hosted demo on Railway](deploy-railway.md) | Publishing a public demo: services, variables, read-only mode, seed and simulator worker | English ([Portuguese](deploy-railway.pt-BR.md)) |
 | [Backend](../backend/README.md) | API modules, scripts and configuration | English |
 | [Demo walkthrough](../DEMO.md) | A five-minute demo with simulated gauges | English ([Portuguese](../DEMO.pt-BR.md)) |
 

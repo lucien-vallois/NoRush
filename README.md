@@ -1,5 +1,10 @@
 # NoRush · Remote Tank Gauging
 
+[![Quality](https://github.com/lucien-vallois/NoRush/actions/workflows/quality.yml/badge.svg)](https://github.com/lucien-vallois/NoRush/actions/workflows/quality.yml)
+[![Release](https://img.shields.io/github/v/release/lucien-vallois/NoRush)](https://github.com/lucien-vallois/NoRush/releases)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+![Node.js 22.20+](https://img.shields.io/badge/node-%E2%89%A522.20-339933?logo=node.js&logoColor=white)
+
 **Remote oil level and oil/water interface gauging for flowback and production tanks.** Operators read every tank on a pad from a console, without climbing the tank, opening the thief hatch, or dropping a gauge line coated in water-finding paste.
 
 [Português](README.pt-BR.md)
@@ -202,7 +207,7 @@ Aggregates include the recent tail with `materialized_only=false`, and startup l
 ## Verification
 
 ```powershell
-npm run check             # backend/frontend builds and unit tests
+npm run check             # lint, backend/frontend builds and unit tests
 npm run smoke             # real local API and database; creates a synthetic reading and alert
 npm run smoke:telemetry   # MQTT → processing → database → authenticated WebSocket
 ```
@@ -225,6 +230,7 @@ To install the server for real (migrations, first admin, HTTPS, no demo data), s
 - [User guide](docs/user-guide.md): every console screen, roles, alerts and forecasts, for operators and admins.
 - [Gauge adapter (norush-edge)](edge/README.md): install, commissioning, troubleshooting, register profiles.
 - [Production install](docs/production-install.md)
+- [Hosted demo on Railway](docs/deploy-railway.md): API, console, simulator worker and a read-only mode for a public demo.
 - [Backend](backend/README.md)
 - [All documentation](docs/README.md), including the hardware integration contract, the validation log, planning notes and the archived hardware R&D (Portuguese).
 
@@ -243,7 +249,7 @@ Field reports matter as much as code, especially a run of `norush-edge` against 
 **Still needs dedicated work:**
 - per-device certificates (mTLS) and broker topic ACLs;
 - industrial provisioning and end-to-end TLS terminated in firmware;
-- session revocation and rotation;
+- refresh-token rotation with reuse detection (sign-out already ends one session, or every session with `/auth/logout/all`);
 - long-term observability and field failure testing;
 - a run of `norush-edge` against a live gauge gateway: so far it has been tested against the manual's register layout only;
 - alerts outside the console: the API's e-mail, SMS, push and Slack channels are placeholders that build the message but do not send it, and they are off by default.
@@ -254,7 +260,7 @@ Field reports matter as much as code, especially a run of `norush-edge` against 
 - No field validation and no measured incident reduction.
 - No delivered mobile app.
 
-**Reports:** the inherited report catalog has more types than PDF templates. The alert summary is the available template, and the validation log lists the formats actually exercised.
+**Reports:** every type in the report API exports to Excel; PDF exists for the alert summary only, and the catalog lists it only there. The validation log lists the formats actually exercised.
 
 **Development defaults** are for the local demo only: database password `secure_password`, sample JWT secrets, an MQTT broker with `allow_anonymous true`, and pgAdmin/Portainer in Compose. With `NODE_ENV=production` the API refuses short, default or repeated JWT secrets. The database password, broker authentication and ACLs must be set by whoever deploys it.
 
