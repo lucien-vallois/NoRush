@@ -58,16 +58,16 @@ export class UserService {
 
   async findAll(): Promise<User[]> {
     return this.userRepository.find({
-      select: [
-        'id',
-        'email',
-        'name',
-        'role',
-        'isActive',
-        'lastLoginAt',
-        'createdAt',
-        'updatedAt',
-      ],
+      select: {
+        id: true,
+        email: true,
+        name: true,
+        role: true,
+        isActive: true,
+        lastLoginAt: true,
+        createdAt: true,
+        updatedAt: true,
+      },
       order: { createdAt: 'DESC' },
     });
   }
@@ -75,17 +75,17 @@ export class UserService {
   async findById(id: string): Promise<User | null> {
     return this.userRepository.findOne({
       where: { id },
-      select: [
-        'id',
-        'email',
-        'name',
-        'role',
-        'isActive',
-        'tokenVersion',
-        'lastLoginAt',
-        'createdAt',
-        'updatedAt',
-      ],
+      select: {
+        id: true,
+        email: true,
+        name: true,
+        role: true,
+        isActive: true,
+        tokenVersion: true,
+        lastLoginAt: true,
+        createdAt: true,
+        updatedAt: true,
+      },
     });
   }
 
@@ -199,7 +199,14 @@ export class UserService {
   async getUsersByRole(role: UserRole): Promise<User[]> {
     return this.userRepository.find({
       where: { role, isActive: true },
-      select: ['id', 'email', 'name', 'role', 'lastLoginAt', 'createdAt'],
+      select: {
+        id: true,
+        email: true,
+        name: true,
+        role: true,
+        lastLoginAt: true,
+        createdAt: true,
+      },
       order: { name: 'ASC' },
     });
   }

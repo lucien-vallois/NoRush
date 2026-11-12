@@ -64,7 +64,7 @@ export class TanksService {
 
   async findAll(): Promise<Tank[]> {
     return this.tankRepository.find({
-      relations: ['sensors'],
+      relations: { sensors: true },
       order: { createdAt: 'DESC' },
     });
   }
@@ -72,7 +72,7 @@ export class TanksService {
   async findById(id: string): Promise<Tank> {
     const tank = await this.tankRepository.findOne({
       where: { id },
-      relations: ['sensors', 'alerts'],
+      relations: { sensors: true, alerts: true },
     });
 
     if (!tank) {
@@ -85,7 +85,7 @@ export class TanksService {
   async findByCode(code: string): Promise<Tank> {
     const tank = await this.tankRepository.findOne({
       where: { code },
-      relations: ['sensors', 'alerts'],
+      relations: { sensors: true, alerts: true },
     });
 
     if (!tank) {
@@ -190,7 +190,7 @@ export class TanksService {
   async getTanksByStatus(status: TankStatus): Promise<Tank[]> {
     return this.tankRepository.find({
       where: { status },
-      relations: ['sensors'],
+      relations: { sensors: true },
       order: { name: 'ASC' },
     });
   }

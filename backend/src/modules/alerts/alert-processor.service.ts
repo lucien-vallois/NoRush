@@ -37,7 +37,7 @@ export class AlertProcessorService {
       // Buscar sensor e tanque relacionados
       const sensor = await this.sensorRepository.findOne({
         where: { id: reading.sensorId },
-        relations: ['tank'],
+        relations: { tank: true },
       });
 
       if (!sensor || !sensor.tank) {
@@ -62,7 +62,7 @@ export class AlertProcessorService {
       // Buscar sensores ativos
       const sensors = await this.sensorRepository.find({
         where: { status: SensorStatus.ACTIVE },
-        relations: ['tank'],
+        relations: { tank: true },
       });
 
       const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);

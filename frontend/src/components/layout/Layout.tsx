@@ -1,5 +1,5 @@
 import React, { Suspense, useEffect, useState } from "react";
-import { Outlet } from "react-router-dom";
+import { Outlet } from "react-router";
 import { useTranslation } from "react-i18next";
 import { Eye } from "lucide-react";
 import { useAuth } from "../../contexts/AuthContext";

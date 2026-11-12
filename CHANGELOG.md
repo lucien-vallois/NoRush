@@ -10,6 +10,7 @@
 - **Notification channels.** The e-mail, SMS, push and Slack placeholders logged "sent" after a fake delay; they now say they are placeholders, and their status reports `delivers: false`.
 - **Reports.** The catalog offered PDF for six report types while only the alert summary has a layout (the others crashed with a 500); PDF output is a real binary buffer with Puppeteer 22+.
 - **Acknowledgment notes** sent to the API are kept (they were dropped).
+- Gauge statistics reported 0 readings in the last 24 hours: the query compared timestamps for equality instead of "since".
 - The batch ingestion route validates every reading and accepts the `X-Device-Token` header.
 
 ### Added
@@ -22,7 +23,10 @@
 ### Engineering
 
 - `npm run check` runs ESLint on the API and the console before building and testing (5,109 reported problems to 0). The console's lint setup works and TypeScript runs in strict mode.
-- Production audit from 45 vulnerabilities (3 critical) to 25 (0 critical): unused packages removed, Puppeteer 25, bcrypt 6, SheetJS 0.20.3 from its official registry. The rest needs major upgrades (NestJS, Vite, TypeORM, React Router).
+- **Production audit: 45 vulnerabilities (3 critical) to 0.** Unused packages removed, Puppeteer 25, bcrypt 6, SheetJS 0.20.3 from its official registry, and these major upgrades:
+  - NestJS 10 → 11 (Express 5), TypeORM 0.3 → 1.1, @nestjs/config 4, @nestjs/schedule 6, @nestjs/swagger 11;
+  - React Router 6 → 7 (imports from `react-router`) and Vite 5 → 7 in the console.
+  NestJS 12 gives the same audit result but ships ESM-only packages that Jest can load only on Node.js 24.9+, so it waits for the move to Node 24. What `npm audit` still reports is in development tooling (Jest, typescript-eslint, Nest CLI) and needs their next majors.
 - Prettier applied to the API, LF line endings pinned with `.gitattributes`, and `.git-blame-ignore-revs` for the formatting commit.
 - Unit tests: 114 → 146 on the API.
 

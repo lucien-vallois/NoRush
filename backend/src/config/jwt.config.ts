@@ -1,4 +1,4 @@
-import { JwtModuleOptions } from '@nestjs/jwt';
+import { JwtModuleOptions, JwtSignOptions } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 
 function secret(config: ConfigService, key: string, fallback: string): string {
@@ -23,13 +23,25 @@ function secret(config: ConfigService, key: string, fallback: string): string {
   return value;
 }
 
+/**
+ * Token lifetime from the environment ("15m", "1h", "7d"; a bare number is
+ * milliseconds, as in jsonwebtoken). The library types only accept `ms`
+ * literals, which a value read from the environment cannot be statically.
+ */
+export const tokenLifetime = (
+  config: ConfigService,
+  key: 'JWT_EXPIRE' | 'JWT_REFRESH_EXPIRE',
+  fallback: string,
+): JwtSignOptions['expiresIn'] =>
+  config.get<string>(key, fallback) as JwtSignOptions['expiresIn'];
+
 export const jwtConfig = (config: ConfigService): JwtModuleOptions => {
   const accessSecret = secret(config, 'JWT_SECRET', 'your-super-secret-key');
   secret(config, 'JWT_REFRESH_SECRET', 'your-refresh-secret-key');
   return {
     secret: accessSecret,
     signOptions: {
-      expiresIn: config.get<string>('JWT_EXPIRE', '24h'),
+      expiresIn: tokenLifetime(config, 'JWT_EXPIRE', '24h'),
       issuer: 'flowback-iiot-platform',
       audience: 'flowback-users',
     },
@@ -39,7 +51,7 @@ export const jwtConfig = (config: ConfigService): JwtModuleOptions => {
 export const refreshJwtConfig = (config: ConfigService): JwtModuleOptions => ({
   secret: secret(config, 'JWT_REFRESH_SECRET', 'your-refresh-secret-key'),
   signOptions: {
-    expiresIn: config.get<string>('JWT_REFRESH_EXPIRE', '7d'),
+    expiresIn: tokenLifetime(config, 'JWT_REFRESH_EXPIRE', '7d'),
     issuer: 'flowback-iiot-platform',
     audience: 'flowback-users',
   },

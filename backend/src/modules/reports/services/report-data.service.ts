@@ -414,8 +414,12 @@ export class ReportDataService {
     _filters: any,
   ): Promise<{ summary: any; data: any; charts: any }> {
     // Dados gerais do sistema
-    const tanks = await this.tankRepository.find({ relations: ['sensors'] });
-    const sensors = await this.sensorRepository.find({ relations: ['tank'] });
+    const tanks = await this.tankRepository.find({
+      relations: { sensors: true },
+    });
+    const sensors = await this.sensorRepository.find({
+      relations: { tank: true },
+    });
     const totalReadings = await this.readingRepository.count({
       where: {
         timestamp: Between(startDate, endDate),
@@ -719,20 +723,20 @@ export class ReportDataService {
     if (tankIds && tankIds.length > 0) {
       return this.tankRepository.find({
         where: tankIds.map((id) => ({ id })),
-        relations: ['sensors'],
+        relations: { sensors: true },
       });
     }
-    return this.tankRepository.find({ relations: ['sensors'] });
+    return this.tankRepository.find({ relations: { sensors: true } });
   }
 
   private async getFilteredSensors(sensorIds?: string[]): Promise<Sensor[]> {
     if (sensorIds && sensorIds.length > 0) {
       return this.sensorRepository.find({
         where: sensorIds.map((id) => ({ id })),
-        relations: ['tank'],
+        relations: { tank: true },
       });
     }
-    return this.sensorRepository.find({ relations: ['tank'] });
+    return this.sensorRepository.find({ relations: { tank: true } });
   }
 
   private getDefaultTitle(type: ReportType): string {

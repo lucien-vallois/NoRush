@@ -95,7 +95,12 @@ export class AlertsService {
   async findById(id: string): Promise<Alert> {
     const alert = await this.alertRepository.findOne({
       where: { id },
-      relations: ['tank', 'sensor', 'resolvedBy', 'acknowledgedBy'],
+      relations: {
+        tank: true,
+        sensor: true,
+        resolvedBy: true,
+        acknowledgedBy: true,
+      },
     });
 
     if (!alert) {
@@ -193,7 +198,7 @@ export class AlertsService {
   async getActiveAlerts(): Promise<Alert[]> {
     return this.alertRepository.find({
       where: { status: AlertStatus.ACTIVE },
-      relations: ['tank', 'sensor'],
+      relations: { tank: true, sensor: true },
       order: { createdAt: 'DESC' },
     });
   }
@@ -201,7 +206,7 @@ export class AlertsService {
   async getAlertsBySeverity(severity: AlertSeverity): Promise<Alert[]> {
     return this.alertRepository.find({
       where: { severity },
-      relations: ['tank', 'sensor'],
+      relations: { tank: true, sensor: true },
       order: { createdAt: 'DESC' },
     });
   }
@@ -209,7 +214,7 @@ export class AlertsService {
   async getAlertsByType(type: AlertType): Promise<Alert[]> {
     return this.alertRepository.find({
       where: { type },
-      relations: ['tank', 'sensor'],
+      relations: { tank: true, sensor: true },
       order: { createdAt: 'DESC' },
     });
   }
@@ -217,7 +222,7 @@ export class AlertsService {
   async getAlertsByStatus(status: AlertStatus): Promise<Alert[]> {
     return this.alertRepository.find({
       where: { status },
-      relations: ['tank', 'sensor'],
+      relations: { tank: true, sensor: true },
       order: { createdAt: 'DESC' },
     });
   }
@@ -225,7 +230,7 @@ export class AlertsService {
   async getUnacknowledgedAlerts(): Promise<Alert[]> {
     return this.alertRepository.find({
       where: { status: AlertStatus.ACTIVE },
-      relations: ['tank', 'sensor'],
+      relations: { tank: true, sensor: true },
       order: { severity: 'DESC', createdAt: 'DESC' },
     });
   }
@@ -236,7 +241,7 @@ export class AlertsService {
         severity: AlertSeverity.CRITICAL,
         status: AlertStatus.ACTIVE,
       },
-      relations: ['tank', 'sensor'],
+      relations: { tank: true, sensor: true },
       order: { createdAt: 'DESC' },
     });
   }

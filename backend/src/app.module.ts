@@ -123,6 +123,7 @@ import { resolve } from 'node:path';
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer): void {
     // Resolve o idioma (Accept-Language) para todas as rotas da API
-    consumer.apply(LanguageMiddleware).forRoutes('*');
+    // Express 5 path syntax: a named, optional wildcard matches every route
+    consumer.apply(LanguageMiddleware).forRoutes('{*path}');
   }
 }

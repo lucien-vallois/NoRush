@@ -6,6 +6,7 @@ import { UserService } from './user.service';
 import { SessionService } from './session.service';
 import { User } from '../../entities/user.entity';
 import { LoginDto, RefreshTokenDto } from './auth.dto';
+import { tokenLifetime } from '../../config/jwt.config';
 
 export interface AuthResponse {
   accessToken: string;
@@ -162,7 +163,7 @@ export class AuthService {
 
     const accessToken = this.jwtService.sign(
       { ...claims, tokenUse: 'access' },
-      { expiresIn: this.configService.get<string>('JWT_EXPIRE', '24h') },
+      { expiresIn: tokenLifetime(this.configService, 'JWT_EXPIRE', '24h') },
     );
     const refreshToken = this.jwtService.sign(
       { ...claims, tokenUse: 'refresh' },
@@ -187,8 +188,8 @@ export class AuthService {
     return exp - iat;
   }
 
-  private refreshExpire(): string {
-    return this.configService.get<string>('JWT_REFRESH_EXPIRE', '7d');
+  private refreshExpire() {
+    return tokenLifetime(this.configService, 'JWT_REFRESH_EXPIRE', '7d');
   }
 
   private refreshSecret(): string {

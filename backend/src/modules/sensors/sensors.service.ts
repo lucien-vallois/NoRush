@@ -6,7 +6,7 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, SelectQueryBuilder } from 'typeorm';
+import { MoreThanOrEqual, Repository, SelectQueryBuilder } from 'typeorm';
 import { Sensor, SensorStatus, SensorType } from '../../entities/sensor.entity';
 import { Tank } from '../../entities/tank.entity';
 import { Reading } from '../../entities/reading.entity';
@@ -71,7 +71,7 @@ export class SensorsService {
   async findById(id: string): Promise<Sensor> {
     const sensor = await this.sensorRepository.findOne({
       where: { id },
-      relations: ['tank'],
+      relations: { tank: true },
     });
 
     if (!sensor) {
@@ -84,7 +84,7 @@ export class SensorsService {
   async findBySensorId(sensorId: string): Promise<Sensor> {
     const sensor = await this.sensorRepository.findOne({
       where: { sensorId },
-      relations: ['tank'],
+      relations: { tank: true },
     });
 
     if (!sensor) {
@@ -154,7 +154,7 @@ export class SensorsService {
   async getSensorsByTank(tankId: string): Promise<Sensor[]> {
     return this.sensorRepository.find({
       where: { tankId },
-      relations: ['tank'],
+      relations: { tank: true },
       order: { name: 'ASC' },
     });
   }
@@ -162,7 +162,7 @@ export class SensorsService {
   async getSensorsByStatus(status: SensorStatus): Promise<Sensor[]> {
     return this.sensorRepository.find({
       where: { status },
-      relations: ['tank'],
+      relations: { tank: true },
       order: { name: 'ASC' },
     });
   }
@@ -170,7 +170,7 @@ export class SensorsService {
   async getSensorsByType(type: SensorType): Promise<Sensor[]> {
     return this.sensorRepository.find({
       where: { type },
-      relations: ['tank'],
+      relations: { tank: true },
       order: { name: 'ASC' },
     });
   }
@@ -178,7 +178,7 @@ export class SensorsService {
   async getOnlineSensors(): Promise<Sensor[]> {
     const sensors = await this.sensorRepository.find({
       where: { status: SensorStatus.ACTIVE },
-      relations: ['tank'],
+      relations: { tank: true },
     });
 
     // Filtrar apenas sensores que transmitiram nos últimos 5 minutos
@@ -279,7 +279,8 @@ export class SensorsService {
     const recentReadings = await this.readingRepository.count({
       where: {
         sensorId: id,
-        timestamp: yesterday,
+        // was `timestamp: yesterday` (equality), which always counted 0
+        timestamp: MoreThanOrEqual(yesterday),
       },
     });
 
@@ -361,7 +362,7 @@ export class SensorsService {
 
     const updatedSensors = await this.sensorRepository.find({
       where: sensorIds.map((id) => ({ id })),
-      relations: ['tank'],
+      relations: { tank: true },
     });
 
     this.logger.log(

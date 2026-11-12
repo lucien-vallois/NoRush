@@ -41,7 +41,7 @@ export class ReadingsService {
     // Verificar se o sensor existe
     const sensor = await this.sensorRepository.findOne({
       where: { id: sensorId },
-      relations: ['tank'],
+      relations: { tank: true },
     });
 
     if (!sensor) {
@@ -109,7 +109,7 @@ export class ReadingsService {
   async findById(id: string): Promise<Reading> {
     const reading = await this.readingRepository.findOne({
       where: { id },
-      relations: ['sensor', 'sensor.tank'],
+      relations: { sensor: { tank: true } },
     });
 
     if (!reading) {
@@ -153,7 +153,7 @@ export class ReadingsService {
   ): Promise<Reading[]> {
     return this.readingRepository.find({
       where: { sensorId },
-      relations: ['sensor', 'sensor.tank'],
+      relations: { sensor: { tank: true } },
       order: { timestamp: 'DESC' },
       take: limit,
     });

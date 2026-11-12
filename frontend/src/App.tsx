@@ -4,7 +4,7 @@ import {
   Routes,
   Route,
   Navigate,
-} from "react-router-dom";
+} from "react-router";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import { AuthProvider } from "./contexts/AuthContext";
 import { WebSocketProvider } from "./contexts/WebSocketContext";

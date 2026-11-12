@@ -407,7 +407,7 @@ export class MessageProcessorService {
         where: { sensorId },
         order: { timestamp: 'DESC' },
         take: 20,
-        select: ['level'],
+        select: { level: true },
       });
       if (recent.length < 10) return null;
 
