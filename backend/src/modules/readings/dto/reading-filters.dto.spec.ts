@@ -24,4 +24,14 @@ describe('Reading query boundaries', () => {
     // sortBy/sortOrder entram no ORDER BY: nada fora da whitelist passa
     await expect(parse(value)).rejects.toMatchObject({ status: 400 });
   });
+
+  it('reads boolean filters sent as query text', async () => {
+    // ?calibratedOnly=true arrives as the string "true" (it used to be a 400)
+    expect(
+      await parse({ calibratedOnly: 'true', processedOnly: 'false' }),
+    ).toMatchObject({ calibratedOnly: true, processedOnly: false });
+    await expect(parse({ calibratedOnly: 'yes' })).rejects.toMatchObject({
+      status: 400,
+    });
+  });
 });

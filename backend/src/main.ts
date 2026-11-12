@@ -9,6 +9,7 @@ import { NestExpressApplication } from '@nestjs/platform-express';
 import { AppModule } from './app.module';
 import { I18nService } from './i18n/i18n.service';
 import { I18nHttpExceptionFilter } from './i18n/i18n-http-exception.filter';
+import { QueryFailedFilter } from './i18n/query-failed.filter';
 import helmet from 'helmet';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 
@@ -32,7 +33,10 @@ async function bootstrap() {
   app.enableShutdownHooks();
 
   // Exceções com payload { code, ...params } saem traduzidas no Accept-Language
-  app.useGlobalFilters(new I18nHttpExceptionFilter(app.get(I18nService)));
+  app.useGlobalFilters(
+    new I18nHttpExceptionFilter(app.get(I18nService)),
+    new QueryFailedFilter(app.get(I18nService)),
+  );
 
   app.useGlobalPipes(
     new ValidationPipe({

@@ -7,10 +7,19 @@ import {
 import { ReportDataService } from './services/report-data.service';
 import { PdfReportService } from './services/pdf-report.service';
 import { ExcelReportService } from './services/excel-report.service';
+import { csvRow } from '../../common/csv';
 
 @Injectable()
 export class ReportsService {
   private readonly logger = new Logger(ReportsService.name);
+  private readonly startedAt = new Date().toISOString();
+  private readonly usage = {
+    total: 0,
+    byType: {} as Record<string, number>,
+    byFormat: {} as Record<string, number>,
+    totalMs: 0,
+    last: null as string | null,
+  };
 
   constructor(
     private reportDataService: ReportDataService,
@@ -23,11 +32,8 @@ export class ReportsService {
     filename: string;
     contentType: string;
   }> {
+    const startedAt = Date.now();
     try {
-      this.logger.log(
-        `Gerando relatório: ${dto.type} em formato ${dto.format}`,
-      );
-
       // Validar parâmetros
       this.validateReportParameters(dto);
 
@@ -70,8 +76,7 @@ export class ReportsService {
           break;
 
         case ReportFormat.CSV:
-          // Para CSV, usamos o formato Excel mas exportamos como CSV
-          buffer = await this.generateCsvReport(dto.type, reportData);
+          buffer = this.generateCsvReport(reportData);
           filename = this.generateFilename(dto.type, 'csv', dto.title);
           contentType = 'text/csv';
           break;
@@ -83,9 +88,8 @@ export class ReportsService {
           });
       }
 
-      this.logger.log(
-        `Relatório gerado com sucesso: ${filename} (${buffer.length} bytes)`,
-      );
+      this.recordUsage(dto.type, dto.format, Date.now() - startedAt);
+      this.logger.log(`Report generated: ${filename} (${buffer.length} bytes)`);
 
       return {
         buffer,
@@ -109,7 +113,9 @@ export class ReportsService {
         metadata: reportData.metadata,
         summary: reportData.summary,
         dataCount: Array.isArray(reportData.data) ? reportData.data.length : 1,
-        availableFormats: ['pdf', 'excel', 'csv'],
+        availableFormats: this.getAvailableReports().find(
+          (report) => report.type === type,
+        )?.formats ?? ['excel'],
       };
     } catch (error) {
       this.logger.error(`Erro ao gerar preview do relatório ${type}:`, error);
@@ -194,49 +200,6 @@ export class ReportsService {
     }));
   }
 
-  async generateScheduledReports(): Promise<void> {
-    try {
-      this.logger.log('Gerando relatórios agendados...');
-
-      // Relatório diário de alertas
-      const yesterday = new Date();
-      yesterday.setDate(yesterday.getDate() - 1);
-
-      const alertReport = await this.generateReport({
-        type: ReportType.ALERT_SUMMARY,
-        format: ReportFormat.PDF,
-        startDate: yesterday.toISOString().split('T')[0],
-        endDate: new Date().toISOString().split('T')[0],
-        title: `Relatório Diário de Alertas - ${yesterday.toLocaleDateString('pt-BR')}`,
-      });
-
-      // Aqui seria implementado o envio por email ou salvamento em storage
-      this.logger.log(`Relatório diário gerado: ${alertReport.filename}`);
-
-      // Relatório semanal de performance (aos domingos)
-      const today = new Date();
-      if (today.getDay() === 0) {
-        // Domingo
-        const weekStart = new Date(today);
-        weekStart.setDate(today.getDate() - 7);
-
-        const performanceReport = await this.generateReport({
-          type: ReportType.SENSOR_PERFORMANCE,
-          format: ReportFormat.EXCEL,
-          startDate: weekStart.toISOString(),
-          endDate: today.toISOString(),
-          title: `Relatório Semanal de Performance - Semana ${this.getWeekNumber(today)}`,
-        });
-
-        this.logger.log(
-          `Relatório semanal gerado: ${performanceReport.filename}`,
-        );
-      }
-    } catch (error) {
-      this.logger.error('Erro ao gerar relatórios agendados:', error);
-    }
-  }
-
   private validateReportParameters(dto: GenerateReportDto): void {
     // Validar período
     if (dto.startDate && dto.endDate) {
@@ -308,58 +271,48 @@ export class ReportsService {
     return names[type] || 'Relatorio';
   }
 
-  private async generateCsvReport(
-    type: ReportType,
-    data: any,
-  ): Promise<Buffer> {
-    // Implementação básica de CSV - em produção usar biblioteca especializada
-    let csv = '';
+  private generateCsvReport(data: {
+    summary?: Record<string, unknown>;
+    data?: unknown;
+  }): Buffer {
+    const lines: string[] = [];
 
-    // Headers
     if (data.summary) {
-      csv += 'Campo,Valor\n';
-      Object.entries(data.summary).forEach(([key, value]) => {
-        csv += `"${key}","${String(value)}"\n`;
-      });
-      csv += '\n';
+      lines.push(csvRow(['field', 'value']));
+      for (const [key, value] of Object.entries(data.summary)) {
+        lines.push(csvRow([key, value]));
+      }
+      lines.push('');
     }
 
-    // Data
-    if (data.data && Array.isArray(data.data) && data.data.length > 0) {
-      const headers = Object.keys(data.data[0]);
-      csv += headers.join(',') + '\n';
-
-      data.data.forEach((row) => {
-        const values = headers.map((header) => {
-          const value = row[header];
-          if (typeof value === 'string' && value.includes(',')) {
-            return `"${value}"`;
-          }
-          return value;
-        });
-        csv += values.join(',') + '\n';
-      });
+    if (Array.isArray(data.data) && data.data.length > 0) {
+      const rows = data.data as Record<string, unknown>[];
+      const headers = Object.keys(rows[0]);
+      lines.push(csvRow(headers));
+      for (const row of rows) lines.push(csvRow(headers.map((h) => row[h])));
     }
 
-    return Buffer.from(csv, 'utf-8');
+    return Buffer.from(lines.join('\n') + '\n', 'utf-8');
   }
 
-  private getWeekNumber(date: Date): number {
-    const firstDayOfYear = new Date(date.getFullYear(), 0, 1);
-    const pastDaysOfYear =
-      (date.getTime() - firstDayOfYear.getTime()) / 86400000;
-    return Math.ceil((pastDaysOfYear + firstDayOfYear.getDay() + 1) / 7);
-  }
-
-  // Método para obter estatísticas de uso dos relatórios
-  async getReportsStats(): Promise<any> {
-    // Em produção, implementar tracking de uso
+  /** Reports generated since the API started (kept in memory). */
+  getReportsStats() {
+    const { total, byType, byFormat, totalMs, last } = this.usage;
     return {
-      totalGenerated: 0,
-      byType: {},
-      byFormat: {},
-      averageGenerationTime: 0,
-      lastGenerated: null,
+      totalGenerated: total,
+      byType,
+      byFormat,
+      averageGenerationTimeMs: total ? Math.round(totalMs / total) : null,
+      lastGenerated: last,
+      since: this.startedAt,
     };
+  }
+
+  private recordUsage(type: ReportType, format: ReportFormat, ms: number) {
+    this.usage.total++;
+    this.usage.byType[type] = (this.usage.byType[type] ?? 0) + 1;
+    this.usage.byFormat[format] = (this.usage.byFormat[format] ?? 0) + 1;
+    this.usage.totalMs += ms;
+    this.usage.last = new Date().toISOString();
   }
 }

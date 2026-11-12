@@ -10,6 +10,7 @@ import {
 } from 'class-validator';
 import { Type } from 'class-transformer';
 import { ApiPropertyOptional } from '@nestjs/swagger';
+import { QueryBoolean } from '../../../common/transformers/query-boolean';
 
 // Whitelist usada tanto na validação quanto na ordenação do serviço —
 // o sortBy é interpolado no ORDER BY, então não pode aceitar valor livre.
@@ -113,6 +114,7 @@ export class ReadingFiltersDto {
   })
   @IsOptional()
   @IsBoolean()
+  @QueryBoolean()
   calibratedOnly?: boolean;
 
   @ApiPropertyOptional({
@@ -121,6 +123,7 @@ export class ReadingFiltersDto {
   })
   @IsOptional()
   @IsBoolean()
+  @QueryBoolean()
   processedOnly?: boolean;
 
   @ApiPropertyOptional({

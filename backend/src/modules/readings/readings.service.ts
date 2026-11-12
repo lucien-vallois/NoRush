@@ -207,7 +207,7 @@ export class ReadingsService {
     }
 
     if (bucket !== '5m' && bucket !== '1h') {
-      throw new BadRequestException("bucket deve ser '5m', '1h' ou 'raw'");
+      throw new BadRequestException({ code: 'invalidTimeseriesBucket' });
     }
     const view = bucket === '5m' ? 'readings_5m' : 'readings_1h';
 

@@ -8,6 +8,8 @@ import {
   HttpCode,
   HttpStatus,
   BadRequestException,
+  DefaultValuePipe,
+  ParseIntPipe,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -309,15 +311,22 @@ export class ReadingsController {
     description: 'Dias para manter',
     required: false,
   })
-  async cleanupOldReadings(@Query('daysToKeep') daysToKeep?: number) {
-    const deletedCount = await this.readingsService.deleteOldReadings(
-      daysToKeep || 90,
-    );
+  async cleanupOldReadings(
+    @Query('daysToKeep', new DefaultValuePipe(90), ParseIntPipe)
+    daysToKeep: number,
+  ) {
+    // The query arrives as text: "0" used to pass `daysToKeep || 90` and
+    // move the cutoff to now, deleting the whole history.
+    if (daysToKeep < 1) {
+      throw new BadRequestException({ code: 'invalidDaysToKeep' });
+    }
+    const deletedCount =
+      await this.readingsService.deleteOldReadings(daysToKeep);
 
     return {
-      message: 'Leituras antigas removidas com sucesso',
+      message: 'Old readings removed',
       deletedReadings: deletedCount,
-      daysKept: daysToKeep || 90,
+      daysKept: daysToKeep,
     };
   }
 

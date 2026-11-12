@@ -6,7 +6,7 @@ import {
   IsArray,
   IsString,
 } from 'class-validator';
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { OmitType, ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export enum ReportType {
   TANK_LEVEL_HISTORY = 'tank_level_history',
@@ -93,3 +93,12 @@ export class GenerateReportDto {
   @IsString()
   title?: string;
 }
+
+/**
+ * Body of the per-type shortcuts (POST /reports/alert-summary, ...): the
+ * same fields and validation as /reports/generate, with the type implied by
+ * the route.
+ */
+export class ReportShortcutDto extends OmitType(GenerateReportDto, [
+  'type',
+] as const) {}

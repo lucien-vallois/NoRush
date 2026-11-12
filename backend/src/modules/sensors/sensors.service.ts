@@ -14,6 +14,9 @@ import { CreateSensorDto } from './dto/create-sensor.dto';
 import { UpdateSensorDto } from './dto/update-sensor.dto';
 import { SensorFiltersDto } from './dto/sensor-filters.dto';
 
+/** Most gauges one bulk request may change. */
+export const MAX_BULK_SENSORS = 100;
+
 @Injectable()
 export class SensorsService {
   private readonly logger = new Logger(SensorsService.name);
@@ -142,9 +145,11 @@ export class SensorsService {
     });
 
     if (readingCount > 0) {
-      throw new ConflictException(
-        `Não é possível excluir o sensor. Existem ${readingCount} leituras associadas.`,
-      );
+      // History is kept: a gauge with readings is set inactive, not deleted
+      throw new ConflictException({
+        code: 'sensorHasReadings',
+        count: readingCount,
+      });
     }
 
     await this.sensorRepository.delete(id);
@@ -330,10 +335,10 @@ export class SensorsService {
       throw new BadRequestException({ code: 'emptySensorIdList' });
     }
 
-    if (sensorIds.length > 100) {
+    if (sensorIds.length > MAX_BULK_SENSORS) {
       throw new BadRequestException({
         code: 'sensorBulkLimitExceeded',
-        max: 100,
+        max: MAX_BULK_SENSORS,
       });
     }
 

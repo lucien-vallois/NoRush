@@ -6,6 +6,7 @@ import {
   IsBoolean,
 } from 'class-validator';
 import { ApiPropertyOptional } from '@nestjs/swagger';
+import { QueryBoolean } from '../../../common/transformers/query-boolean';
 import {
   SensorType,
   SensorProtocol,
@@ -78,6 +79,7 @@ export class SensorFiltersDto {
   })
   @IsOptional()
   @IsBoolean()
+  @QueryBoolean()
   onlineOnly?: boolean;
 
   @ApiPropertyOptional({
@@ -86,6 +88,7 @@ export class SensorFiltersDto {
   })
   @IsOptional()
   @IsBoolean()
+  @QueryBoolean()
   needsCalibration?: boolean;
 
   @ApiPropertyOptional({
@@ -94,5 +97,6 @@ export class SensorFiltersDto {
   })
   @IsOptional()
   @IsBoolean()
+  @QueryBoolean()
   lowBattery?: boolean;
 }

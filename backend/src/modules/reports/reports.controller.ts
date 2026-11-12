@@ -1,13 +1,4 @@
-import {
-  Controller,
-  Post,
-  Get,
-  Body,
-  Query,
-  Res,
-  HttpCode,
-  HttpStatus,
-} from '@nestjs/common';
+import { Controller, Post, Get, Body, Query, Res } from '@nestjs/common';
 import {
   ApiTags,
   ApiOperation,
@@ -20,8 +11,8 @@ import type { Response } from 'express';
 import { ReportsService } from './reports.service';
 import {
   GenerateReportDto,
+  ReportShortcutDto,
   ReportType,
-  ReportFormat,
 } from './dto/generate-report.dto';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { UserRole } from '../../entities/user.entity';
@@ -123,27 +114,6 @@ export class ReportsController {
     return this.reportsService.getReportsStats();
   }
 
-  @Post('scheduled/generate')
-  @Roles(UserRole.ADMIN)
-  @HttpCode(HttpStatus.OK)
-  @ApiBearerAuth()
-  @ApiOperation({
-    summary: 'Gerar relatórios agendados',
-    description:
-      'Executa geração manual de relatórios agendados (apenas admin)',
-  })
-  @ApiResponse({
-    status: 200,
-    description: 'Relatórios agendados gerados com sucesso',
-  })
-  async generateScheduledReports() {
-    await this.reportsService.generateScheduledReports();
-    return {
-      message: 'Scheduled reports generated',
-      timestamp: new Date().toISOString(),
-    };
-  }
-
   // Endpoints específicos para tipos comuns de relatório
 
   @Post('tank-level-history')
@@ -167,14 +137,7 @@ export class ReportsController {
     },
   })
   async generateTankLevelHistory(
-    @Body()
-    body: {
-      format: ReportFormat;
-      startDate: string;
-      endDate: string;
-      tankIds?: string[];
-      title?: string;
-    },
+    @Body() body: ReportShortcutDto,
     @Res() res: Response,
   ) {
     const dto: GenerateReportDto = {
@@ -205,14 +168,7 @@ export class ReportsController {
   })
   @ApiResponse({ status: 200, description: 'Relatório gerado com sucesso' })
   async generateSensorPerformance(
-    @Body()
-    body: {
-      format: ReportFormat;
-      startDate: string;
-      endDate: string;
-      sensorIds?: string[];
-      title?: string;
-    },
+    @Body() body: ReportShortcutDto,
     @Res() res: Response,
   ) {
     const dto: GenerateReportDto = {
@@ -243,15 +199,7 @@ export class ReportsController {
   })
   @ApiResponse({ status: 200, description: 'Relatório gerado com sucesso' })
   async generateAlertSummary(
-    @Body()
-    body: {
-      format: ReportFormat;
-      startDate: string;
-      endDate: string;
-      tankIds?: string[];
-      sensorIds?: string[];
-      title?: string;
-    },
+    @Body() body: ReportShortcutDto,
     @Res() res: Response,
   ) {
     const dto: GenerateReportDto = {
@@ -283,13 +231,7 @@ export class ReportsController {
   })
   @ApiResponse({ status: 200, description: 'Relatório gerado com sucesso' })
   async generateSystemOverview(
-    @Body()
-    body: {
-      format: ReportFormat;
-      startDate?: string;
-      endDate?: string;
-      title?: string;
-    },
+    @Body() body: ReportShortcutDto,
     @Res() res: Response,
   ) {
     const dto: GenerateReportDto = {
@@ -319,11 +261,7 @@ export class ReportsController {
   })
   @ApiResponse({ status: 200, description: 'Relatório gerado com sucesso' })
   async generateMaintenanceSchedule(
-    @Body()
-    body: {
-      format: ReportFormat;
-      title?: string;
-    },
+    @Body() body: ReportShortcutDto,
     @Res() res: Response,
   ) {
     const dto: GenerateReportDto = {
@@ -351,14 +289,7 @@ export class ReportsController {
   })
   @ApiResponse({ status: 200, description: 'Relatório gerado com sucesso' })
   async generateProductionAnalysis(
-    @Body()
-    body: {
-      format: ReportFormat;
-      startDate: string;
-      endDate: string;
-      tankIds?: string[];
-      title?: string;
-    },
+    @Body() body: ReportShortcutDto,
     @Res() res: Response,
   ) {
     const dto: GenerateReportDto = {

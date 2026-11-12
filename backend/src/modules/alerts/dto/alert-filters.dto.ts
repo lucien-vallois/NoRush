@@ -11,8 +11,9 @@ import {
   IsIn,
   MaxLength,
 } from 'class-validator';
-import { Transform, Type } from 'class-transformer';
+import { Type } from 'class-transformer';
 import { ApiPropertyOptional } from '@nestjs/swagger';
+import { QueryBoolean } from '../../../common/transformers/query-boolean';
 import {
   AlertType,
   AlertSeverity,
@@ -94,9 +95,7 @@ export class AlertFiltersDto {
   })
   @IsOptional()
   @IsBoolean()
-  @Transform(({ value }) =>
-    value === 'true' ? true : value === 'false' ? false : value,
-  )
+  @QueryBoolean()
   unacknowledgedOnly?: boolean;
 
   @ApiPropertyOptional({
@@ -105,9 +104,7 @@ export class AlertFiltersDto {
   })
   @IsOptional()
   @IsBoolean()
-  @Transform(({ value }) =>
-    value === 'true' ? true : value === 'false' ? false : value,
-  )
+  @QueryBoolean()
   criticalOnly?: boolean;
 
   @ApiPropertyOptional({

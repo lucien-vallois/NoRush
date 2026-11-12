@@ -9,6 +9,7 @@ import {
   Query,
   HttpCode,
   HttpStatus,
+  BadRequestException,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -18,7 +19,7 @@ import {
   ApiQuery,
   ApiBearerAuth,
 } from '@nestjs/swagger';
-import { SensorsService } from './sensors.service';
+import { MAX_BULK_SENSORS, SensorsService } from './sensors.service';
 import { CreateSensorDto } from './dto/create-sensor.dto';
 import { UpdateSensorDto } from './dto/update-sensor.dto';
 import { SensorFiltersDto } from './dto/sensor-filters.dto';
@@ -279,10 +280,21 @@ export class SensorsController {
     type: [Sensor],
   })
   async bulkRegisterCalibration(
-    @Body() body: { sensorIds: string[] },
+    @Body() body: { sensorIds?: unknown },
   ): Promise<Sensor[]> {
+    // Same bounds as bulk/status; the list used to be taken unchecked
+    const ids = body?.sensorIds;
+    if (!Array.isArray(ids) || ids.length === 0) {
+      throw new BadRequestException({ code: 'emptySensorIdList' });
+    }
+    if (ids.length > MAX_BULK_SENSORS) {
+      throw new BadRequestException({
+        code: 'sensorBulkLimitExceeded',
+        max: MAX_BULK_SENSORS,
+      });
+    }
     const results: Sensor[] = [];
-    for (const sensorId of body.sensorIds) {
+    for (const sensorId of ids as string[]) {
       const result = await this.sensorsService.updateCalibrationDate(
         sensorId,
         new Date(),

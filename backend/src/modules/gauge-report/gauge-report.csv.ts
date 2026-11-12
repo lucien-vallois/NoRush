@@ -1,5 +1,6 @@
 import { formatFeetInches, L_PER_BBL } from './gauge-report.engine';
 import type { GaugeReport, GaugeReportTank } from './gauge-report.service';
+import { csvText } from '../../common/csv';
 
 export type ReportUnits = 'imperial' | 'metric';
 
@@ -32,11 +33,7 @@ export function formatLocal(
 }
 
 /** Text cell: quoted when needed, and never read as a formula by a spreadsheet. */
-function text(value: string | null | undefined): string {
-  let v = value ?? '';
-  if (/^[=+\-@\t\r]/.test(v)) v = `'${v}`;
-  return /[",\n\r]/.test(v) ? `"${v.replace(/"/g, '""')}"` : v;
-}
+const text = csvText;
 
 function number(value: number | null | undefined, digits: number): string {
   return value == null || !Number.isFinite(value) ? '' : value.toFixed(digits);

@@ -198,7 +198,8 @@ export class Sensor {
   }
 
   getBatteryStatus(): 'good' | 'warning' | 'critical' {
-    if (!this.batteryLevel) return 'warning';
+    // 0% is a real reading (critical); only a missing value is unknown
+    if (this.batteryLevel == null) return 'warning';
 
     if (this.batteryLevel >= 20) return 'good';
     if (this.batteryLevel >= 10) return 'warning';

@@ -11,6 +11,11 @@
 - **Reports.** The catalog offered PDF for six report types while only the alert summary has a layout (the others crashed with a 500); PDF output is a real binary buffer with Puppeteer 22+.
 - **Acknowledgment notes** sent to the API are kept (they were dropped).
 - Gauge statistics reported 0 readings in the last 24 hours: the query compared timestamps for equality instead of "since".
+- **Reading history cleanup:** `POST /readings/maintenance/cleanup?daysToKeep=0` deleted every reading (the text `"0"` passed a `|| 90` default and moved the cutoff to now); the value is now parsed and must be at least 1.
+- Boolean list filters sent in the query string (`?onlineOnly=true`, `?calibratedOnly=true`, ...) were refused with 400 on gauges and readings.
+- A malformed id in a path (`/sensors/not-a-uuid`) answers 400 with a translated message instead of a database error 500.
+- Report CSV cells are quoted per RFC 4180 and guarded against formula injection, like the gauge report CSV; the per-type report shortcuts validate their body; the preview lists only the formats that work; `GET /reports/stats` counts real usage instead of returning fixed zeros; the "scheduled reports" route, which generated files and discarded them, was removed.
+- Deleting a gauge with readings is refused with a translated message; bulk calibration takes 1 to 100 gauges like bulk status; a 0% battery is critical, not unknown.
 - The batch ingestion route validates every reading and accepts the `X-Device-Token` header.
 
 ### Added
