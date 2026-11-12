@@ -96,71 +96,67 @@ export class ReportsService {
     }
   }
 
-  async getAvailableReports(): Promise<any[]> {
-    return [
+  /**
+   * Report catalog. Every type exports to Excel; PDF is listed only for the
+   * types that have a layout (templates/*.hbs), so the catalog never offers
+   * a format that would fail.
+   */
+  getAvailableReports() {
+    const catalog = [
       {
         type: ReportType.TANK_LEVEL_HISTORY,
-        title: 'Histórico de Níveis dos Tanques',
-        description: 'Relatório detalhado dos níveis de todos os tanques no período selecionado',
+        title: 'Tank level history',
+        description: 'Levels of every tank over the selected period',
         formats: ['pdf', 'excel', 'csv'],
-        parameters: {
-          startDate: 'Obrigatório',
-          endDate: 'Obrigatório',
-          tankIds: 'Opcional',
-        },
+        parameters: { startDate: 'required', endDate: 'required', tankIds: 'optional' },
       },
       {
         type: ReportType.SENSOR_PERFORMANCE,
-        title: 'Performance dos Sensores',
-        description: 'Análise de performance, qualidade e status de todos os sensores',
+        title: 'Gauge performance',
+        description: 'Reading quality, transmissions and status of every gauge',
         formats: ['pdf', 'excel', 'csv'],
-        parameters: {
-          startDate: 'Obrigatório',
-          endDate: 'Obrigatório',
-          sensorIds: 'Opcional',
-        },
+        parameters: { startDate: 'required', endDate: 'required', sensorIds: 'optional' },
       },
       {
         type: ReportType.ALERT_SUMMARY,
-        title: 'Resumo de Alertas',
-        description: 'Relatório completo de todos os alertas gerados no sistema',
+        title: 'Alert summary',
+        description: 'Every alert raised in the period, with acknowledgment and resolution',
         formats: ['pdf', 'excel', 'csv'],
         parameters: {
-          startDate: 'Obrigatório',
-          endDate: 'Obrigatório',
-          tankIds: 'Opcional',
-          sensorIds: 'Opcional',
+          startDate: 'required',
+          endDate: 'required',
+          tankIds: 'optional',
+          sensorIds: 'optional',
         },
       },
       {
         type: ReportType.SYSTEM_OVERVIEW,
-        title: 'Visão Geral do Sistema',
-        description: 'Status geral do sistema, tanques e sensores',
+        title: 'System overview',
+        description: 'Overall status of tanks and gauges',
         formats: ['pdf', 'excel'],
-        parameters: {
-          startDate: 'Opcional',
-          endDate: 'Opcional',
-        },
+        parameters: { startDate: 'optional', endDate: 'optional' },
       },
       {
         type: ReportType.MAINTENANCE_SCHEDULE,
-        title: 'Cronograma de Manutenção',
-        description: 'Lista de itens que precisam de manutenção ou calibração',
+        title: 'Maintenance schedule',
+        description: 'Tanks and gauges due for maintenance or calibration',
         formats: ['pdf', 'excel', 'csv'],
         parameters: {},
       },
       {
         type: ReportType.PRODUCTION_ANALYSIS,
-        title: 'Análise de Produção',
-        description: 'Análise de produção baseada nos volumes dos tanques',
+        title: 'Production analysis',
+        description: 'Production estimated from tank volumes',
         formats: ['pdf', 'excel', 'csv'],
-        parameters: {
-          startDate: 'Obrigatório',
-          endDate: 'Obrigatório',
-          tankIds: 'Opcional',
-        },
+        parameters: { startDate: 'required', endDate: 'required', tankIds: 'optional' },
       },
     ];
+    return catalog.map((report) => ({
+      ...report,
+      formats: report.formats.filter(
+        (format) => format !== 'pdf' || this.pdfReportService.hasLayout(report.type),
+      ),
+    }));
   }
 
   async generateScheduledReports(): Promise<void> {

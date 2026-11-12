@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, BadRequestException } from '@nestjs/common';
 import * as puppeteer from 'puppeteer';
 import * as handlebars from 'handlebars';
 import * as fs from 'fs';
@@ -30,13 +30,18 @@ export class PdfReportService {
     this.loadTemplates();
   }
 
+  hasLayout(type: ReportType): boolean {
+    return this.templates.has(type);
+  }
+
   async generatePdf(type: ReportType, data: ReportData): Promise<Buffer> {
     try {
       this.logger.log(`Gerando PDF para relatório: ${type}`);
 
       const template = this.templates.get(type);
       if (!template) {
-        throw new Error(`Template não encontrado para o tipo: ${type}`);
+        // No PDF layout for this report type: a client error, not a crash
+        throw new BadRequestException({ code: 'unsupportedReportFormat', format: 'pdf' });
       }
 
       // Preparar dados para o template
@@ -58,7 +63,7 @@ export class PdfReportService {
   }
 
   private async generatePdfFromHtml(html: string): Promise<Buffer> {
-    let browser;
+    let browser: puppeteer.Browser | undefined;
 
     try {
       browser = await puppeteer.launch({
@@ -82,10 +87,11 @@ export class PdfReportService {
       await page.setViewport({ width: 1200, height: 800 });
 
       // Carregar HTML
-      await page.setContent(html, { waitUntil: 'networkidle0' });
+      await page.setContent(html, { waitUntil: 'load' });
 
-      // Gerar PDF
-      const pdfBuffer = await page.pdf({
+      // Puppeteer ≥ 22 returns a Uint8Array; Express only streams a Buffer
+      // as binary (a Uint8Array would be serialized as JSON).
+      const pdf = await page.pdf({
         format: 'A4',
         printBackground: true,
         margin: {
@@ -99,7 +105,7 @@ export class PdfReportService {
         footerTemplate: this.getFooterTemplate(),
       });
 
-      return pdfBuffer;
+      return Buffer.from(pdf);
     } finally {
       if (browser) {
         await browser.close();
@@ -131,13 +137,20 @@ export class PdfReportService {
       const templatePath = path.join(templatesDir, filename);
       if (fs.existsSync(templatePath)) {
         const templateContent = fs.readFileSync(templatePath, 'utf-8');
-        const compiledTemplate = handlebars.compile(templateContent);
-        this.templates.set(type, compiledTemplate);
-        this.logger.log(`Template carregado: ${filename}`);
-      } else {
-        this.logger.warn(`Template não encontrado: ${templatePath}`);
+        this.templates.set(type, handlebars.compile(templateContent));
       }
     });
+
+    // Not every report type has a PDF layout yet (they all export to Excel):
+    // say so once at startup instead of warning once per missing file.
+    const withPdf = [...this.templates.keys()];
+    const excelOnly = Object.keys(templateFiles).filter(
+      (type) => !this.templates.has(type),
+    );
+    this.logger.log(
+      `PDF layouts: ${withPdf.join(', ') || 'none'}` +
+        (excelOnly.length ? `; Excel only: ${excelOnly.join(', ')}` : ''),
+    );
   }
 
   private prepareTemplateData(data: ReportData): any {
@@ -319,7 +332,7 @@ export class PdfReportService {
   private getHeaderTemplate(): string {
     return `
       <div style="font-size: 10px; color: #666; padding: 10px 20px; border-bottom: 1px solid #e2e8f0;">
-        Flowback IoT Platform - Relatório
+        NoRush · Remote Tank Gauging
       </div>
     `;
   }
