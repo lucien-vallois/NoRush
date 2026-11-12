@@ -26,15 +26,23 @@ describe('Authentication', () => {
     isActive: true,
     tokenVersion: 0,
   };
+  const revoked = new Map<string, Date>();
+  const sessions = {
+    revoke: jest.fn(async (sid: string, _userId: string, expiresAt: Date) => {
+      revoked.set(sid, expiresAt);
+    }),
+    isRevoked: jest.fn(async (sid: string) => revoked.has(sid)),
+  };
   let auth: AuthService;
   beforeEach(() => {
     jest.clearAllMocks();
+    revoked.clear();
     users.validatePassword.mockResolvedValue({
       ...user,
       passwordHash: 'never-expose',
     });
     users.findById.mockResolvedValue(user);
-    auth = new AuthService(users as never, jwt, config);
+    auth = new AuthService(users as never, jwt, config, sessions as never);
   });
   it('issues separate token purposes and the actual configured lifetime', async () => {
     const result = await auth.login({
@@ -108,17 +116,56 @@ describe('Authentication', () => {
       auth.refreshToken({ refreshToken: foreign }),
     ).rejects.toBeInstanceOf(UnauthorizedException);
   });
-  it('revokes the whole session on logout', async () => {
+  it('signs out only the session that logs out', async () => {
+    const first = await auth.login({ email: user.email, password: 'test' });
+    const second = await auth.login({ email: user.email, password: 'test' });
+    const firstSid = jwt.decode(first.accessToken).sid;
+    expect(firstSid).toBeDefined();
+    expect(jwt.decode(second.accessToken).sid).not.toBe(firstSid);
+
+    await auth.logout(user.id, firstSid);
+
+    expect(users.incrementTokenVersion).not.toHaveBeenCalled();
+    const [, , expiresAt] = sessions.revoke.mock.calls[0];
+    // kept until the session's refresh token (7d by default) would expire
+    expect(expiresAt.getTime() - Date.now()).toBeGreaterThan(6.9 * 86400e3);
+
+    expect(await auth.validateToken(first.accessToken)).toBeNull();
+    await expect(
+      auth.refreshToken({ refreshToken: first.refreshToken }),
+    ).rejects.toBeInstanceOf(UnauthorizedException);
+
+    // Another person on the same shared demo account stays signed in
+    expect(await auth.validateToken(second.accessToken)).toEqual(user);
+    await expect(
+      auth.refreshToken({ refreshToken: second.refreshToken }),
+    ).resolves.toHaveProperty('accessToken');
+  });
+  it('keeps the session id across refreshes, so logout after a refresh still works', async () => {
     const tokens = await auth.login({ email: user.email, password: 'test' });
-    await auth.logout(user.id);
+    const next = await auth.refreshToken({ refreshToken: tokens.refreshToken });
+    const sid = jwt.decode(tokens.accessToken).sid;
+    expect(jwt.decode(next.accessToken).sid).toBe(sid);
+
+    await auth.logout(user.id, jwt.decode(next.accessToken).sid);
+    expect(await auth.validateToken(tokens.accessToken)).toBeNull();
+    expect(await auth.validateToken(next.accessToken)).toBeNull();
+  });
+  it('signs out everywhere by bumping the token version', async () => {
+    const tokens = await auth.login({ email: user.email, password: 'test' });
+    await auth.logoutEverywhere(user.id);
     expect(users.incrementTokenVersion).toHaveBeenCalledWith(user.id);
 
-    // Versão no banco andou: access e refresh da sessão anterior morrem
     users.findById.mockResolvedValue({ ...user, tokenVersion: 1 });
     expect(await auth.validateToken(tokens.accessToken)).toBeNull();
     await expect(
       auth.refreshToken({ refreshToken: tokens.refreshToken }),
     ).rejects.toBeInstanceOf(UnauthorizedException);
+  });
+  it('falls back to signing out everywhere for tokens issued without a session id', async () => {
+    await auth.logout(user.id, undefined);
+    expect(users.incrementTokenVersion).toHaveBeenCalledWith(user.id);
+    expect(sessions.revoke).not.toHaveBeenCalled();
   });
   it('keeps the current session valid when the version matches', async () => {
     const tokens = await auth.login({ email: user.email, password: 'test' });

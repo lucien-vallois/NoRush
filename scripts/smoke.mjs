@@ -351,11 +351,14 @@ try {
     },
   );
   await check(
-    "logout revokes the session: old access and refresh tokens die",
+    "logout revokes that session only: its tokens die, other sessions stay",
     async () => {
-      const fresh = await request("/auth/login", {
-        body: { email: "operador@flowback.com", password: "operador123" },
-      });
+      const credentials = {
+        email: "operador@flowback.com",
+        password: "operador123",
+      };
+      const fresh = await request("/auth/login", { body: credentials });
+      const other = await request("/auth/login", { body: credentials });
       await request("/auth/logout", {
         token: fresh.accessToken,
         status: 200,
@@ -368,6 +371,13 @@ try {
       await request("/auth/refresh", {
         body: { refreshToken: fresh.refreshToken },
         status: 401,
+      });
+      // Shared demo accounts: one visitor signing out must not end the others
+      await request("/auth/profile", { token: other.accessToken, status: 200 });
+      await request("/auth/logout", {
+        token: other.accessToken,
+        status: 200,
+        body: {},
       });
     },
   );

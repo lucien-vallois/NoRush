@@ -23,6 +23,7 @@ import { Roles } from '../../common/decorators/roles.decorator';
 import { User, UserRole } from '../../entities/user.entity';
 import { I18nService } from '../../i18n/i18n.service';
 import { CurrentLang } from '../../i18n/current-lang.decorator';
+import type { AuthenticatedUser } from './strategies/jwt.strategy';
 
 @ApiTags('Autenticação')
 @Controller('auth')
@@ -59,13 +60,34 @@ export class AuthController {
 
   @Post('logout')
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Fazer logout do sistema' })
-  @ApiResponse({ status: 200, description: 'Logout realizado com sucesso' })
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: 'Sign out this session',
+    description:
+      'Refuses the access and refresh tokens of this session from now on. Other sessions of the same user stay signed in.',
+  })
+  @ApiResponse({ status: 200, description: 'Signed out' })
   async logout(
-    @CurrentUser() user: User,
+    @CurrentUser() user: AuthenticatedUser,
     @CurrentLang() lang: string,
   ): Promise<{ message: string }> {
-    await this.authService.logout(user.id);
+    await this.authService.logout(user.id, user.sessionId);
+    return { message: this.i18n.translate(lang, 'exceptions.logoutSuccess') };
+  }
+
+  @Post('logout/all')
+  @HttpCode(HttpStatus.OK)
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: 'Sign out everywhere',
+    description: "Refuses every token issued to the user so far, on every device.",
+  })
+  @ApiResponse({ status: 200, description: 'Every session signed out' })
+  async logoutEverywhere(
+    @CurrentUser() user: AuthenticatedUser,
+    @CurrentLang() lang: string,
+  ): Promise<{ message: string }> {
+    await this.authService.logoutEverywhere(user.id);
     return { message: this.i18n.translate(lang, 'exceptions.logoutSuccess') };
   }
 
