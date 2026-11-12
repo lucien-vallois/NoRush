@@ -29,12 +29,48 @@ function report(): GaugeReport {
         gaugeId: 'SENSOR-001',
         highLevelThreshold: 4.2,
         hasInterface: true,
-        opening: { at: '2026-11-03T13:00:00.000Z', level: 3.7719, interfaceLevel: 2.54, totalL: bbl(300), oilL: bbl(100), waterL: bbl(200) },
-        closing: { at: '2026-11-04T13:00:00.000Z', level: 3.048, interfaceLevel: 1.8288, totalL: bbl(250), oilL: bbl(110), waterL: bbl(140) },
-        total: { opening: bbl(300), closing: bbl(250), removed: bbl(120), produced: bbl(70) },
-        oil: { opening: bbl(100), closing: bbl(110), removed: 0, produced: bbl(10) },
-        water: { opening: bbl(200), closing: bbl(140), removed: bbl(120), produced: bbl(60) },
-        removals: [{ layer: 'water', start: '2026-11-03T16:40:00.000Z', end: '2026-11-03T17:10:00.000Z', amountL: bbl(120) }],
+        opening: {
+          at: '2026-11-03T13:00:00.000Z',
+          level: 3.7719,
+          interfaceLevel: 2.54,
+          totalL: bbl(300),
+          oilL: bbl(100),
+          waterL: bbl(200),
+        },
+        closing: {
+          at: '2026-11-04T13:00:00.000Z',
+          level: 3.048,
+          interfaceLevel: 1.8288,
+          totalL: bbl(250),
+          oilL: bbl(110),
+          waterL: bbl(140),
+        },
+        total: {
+          opening: bbl(300),
+          closing: bbl(250),
+          removed: bbl(120),
+          produced: bbl(70),
+        },
+        oil: {
+          opening: bbl(100),
+          closing: bbl(110),
+          removed: 0,
+          produced: bbl(10),
+        },
+        water: {
+          opening: bbl(200),
+          closing: bbl(140),
+          removed: bbl(120),
+          produced: bbl(60),
+        },
+        removals: [
+          {
+            layer: 'water',
+            start: '2026-11-03T16:40:00.000Z',
+            end: '2026-11-03T17:10:00.000Z',
+            amountL: bbl(120),
+          },
+        ],
         maxLevel: 3.9,
         samples: 288,
         longestGapMinutes: 5,
@@ -58,10 +94,14 @@ describe('buildGaugeReportCsv', () => {
   it('writes gauges in ft-in, volumes in bbl and haul times on the pad clock', () => {
     const csv = buildGaugeReportCsv(report(), 'imperial');
     expect(csv.startsWith('﻿NoRush gauge report')).toBe(true);
-    expect(csv).toContain('From,2026-11-03 07:00,To,2026-11-04 07:00,Time zone,America/Chicago');
+    expect(csv).toContain(
+      'From,2026-11-03 07:00,To,2026-11-04 07:00,Time zone,America/Chicago',
+    );
     const row = csv.split('\r\n').find((l) => l.startsWith('FK-01'))!;
     expect(row).toContain(`"12' 4 1/2"""`);
-    expect(row).toContain(',100.00,110.00,0.00,10.00,200.00,140.00,120.00,60.00,70.00,');
+    expect(row).toContain(
+      ',100.00,110.00,0.00,10.00,200.00,140.00,120.00,60.00,70.00,',
+    );
     expect(row).toContain('water out 10:40-11:10: 120.00 bbl');
   });
 
@@ -79,7 +119,9 @@ describe('buildGaugeReportCsv', () => {
 });
 
 describe('GaugeReportService.resolve', () => {
-  const config = { get: (_key: string, fallback: unknown) => fallback } as unknown as ConfigService;
+  const config = {
+    get: (_key: string, fallback: unknown) => fallback,
+  } as unknown as ConfigService;
   const service = new GaugeReportService({} as DataSource, config);
   const now = Date.parse('2026-11-04T15:00:00Z');
 
@@ -104,7 +146,9 @@ describe('GaugeReportService.resolve', () => {
       fail('expected an error');
     } catch (error) {
       expect(error).toBeInstanceOf(BadRequestException);
-      expect((error as BadRequestException).getResponse()).toMatchObject({ code });
+      expect((error as BadRequestException).getResponse()).toMatchObject({
+        code,
+      });
     }
   });
 });

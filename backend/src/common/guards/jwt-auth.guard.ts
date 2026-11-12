@@ -1,4 +1,9 @@
-import { Injectable, ExecutionContext, UnauthorizedException, Logger } from '@nestjs/common';
+import {
+  Injectable,
+  ExecutionContext,
+  UnauthorizedException,
+  Logger,
+} from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { AuthGuard } from '@nestjs/passport';
 import { IS_PUBLIC_KEY } from '../decorators/public.decorator';
@@ -39,7 +44,7 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
     if (err || !user) {
       const request = context.switchToHttp().getRequest();
       this.logger.warn(
-        `Tentativa de acesso não autorizado: ${request.method} ${request.url} - ${info?.message || err?.message || 'Token inválido'}`
+        `Tentativa de acesso não autorizado: ${request.method} ${request.url} - ${info?.message || err?.message || 'Token inválido'}`,
       );
 
       throw err || new UnauthorizedException({ code: 'invalidToken' });

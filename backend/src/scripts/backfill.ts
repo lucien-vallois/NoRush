@@ -401,7 +401,10 @@ async function main(): Promise<void> {
       if (!tank) continue; // sensor de tanque fora do backfill (ex.: FK-06)
       if (s.type === 'float_switch') continue; // chave pontual, sem nível contínuo
       // um sensor por tanque; a haste magnetostritiva tem prioridade
-      if (!tank.gauge || (s.type === 'magnetostrictive' && tank.gaugeType !== 'magnetostrictive')) {
+      if (
+        !tank.gauge ||
+        (s.type === 'magnetostrictive' && tank.gaugeType !== 'magnetostrictive')
+      ) {
         tank.gauge = { id: s.id, sensorId: s.sensorId };
         tank.gaugeType = s.type;
       }
@@ -628,9 +631,9 @@ async function main(): Promise<void> {
     );
     // Plain PostgreSQL (no TimescaleDB, e.g. a hosted demo) has no chunks.
     const chunks = await client
-      .query<{ n: string }>(
-        `SELECT count(*) AS n FROM timescaledb_information.chunks WHERE hypertable_name = 'readings'`,
-      )
+      .query<{
+        n: string;
+      }>(`SELECT count(*) AS n FROM timescaledb_information.chunks WHERE hypertable_name = 'readings'`)
       .catch(() => ({ rows: [{ n: 'n/a (sem TimescaleDB)' }] }));
     const alertTypes = await client.query<any>(
       `SELECT type, severity, count(*)::int AS n FROM alerts GROUP BY type, severity ORDER BY type, severity`,

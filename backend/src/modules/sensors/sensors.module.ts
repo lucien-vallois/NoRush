@@ -13,9 +13,7 @@ import { SensorsService } from './sensors.service';
 import { SensorsController } from './sensors.controller';
 
 @Module({
-  imports: [
-    TypeOrmModule.forFeature([Sensor, Tank, Reading]),
-  ],
+  imports: [TypeOrmModule.forFeature([Sensor, Tank, Reading])],
   controllers: [SensorsController],
   providers: [SensorsService],
   exports: [SensorsService],

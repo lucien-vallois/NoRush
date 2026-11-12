@@ -1,12 +1,28 @@
-import { Injectable, Logger, NotFoundException, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  Logger,
+  NotFoundException,
+  BadRequestException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, SelectQueryBuilder, Between, MoreThanOrEqual, LessThanOrEqual, DataSource } from 'typeorm';
+import {
+  Repository,
+  SelectQueryBuilder,
+  Between,
+  MoreThanOrEqual,
+  LessThanOrEqual,
+  DataSource,
+} from 'typeorm';
 import { randomUUID } from 'crypto';
 import { Reading } from '../../entities/reading.entity';
 import { Sensor } from '../../entities/sensor.entity';
 import { Tank } from '../../entities/tank.entity';
 import { CreateReadingDto } from './dto/create-reading.dto';
-import { ReadingFiltersDto, READING_SORT_COLUMNS, READING_SORT_ORDERS } from './dto/reading-filters.dto';
+import {
+  ReadingFiltersDto,
+  READING_SORT_COLUMNS,
+  READING_SORT_ORDERS,
+} from './dto/reading-filters.dto';
 
 @Injectable()
 export class ReadingsService {
@@ -61,7 +77,7 @@ export class ReadingsService {
     await this.readingRepository.insert(reading);
 
     this.logger.debug(
-      `Nova leitura criada: sensor=${sensor.sensorId}, nível=${createReadingDto.level}m, volume=${volume}L`
+      `Nova leitura criada: sensor=${sensor.sensorId}, nível=${createReadingDto.level}m, volume=${volume}L`,
     );
 
     return reading;
@@ -82,10 +98,7 @@ export class ReadingsService {
     const offset = (page - 1) * limit;
     const totalPages = Math.ceil(total / limit);
 
-    const readings = await queryBuilder
-      .skip(offset)
-      .take(limit)
-      .getMany();
+    const readings = await queryBuilder.skip(offset).take(limit).getMany();
 
     return {
       readings,
@@ -109,7 +122,10 @@ export class ReadingsService {
     return reading;
   }
 
-  async findBySensor(sensorId: string, filters?: ReadingFiltersDto): Promise<{
+  async findBySensor(
+    sensorId: string,
+    filters?: ReadingFiltersDto,
+  ): Promise<{
     readings: Reading[];
     total: number;
     page: number;
@@ -120,7 +136,10 @@ export class ReadingsService {
     return this.findAll(queryFilters);
   }
 
-  async findByTank(tankId: string, filters?: ReadingFiltersDto): Promise<{
+  async findByTank(
+    tankId: string,
+    filters?: ReadingFiltersDto,
+  ): Promise<{
     readings: Reading[];
     total: number;
     page: number;
@@ -131,7 +150,10 @@ export class ReadingsService {
     return this.findAll(queryFilters);
   }
 
-  async getLatestBySensor(sensorId: string, limit: number = 10): Promise<Reading[]> {
+  async getLatestBySensor(
+    sensorId: string,
+    limit: number = 10,
+  ): Promise<Reading[]> {
     return this.readingRepository.find({
       where: { sensorId },
       relations: ['sensor', 'sensor.tank'],
@@ -140,7 +162,10 @@ export class ReadingsService {
     });
   }
 
-  async getLatestByTank(tankId: string, limit: number = 10): Promise<Reading[]> {
+  async getLatestByTank(
+    tankId: string,
+    limit: number = 10,
+  ): Promise<Reading[]> {
     return this.readingRepository
       .createQueryBuilder('reading')
       .leftJoinAndSelect('reading.sensor', 'sensor')
@@ -209,7 +234,8 @@ export class ReadingsService {
       min_level: r.min_level !== null ? Number(r.min_level) : null,
       avg_volume: r.avg_volume !== null ? Number(r.avg_volume) : null,
       avg_oil_level: r.avg_oil_level !== null ? Number(r.avg_oil_level) : null,
-      avg_water_level: r.avg_water_level !== null ? Number(r.avg_water_level) : null,
+      avg_water_level:
+        r.avg_water_level !== null ? Number(r.avg_water_level) : null,
       avg_quality: r.avg_quality !== null ? Number(r.avg_quality) : null,
       sample_count: Number(r.sample_count),
     }));
@@ -222,7 +248,12 @@ export class ReadingsService {
     };
   }
 
-  async getReadingStats(sensorId?: string, tankId?: string, startDate?: Date, endDate?: Date): Promise<any> {
+  async getReadingStats(
+    sensorId?: string,
+    tankId?: string,
+    startDate?: Date,
+    endDate?: Date,
+  ): Promise<any> {
     let queryBuilder = this.readingRepository
       .createQueryBuilder('reading')
       .select([
@@ -239,7 +270,9 @@ export class ReadingsService {
       ]);
 
     if (sensorId) {
-      queryBuilder = queryBuilder.where('reading.sensorId = :sensorId', { sensorId });
+      queryBuilder = queryBuilder.where('reading.sensorId = :sensorId', {
+        sensorId,
+      });
     }
 
     if (tankId) {
@@ -250,21 +283,38 @@ export class ReadingsService {
     }
 
     if (startDate && endDate) {
-      queryBuilder = queryBuilder.andWhere('reading.timestamp BETWEEN :startDate AND :endDate', {
+      queryBuilder = queryBuilder.andWhere(
+        'reading.timestamp BETWEEN :startDate AND :endDate',
+        {
+          startDate,
+          endDate,
+        },
+      );
+    } else if (startDate) {
+      queryBuilder = queryBuilder.andWhere('reading.timestamp >= :startDate', {
         startDate,
+      });
+    } else if (endDate) {
+      queryBuilder = queryBuilder.andWhere('reading.timestamp <= :endDate', {
         endDate,
       });
-    } else if (startDate) {
-      queryBuilder = queryBuilder.andWhere('reading.timestamp >= :startDate', { startDate });
-    } else if (endDate) {
-      queryBuilder = queryBuilder.andWhere('reading.timestamp <= :endDate', { endDate });
     }
 
     const stats = await queryBuilder.getRawOne();
 
     // Calcular estatísticas adicionais
-    const trend = await this.calculateTrend(sensorId, tankId, startDate, endDate);
-    const qualityDistribution = await this.getQualityDistribution(sensorId, tankId, startDate, endDate);
+    const trend = await this.calculateTrend(
+      sensorId,
+      tankId,
+      startDate,
+      endDate,
+    );
+    const qualityDistribution = await this.getQualityDistribution(
+      sensorId,
+      tankId,
+      startDate,
+      endDate,
+    );
 
     return {
       summary: {
@@ -290,14 +340,21 @@ export class ReadingsService {
     return row?.[key] ?? row?.[key.toLowerCase()];
   }
 
-  private async calculateTrend(sensorId?: string, tankId?: string, startDate?: Date, endDate?: Date): Promise<any> {
+  private async calculateTrend(
+    sensorId?: string,
+    tankId?: string,
+    startDate?: Date,
+    endDate?: Date,
+  ): Promise<any> {
     // Dividir o período em duas metades para calcular tendência
     let midDate: Date;
 
     if (startDate && endDate) {
       const start = new Date(startDate);
       const end = new Date(endDate);
-      midDate = new Date(start.getTime() + (end.getTime() - start.getTime()) / 2);
+      midDate = new Date(
+        start.getTime() + (end.getTime() - start.getTime()) / 2,
+      );
     } else {
       // Últimas 24 horas divididas ao meio
       const now = new Date();
@@ -318,8 +375,12 @@ export class ReadingsService {
       .where('reading.timestamp >= :midDate', { midDate });
 
     if (sensorId) {
-      queryBuilder1 = queryBuilder1.andWhere('reading.sensorId = :sensorId', { sensorId });
-      queryBuilder2 = queryBuilder2.andWhere('reading.sensorId = :sensorId', { sensorId });
+      queryBuilder1 = queryBuilder1.andWhere('reading.sensorId = :sensorId', {
+        sensorId,
+      });
+      queryBuilder2 = queryBuilder2.andWhere('reading.sensorId = :sensorId', {
+        sensorId,
+      });
     }
 
     if (tankId) {
@@ -362,7 +423,12 @@ export class ReadingsService {
     };
   }
 
-  private async getQualityDistribution(sensorId?: string, tankId?: string, startDate?: Date, endDate?: Date): Promise<any> {
+  private async getQualityDistribution(
+    sensorId?: string,
+    tankId?: string,
+    startDate?: Date,
+    endDate?: Date,
+  ): Promise<any> {
     let queryBuilder = this.readingRepository
       .createQueryBuilder('reading')
       .select([
@@ -373,7 +439,9 @@ export class ReadingsService {
       ]);
 
     if (sensorId) {
-      queryBuilder = queryBuilder.where('reading.sensorId = :sensorId', { sensorId });
+      queryBuilder = queryBuilder.where('reading.sensorId = :sensorId', {
+        sensorId,
+      });
     }
 
     if (tankId) {
@@ -384,10 +452,13 @@ export class ReadingsService {
     }
 
     if (startDate && endDate) {
-      queryBuilder = queryBuilder.andWhere('reading.timestamp BETWEEN :startDate AND :endDate', {
-        startDate,
-        endDate,
-      });
+      queryBuilder = queryBuilder.andWhere(
+        'reading.timestamp BETWEEN :startDate AND :endDate',
+        {
+          startDate,
+          endDate,
+        },
+      );
     }
 
     const qualityStats = await queryBuilder.getRawOne();
@@ -395,9 +466,9 @@ export class ReadingsService {
     // Distribuição por faixas de qualidade
     const distribution = {
       excellent: 0, // 90-100%
-      good: 0,      // 70-89%
-      fair: 0,      // 50-69%
-      poor: 0,      // 0-49%
+      good: 0, // 70-89%
+      fair: 0, // 50-69%
+      poor: 0, // 0-49%
     };
 
     const avgQualityRaw = this.raw(qualityStats, 'avgQuality');
@@ -412,20 +483,27 @@ export class ReadingsService {
     }
 
     return {
-      average: Math.round((parseFloat(this.raw(qualityStats, 'avgQuality')) || 0) * 100) / 100,
+      average:
+        Math.round(
+          (parseFloat(this.raw(qualityStats, 'avgQuality')) || 0) * 100,
+        ) / 100,
       minimum: parseInt(this.raw(qualityStats, 'minQuality')) || 0,
       maximum: parseInt(this.raw(qualityStats, 'maxQuality')) || 0,
       distribution,
     };
   }
 
-  async getHourlyAggregates(sensorId?: string, tankId?: string, hours: number = 24): Promise<any[]> {
+  async getHourlyAggregates(
+    sensorId?: string,
+    tankId?: string,
+    hours: number = 24,
+  ): Promise<any[]> {
     const startDate = new Date(Date.now() - hours * 60 * 60 * 1000);
 
     let queryBuilder = this.readingRepository
       .createQueryBuilder('reading')
       .select([
-        'DATE_TRUNC(\'hour\', reading.timestamp) as hour',
+        "DATE_TRUNC('hour', reading.timestamp) as hour",
         'AVG(reading.level) as avgLevel',
         'MIN(reading.level) as minLevel',
         'MAX(reading.level) as maxLevel',
@@ -433,11 +511,13 @@ export class ReadingsService {
         'COUNT(*) as readingCount',
       ])
       .where('reading.timestamp >= :startDate', { startDate })
-      .groupBy('DATE_TRUNC(\'hour\', reading.timestamp)')
+      .groupBy("DATE_TRUNC('hour', reading.timestamp)")
       .orderBy('hour', 'ASC');
 
     if (sensorId) {
-      queryBuilder = queryBuilder.andWhere('reading.sensorId = :sensorId', { sensorId });
+      queryBuilder = queryBuilder.andWhere('reading.sensorId = :sensorId', {
+        sensorId,
+      });
     }
 
     if (tankId) {
@@ -449,7 +529,7 @@ export class ReadingsService {
 
     const aggregates = await queryBuilder.getRawMany();
 
-    return aggregates.map(agg => ({
+    return aggregates.map((agg) => ({
       hour: agg.hour,
       avgLevel: Math.round(parseFloat(agg.avgLevel) * 100) / 100,
       minLevel: Math.round(parseFloat(agg.minLevel) * 100) / 100,
@@ -466,7 +546,9 @@ export class ReadingsService {
       timestamp: LessThanOrEqual(cutoffDate) as any,
     });
 
-    this.logger.log(`Deletadas ${result.affected} leituras antigas (antes de ${cutoffDate.toISOString()})`);
+    this.logger.log(
+      `Deletadas ${result.affected} leituras antigas (antes de ${cutoffDate.toISOString()})`,
+    );
 
     return result.affected || 0;
   }
@@ -480,7 +562,9 @@ export class ReadingsService {
       .where('reading.volume IS NULL OR reading.isProcessed = false');
 
     if (sensorId) {
-      queryBuilder = queryBuilder.andWhere('reading.sensorId = :sensorId', { sensorId });
+      queryBuilder = queryBuilder.andWhere('reading.sensorId = :sensorId', {
+        sensorId,
+      });
     }
 
     const readings = await queryBuilder.getMany();
@@ -507,7 +591,9 @@ export class ReadingsService {
     return updatedCount;
   }
 
-  private buildFilteredQuery(filters?: ReadingFiltersDto): SelectQueryBuilder<Reading> {
+  private buildFilteredQuery(
+    filters?: ReadingFiltersDto,
+  ): SelectQueryBuilder<Reading> {
     const queryBuilder = this.readingRepository
       .createQueryBuilder('reading')
       .leftJoinAndSelect('reading.sensor', 'sensor')
@@ -516,7 +602,9 @@ export class ReadingsService {
     if (!filters) return queryBuilder;
 
     if (filters.sensorId) {
-      queryBuilder.andWhere('reading.sensorId = :sensorId', { sensorId: filters.sensorId });
+      queryBuilder.andWhere('reading.sensorId = :sensorId', {
+        sensorId: filters.sensorId,
+      });
     }
 
     if (filters.tankId) {
@@ -524,10 +612,13 @@ export class ReadingsService {
     }
 
     if (filters.startDate && filters.endDate) {
-      queryBuilder.andWhere('reading.timestamp BETWEEN :startDate AND :endDate', {
-        startDate: new Date(filters.startDate),
-        endDate: new Date(filters.endDate),
-      });
+      queryBuilder.andWhere(
+        'reading.timestamp BETWEEN :startDate AND :endDate',
+        {
+          startDate: new Date(filters.startDate),
+          endDate: new Date(filters.endDate),
+        },
+      );
     } else if (filters.startDate) {
       queryBuilder.andWhere('reading.timestamp >= :startDate', {
         startDate: new Date(filters.startDate),
@@ -539,23 +630,33 @@ export class ReadingsService {
     }
 
     if (filters.minLevel !== undefined) {
-      queryBuilder.andWhere('reading.level >= :minLevel', { minLevel: filters.minLevel });
+      queryBuilder.andWhere('reading.level >= :minLevel', {
+        minLevel: filters.minLevel,
+      });
     }
 
     if (filters.maxLevel !== undefined) {
-      queryBuilder.andWhere('reading.level <= :maxLevel', { maxLevel: filters.maxLevel });
+      queryBuilder.andWhere('reading.level <= :maxLevel', {
+        maxLevel: filters.maxLevel,
+      });
     }
 
     if (filters.minVolume !== undefined) {
-      queryBuilder.andWhere('reading.volume >= :minVolume', { minVolume: filters.minVolume });
+      queryBuilder.andWhere('reading.volume >= :minVolume', {
+        minVolume: filters.minVolume,
+      });
     }
 
     if (filters.maxVolume !== undefined) {
-      queryBuilder.andWhere('reading.volume <= :maxVolume', { maxVolume: filters.maxVolume });
+      queryBuilder.andWhere('reading.volume <= :maxVolume', {
+        maxVolume: filters.maxVolume,
+      });
     }
 
     if (filters.minQuality !== undefined) {
-      queryBuilder.andWhere('reading.quality >= :minQuality', { minQuality: filters.minQuality });
+      queryBuilder.andWhere('reading.quality >= :minQuality', {
+        minQuality: filters.minQuality,
+      });
     }
 
     if (filters.calibratedOnly) {
@@ -569,7 +670,8 @@ export class ReadingsService {
     // Ordenação — o valor entra no SQL, então aceita apenas a whitelist do DTO
     const requested = filters.sortBy;
     const sortBy =
-      requested && (READING_SORT_COLUMNS as readonly string[]).includes(requested)
+      requested &&
+      (READING_SORT_COLUMNS as readonly string[]).includes(requested)
         ? requested
         : 'timestamp';
     const sortOrder = filters.sortOrder === 'ASC' ? 'ASC' : 'DESC';

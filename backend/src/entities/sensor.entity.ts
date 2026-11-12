@@ -1,4 +1,13 @@
-import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn, ManyToOne, OneToMany, JoinColumn } from 'typeorm';
+import {
+  Entity,
+  Column,
+  PrimaryGeneratedColumn,
+  CreateDateColumn,
+  UpdateDateColumn,
+  ManyToOne,
+  OneToMany,
+  JoinColumn,
+} from 'typeorm';
 import { NumericTransformer } from '../common/transformers/numeric.transformer';
 import { Tank } from './tank.entity';
 import { Reading } from './reading.entity';
@@ -65,7 +74,7 @@ export class Sensor {
   @Column('uuid')
   tankId: string;
 
-  @ManyToOne(() => Tank, tank => tank.sensors, { onDelete: 'CASCADE' })
+  @ManyToOne(() => Tank, (tank) => tank.sensors, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'tankId' })
   tank: Tank;
 
@@ -77,23 +86,48 @@ export class Sensor {
   status: SensorStatus;
 
   // Configurações elétricas
-  @Column('decimal', { precision: 5, scale: 2, nullable: true, transformer: new NumericTransformer() })
+  @Column('decimal', {
+    precision: 5,
+    scale: 2,
+    nullable: true,
+    transformer: new NumericTransformer(),
+  })
   batteryLevel: number; // Nível de bateria em porcentagem (0-100)
 
   @Column({ nullable: true })
   batteryLastUpdate: Date;
 
-  @Column('decimal', { precision: 6, scale: 2, nullable: true, transformer: new NumericTransformer() })
+  @Column('decimal', {
+    precision: 6,
+    scale: 2,
+    nullable: true,
+    transformer: new NumericTransformer(),
+  })
   powerVoltage: number; // Tensão de alimentação em volts
 
   // Configurações de medição
-  @Column('decimal', { precision: 5, scale: 2, nullable: true, transformer: new NumericTransformer() })
+  @Column('decimal', {
+    precision: 5,
+    scale: 2,
+    nullable: true,
+    transformer: new NumericTransformer(),
+  })
   measurementRangeMin: number; // Faixa de medição mínima em metros
 
-  @Column('decimal', { precision: 5, scale: 2, nullable: true, transformer: new NumericTransformer() })
+  @Column('decimal', {
+    precision: 5,
+    scale: 2,
+    nullable: true,
+    transformer: new NumericTransformer(),
+  })
   measurementRangeMax: number; // Faixa de medição máxima em metros
 
-  @Column('decimal', { precision: 4, scale: 2, nullable: true, transformer: new NumericTransformer() })
+  @Column('decimal', {
+    precision: 4,
+    scale: 2,
+    nullable: true,
+    transformer: new NumericTransformer(),
+  })
   accuracy: number; // Precisão em metros ou porcentagem
 
   // Status de conectividade
@@ -144,7 +178,7 @@ export class Sensor {
   updatedAt: Date;
 
   // Relacionamentos
-  @OneToMany(() => Reading, reading => reading.sensor)
+  @OneToMany(() => Reading, (reading) => reading.sensor)
   readings: Reading[];
 
   // Métodos de instância

@@ -1,7 +1,19 @@
-import { IsUUID, IsNumber, IsOptional, IsObject, Min, Max, IsDateString, IsBoolean } from 'class-validator';
+import {
+  IsUUID,
+  IsNumber,
+  IsOptional,
+  IsObject,
+  Min,
+  Max,
+  IsDateString,
+  IsBoolean,
+} from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
-import { OilWaterInterfaceDto, SensorMetadataDto } from '../../iot-gateway/dto/sensor-message.dto';
+import {
+  OilWaterInterfaceDto,
+  SensorMetadataDto,
+} from '../../iot-gateway/dto/sensor-message.dto';
 
 export class CreateReadingDto {
   @ApiProperty({
@@ -20,7 +32,7 @@ export class CreateReadingDto {
 
   @ApiPropertyOptional({
     description: 'Volume calculado em litros',
-    example: 2450.50,
+    example: 2450.5,
   })
   @IsOptional()
   @IsNumber()

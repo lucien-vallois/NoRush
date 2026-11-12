@@ -1,7 +1,6 @@
 import { resolveDbEnv } from './db-env';
 
-const from = (env: Record<string, string>) =>
-  resolveDbEnv((key) => env[key]);
+const from = (env: Record<string, string>) => resolveDbEnv((key) => env[key]);
 
 describe('resolveDbEnv', () => {
   it('falls back to the local Docker Compose database', () => {
@@ -71,8 +70,8 @@ describe('resolveDbEnv', () => {
   });
 
   it('ignores empty variables instead of connecting with blank values', () => {
-    expect(from({ DB_HOST: '', DATABASE_URL: 'postgres://u:p@url-host/db' }).host).toBe(
-      'url-host',
-    );
+    expect(
+      from({ DB_HOST: '', DATABASE_URL: 'postgres://u:p@url-host/db' }).host,
+    ).toBe('url-host');
   });
 });

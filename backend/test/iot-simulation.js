@@ -64,9 +64,19 @@ const TANK_SCENARIOS = {
   'FK-01': { level: 1.8, flow: 1.2, label: 'enchendo 1.2 m³/h' },
   'FK-02': { level: 3.8, flow: 2.5, label: 'enchimento rápido 2.5 m³/h' },
   'FK-03': { level: 1.4, flow: -2.0, label: 'esvaziando 2.0 m³/h' },
-  'FK-04': { level: 3.1, flow: 0, jitter: 0.05, label: 'estático (±0.05 m³/h)' },
+  'FK-04': {
+    level: 3.1,
+    flow: 0,
+    jitter: 0.05,
+    label: 'estático (±0.05 m³/h)',
+  },
   'FK-05': { level: 4.45, flow: 0.8, label: 'enchendo devagar 0.8 m³/h' },
-  'FK-06': { level: 0.25, flow: 0, offline: true, label: 'em manutenção — offline' },
+  'FK-06': {
+    level: 0.25,
+    flow: 0,
+    offline: true,
+    label: 'em manutenção — offline',
+  },
 };
 
 // Registro sensor -> tanque: uma haste de duas boias por tanque (mesma ordem do seed.ts)
@@ -81,11 +91,16 @@ const SENSOR_REGISTRY = {
 
 // Sensores ativos por padrão: todos, exceto os do tanque em manutenção (FK-06)
 const DEFAULT_SENSORS = Object.keys(SENSOR_REGISTRY).filter(
-  (id) => !TANK_SCENARIOS[SENSOR_REGISTRY[id].tank].offline
+  (id) => !TANK_SCENARIOS[SENSOR_REGISTRY[id].tank].offline,
 );
 
 // Falha programada: bateria doente no SENSOR-004 (drena ~50x mais rápido e silencia)
-const DYING_SENSOR = { id: 'SENSOR-004', startBattery: 12, drainPerTx: 0.5, silentBelow: 5 };
+const DYING_SENSOR = {
+  id: 'SENSOR-004',
+  startBattery: 12,
+  drainPerTx: 0.5,
+  silentBelow: 5,
+};
 
 // ============================== CONFIGURAÇÃO ==============================
 
@@ -107,7 +122,10 @@ const config = {
     path: '/iot/sensors/data',
   },
   simulation: {
-    sensors: (process.env.SENSORS ? process.env.SENSORS : DEFAULT_SENSORS.join(','))
+    sensors: (process.env.SENSORS
+      ? process.env.SENSORS
+      : DEFAULT_SENSORS.join(',')
+    )
       .split(',')
       .map((s) => s.trim())
       .filter(Boolean),
@@ -226,7 +244,11 @@ function advanceTanks(dtSimMs) {
     // FK-04: micro-ruído na vazão; demais: vazão do cenário
     const flow = sc.jitter ? (Math.random() * 2 - 1) * sc.jitter : sc.flow;
     st.lastFlow = flow;
-    st.level = clamp(st.level + (flow / TANK_AREA_M2) * dtHours, LEVEL_MIN_M, LEVEL_MAX_M);
+    st.level = clamp(
+      st.level + (flow / TANK_AREA_M2) * dtHours,
+      LEVEL_MIN_M,
+      LEVEL_MAX_M,
+    );
   }
 }
 
@@ -238,22 +260,32 @@ function advanceTanks(dtSimMs) {
 function sampleSensor(sensorId) {
   const reg = SENSOR_REGISTRY[sensorId];
   if (!reg) {
-    throw new Error(`Sensor desconhecido: ${sensorId} (use um de SENSOR-001..SENSOR-006)`);
+    throw new Error(
+      `Sensor desconhecido: ${sensorId} (use um de SENSOR-001..SENSOR-006)`,
+    );
   }
   const tank = getTankState(reg.tank);
   const s = getSensorState(sensorId);
 
   // Bateria: dreno por transmissão + recarga solar (teto 100%)
-  const drain = sensorId === DYING_SENSOR.id ? DYING_SENSOR.drainPerTx : BATTERY_DRAIN_PER_TX;
+  const drain =
+    sensorId === DYING_SENSOR.id
+      ? DYING_SENSOR.drainPerTx
+      : BATTERY_DRAIN_PER_TX;
   s.battery = clamp(s.battery - drain, 0, 100);
-  if (s.solar) s.battery = clamp(s.battery + Math.random() * BATTERY_SOLAR_GAIN, 0, 100);
+  if (s.solar)
+    s.battery = clamp(s.battery + Math.random() * BATTERY_SOLAR_GAIN, 0, 100);
   s.txCount += 1;
 
   // Falha programada: a haste com bateria doente silencia quando a bateria crítica esgota
-  if (!s.silent && sensorId === DYING_SENSOR.id && s.battery <= DYING_SENSOR.silentBelow) {
+  if (
+    !s.silent &&
+    sensorId === DYING_SENSOR.id &&
+    s.battery <= DYING_SENSOR.silentBelow
+  ) {
     s.silent = true;
     console.log(
-      `🔴 FALHA PROGRAMADA: ${sensorId} (${reg.tank}) bateria esgotada (${s.battery.toFixed(2)}%) — sensor OFFLINE, parando de transmitir`
+      `🔴 FALHA PROGRAMADA: ${sensorId} (${reg.tank}) bateria esgotada (${s.battery.toFixed(2)}%) — sensor OFFLINE, parando de transmitir`,
     );
   }
 
@@ -312,7 +344,9 @@ const stats = {
 function dropPacket(sensorId, data) {
   if (Math.random() >= PACKET_LOSS_RATE) return false;
   stats.messagesDropped += 1;
-  console.log(`📵 ${sensorId} (${SENSOR_REGISTRY[sensorId].tank}): pacote PERDIDO (nível ${data.level}m não publicado)`);
+  console.log(
+    `📵 ${sensorId} (${SENSOR_REGISTRY[sensorId].tank}): pacote PERDIDO (nível ${data.level}m não publicado)`,
+  );
   return true;
 }
 
@@ -323,12 +357,17 @@ function generateSensorData(sensorId, dtSimMs = 0) {
     const st = getTankState(SENSOR_REGISTRY[sensorId].tank);
     const dtHours = dtSimMs / 1000 / 3600;
     st.lastFlow = TANK_SCENARIOS[SENSOR_REGISTRY[sensorId].tank].flow;
-    st.level = clamp(st.level + (st.lastFlow / TANK_AREA_M2) * dtHours, LEVEL_MIN_M, LEVEL_MAX_M);
+    st.level = clamp(
+      st.level + (st.lastFlow / TANK_AREA_M2) * dtHours,
+      LEVEL_MIN_M,
+      LEVEL_MAX_M,
+    );
   }
   // Credencial de ingestão: SIM_DEVICE_TOKEN (credencial individual de um
   // dispositivo provisionado em /devices) tem precedência sobre a chave
   // compartilhada IOT_INGEST_KEY usada pela demonstração.
-  const authToken = process.env.SIM_DEVICE_TOKEN || process.env.IOT_INGEST_KEY || undefined;
+  const authToken =
+    process.env.SIM_DEVICE_TOKEN || process.env.IOT_INGEST_KEY || undefined;
   return { ...sampleSensor(sensorId), authToken };
 }
 
@@ -344,17 +383,22 @@ function sendMQTT(sensorId) {
 
   const payload = JSON.stringify(data);
 
-  mqttClient.publish(config.mqtt.topic, payload, { qos: 1, retain: false }, (err) => {
-    stats.messagesSent++;
+  mqttClient.publish(
+    config.mqtt.topic,
+    payload,
+    { qos: 1, retain: false },
+    (err) => {
+      stats.messagesSent++;
 
-    if (err) {
-      stats.messagesError++;
-      console.error(`❌ Erro ao enviar MQTT para ${sensorId}:`, err.message);
-    } else {
-      stats.messagesSuccess++;
-      logTransmission(data, 'MQTT');
-    }
-  });
+      if (err) {
+        stats.messagesError++;
+        console.error(`❌ Erro ao enviar MQTT para ${sensorId}:`, err.message);
+      } else {
+        stats.messagesSuccess++;
+        logTransmission(data, 'MQTT');
+      }
+    },
+  );
 }
 
 // Função para enviar dados via HTTP
@@ -391,7 +435,9 @@ function sendHTTP(sensorId) {
         logTransmission(data, `HTTP ${res.statusCode}`);
       } else {
         stats.messagesError++;
-        console.error(`❌ HTTP erro para ${sensorId}: status=${res.statusCode}, resposta=${responseData}`);
+        console.error(
+          `❌ HTTP erro para ${sensorId}: status=${res.statusCode}, resposta=${responseData}`,
+        );
       }
     });
   });
@@ -413,7 +459,7 @@ function logTransmission(data, proto) {
     ? ` óleo/água=${data.oilWaterInterface.oilLevel.toFixed(2)}/${data.oilWaterInterface.waterLevel.toFixed(2)}m`
     : '';
   console.log(
-    `📡 ${proto} ${data.sensorId} (${reg.tank} float stick): nível=${data.level}m${ifc} bateria=${data.batteryLevel.toFixed(2)}% sinal=${data.metadata.signalStrength}dBm`
+    `📡 ${proto} ${data.sensorId} (${reg.tank} float stick): nível=${data.level}m${ifc} bateria=${data.batteryLevel.toFixed(2)}% sinal=${data.metadata.signalStrength}dBm`,
   );
 }
 
@@ -421,7 +467,9 @@ function logTransmission(data, proto) {
 
 function connectMQTT() {
   return new Promise((resolve, reject) => {
-    console.log(`🔌 Conectando ao MQTT: ${config.mqtt.host}:${config.mqtt.port}`);
+    console.log(
+      `🔌 Conectando ao MQTT: ${config.mqtt.host}:${config.mqtt.port}`,
+    );
 
     const client = mqtt.connect({
       host: config.mqtt.host,
@@ -465,15 +513,29 @@ function printStats() {
   const duration = (stats.endTime - stats.startTime) / 1000;
   const simHours = simClock.simElapsedMs / 3600000;
   const attempts = stats.messagesSent + stats.messagesDropped;
-  const successRate = stats.messagesSent > 0 ? (stats.messagesSuccess / stats.messagesSent * 100).toFixed(1) : '0.0';
-  const dropRate = attempts > 0 ? (stats.messagesDropped / attempts * 100).toFixed(1) : '0.0';
+  const successRate =
+    stats.messagesSent > 0
+      ? ((stats.messagesSuccess / stats.messagesSent) * 100).toFixed(1)
+      : '0.0';
+  const dropRate =
+    attempts > 0
+      ? ((stats.messagesDropped / attempts) * 100).toFixed(1)
+      : '0.0';
   const messagesPerSecond = (attempts / duration).toFixed(2);
 
   console.log('\n📊 === ESTATÍSTICAS DA SIMULAÇÃO ===');
-  console.log(`⏱️  Duração real: ${duration.toFixed(1)}s | Tempo simulado: ${simHours.toFixed(2)}h (${simClock.ticks} ciclos)`);
-  console.log(`📤 Transmissões: ${attempts} (publicadas: ${stats.messagesSent}, perdidas: ${stats.messagesDropped} — ${dropRate}%)`);
-  console.log(`✅ Sucesso: ${stats.messagesSuccess} | ❌ Erros: ${stats.messagesError}`);
-  console.log(`📈 Taxa de sucesso: ${successRate}% | ⚡ Throughput: ${messagesPerSecond} msg/s`);
+  console.log(
+    `⏱️  Duração real: ${duration.toFixed(1)}s | Tempo simulado: ${simHours.toFixed(2)}h (${simClock.ticks} ciclos)`,
+  );
+  console.log(
+    `📤 Transmissões: ${attempts} (publicadas: ${stats.messagesSent}, perdidas: ${stats.messagesDropped} — ${dropRate}%)`,
+  );
+  console.log(
+    `✅ Sucesso: ${stats.messagesSuccess} | ❌ Erros: ${stats.messagesError}`,
+  );
+  console.log(
+    `📈 Taxa de sucesso: ${successRate}% | ⚡ Throughput: ${messagesPerSecond} msg/s`,
+  );
 
   // Bateria final por sensor
   console.log('\n🔋 Bateria final por sensor:');
@@ -489,7 +551,9 @@ function printStats() {
       continue;
     }
     const flag = s.silent ? ' ☠️ OFFLINE (bateria esgotada)' : '';
-    console.log(`   ${id} (${reg.tank}): ${s.battery.toFixed(2)}% [${s.txCount} tx]${flag}`);
+    console.log(
+      `   ${id} (${reg.tank}): ${s.battery.toFixed(2)}% [${s.txCount} tx]${flag}`,
+    );
   }
 
   // Nível final por tanque
@@ -502,7 +566,7 @@ function printStats() {
     const st = getTankState(code);
     const delta = st.level - st.initialLevel;
     console.log(
-      `   ${code}: ${st.initialLevel.toFixed(3)}m -> ${st.level.toFixed(3)}m (Δ ${delta >= 0 ? '+' : ''}${delta.toFixed(3)}m | ${sc.label})`
+      `   ${code}: ${st.initialLevel.toFixed(3)}m -> ${st.level.toFixed(3)}m (Δ ${delta >= 0 ? '+' : ''}${delta.toFixed(3)}m | ${sc.label})`,
     );
   }
   console.log('=====================================\n');
@@ -511,8 +575,12 @@ function printStats() {
 // Cabeçalho com o cenário completo (para conferir a física antes de rodar)
 function printScenario() {
   const dtSimMs = config.simulation.interval * config.simulation.speed;
-  console.log(`⚡ SIM_SPEED=${config.simulation.speed} (1s real = ${config.simulation.speed}s simulados)`);
-  console.log(`🕐 Ciclo de ${config.simulation.interval}ms real = ${(dtSimMs / 1000).toFixed(0)}s simulados | área do tanque = ${TANK_AREA_M2.toFixed(3)} m²`);
+  console.log(
+    `⚡ SIM_SPEED=${config.simulation.speed} (1s real = ${config.simulation.speed}s simulados)`,
+  );
+  console.log(
+    `🕐 Ciclo de ${config.simulation.interval}ms real = ${(dtSimMs / 1000).toFixed(0)}s simulados | área do tanque = ${TANK_AREA_M2.toFixed(3)} m²`,
+  );
   console.log('\n🛢️  Cenários por tanque (Δ nível por ciclo):');
   for (const [code, sc] of Object.entries(TANK_SCENARIOS)) {
     if (sc.offline) {
@@ -521,10 +589,12 @@ function printScenario() {
     }
     const dLevel = (sc.flow / TANK_AREA_M2) * (dtSimMs / 3600000); // metros por ciclo
     console.log(
-      `   ${code}: inicia ${sc.level.toFixed(2)}m — ${sc.label} (Δ ${dLevel >= 0 ? '+' : ''}${(dLevel * 1000).toFixed(1)}mm/ciclo)`
+      `   ${code}: inicia ${sc.level.toFixed(2)}m — ${sc.label} (Δ ${dLevel >= 0 ? '+' : ''}${(dLevel * 1000).toFixed(1)}mm/ciclo)`,
     );
   }
-  console.log(`\n🔋 ${DYING_SENSOR.id}: bateria crítica inicial ${DYING_SENSOR.startBattery}% (drena ${DYING_SENSOR.drainPerTx}%/tx, silencia em ${DYING_SENSOR.silentBelow}%)`);
+  console.log(
+    `\n🔋 ${DYING_SENSOR.id}: bateria crítica inicial ${DYING_SENSOR.startBattery}% (drena ${DYING_SENSOR.drainPerTx}%/tx, silencia em ${DYING_SENSOR.silentBelow}%)`,
+  );
   console.log('');
 }
 
@@ -540,7 +610,9 @@ function resolveActiveSensors() {
       continue;
     }
     if (TANK_SCENARIOS[reg.tank].offline) {
-      console.warn(`⚠️  ${id}: tanque ${reg.tank} em manutenção — não transmite`);
+      console.warn(
+        `⚠️  ${id}: tanque ${reg.tank} em manutenção — não transmite`,
+      );
       continue;
     }
     active.push(id);
@@ -553,7 +625,9 @@ async function main() {
   console.log('🚀 Iniciando Simulação IoT (física) - Flowback Platform');
   console.log(`📋 Protocolo: ${config.simulation.protocol.toUpperCase()}`);
   console.log(`🔧 Sensores: ${config.simulation.sensors.join(', ')}`);
-  console.log(`⏰ Intervalo: ${config.simulation.interval}ms | ⏳ Duração: ${config.simulation.duration}ms`);
+  console.log(
+    `⏰ Intervalo: ${config.simulation.interval}ms | ⏳ Duração: ${config.simulation.duration}ms`,
+  );
   printScenario();
 
   const activeSensors = resolveActiveSensors();
@@ -595,7 +669,9 @@ async function main() {
   // Encerramento programado
   const shutdown = (reason) => {
     clearInterval(interval);
-    stats.silentSensors = Object.values(sensorState).filter((s) => s.silent).length;
+    stats.silentSensors = Object.values(sensorState).filter(
+      (s) => s.silent,
+    ).length;
 
     if (config.simulation.protocol === 'mqtt') {
       disconnectMQTT();
@@ -613,7 +689,9 @@ async function main() {
   if (config.simulation.duration > 0) {
     setTimeout(() => shutdown('duração atingida'), config.simulation.duration);
   } else {
-    console.log('♾️  SIM_DURATION=0 — simulação contínua (encerrar com SIGTERM)');
+    console.log(
+      '♾️  SIM_DURATION=0 — simulação contínua (encerrar com SIGTERM)',
+    );
   }
 
   // Tratamento de sinais para encerramento graceful
@@ -638,7 +716,9 @@ if (require.main === module) {
     console.error('  node iot-simulation.js mqtt   # Simulação via MQTT');
     console.error('  node iot-simulation.js http   # Simulação via HTTP');
     console.error('  node iot-simulation.js        # Padrão: MQTT');
-    console.error('Env: SIM_INTERVAL, SIM_DURATION (0 = contínua), SIM_SPEED, SENSORS, MQTT_HOST, MQTT_PORT, MQTT_TOPIC_SENSOR_DATA, HTTP_URL, HTTP_HOST, HTTP_PORT');
+    console.error(
+      'Env: SIM_INTERVAL, SIM_DURATION (0 = contínua), SIM_SPEED, SENSORS, MQTT_HOST, MQTT_PORT, MQTT_TOPIC_SENSOR_DATA, HTTP_URL, HTTP_HOST, HTTP_PORT',
+    );
     process.exit(1);
   }
 

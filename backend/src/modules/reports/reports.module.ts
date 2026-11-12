@@ -17,9 +17,7 @@ import { ReportDataService } from './services/report-data.service';
 import { ReportsController } from './reports.controller';
 
 @Module({
-  imports: [
-    TypeOrmModule.forFeature([Tank, Sensor, Reading, Alert]),
-  ],
+  imports: [TypeOrmModule.forFeature([Tank, Sensor, Reading, Alert])],
   controllers: [ReportsController],
   providers: [
     ReportsService,

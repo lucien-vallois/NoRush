@@ -106,7 +106,10 @@ export class DeviceCommandsService {
     this.prune();
     const tracked = this.commands.get(requestId);
     if (!tracked) {
-      throw new NotFoundException({ code: 'commandRequestNotFound', requestId });
+      throw new NotFoundException({
+        code: 'commandRequestNotFound',
+        requestId,
+      });
     }
 
     if (

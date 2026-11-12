@@ -29,7 +29,8 @@ export class TankDimensionsDto {
   diameter: number;
 
   @ApiPropertyOptional({
-    description: 'Volume nominal (L). Se omitido: último ponto da tabela de arqueação ou cilindro vertical.',
+    description:
+      'Volume nominal (L). Se omitido: último ponto da tabela de arqueação ou cilindro vertical.',
     example: 64000,
   })
   @IsOptional()

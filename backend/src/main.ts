@@ -19,7 +19,8 @@ async function bootstrap() {
   // proxy. Off when the API is exposed directly, where that header could be
   // forged to dodge the limit. TRUST_PROXY = number of proxy hops.
   const trustProxy =
-    process.env.TRUST_PROXY ?? (process.env.RAILWAY_ENVIRONMENT ? '1' : undefined);
+    process.env.TRUST_PROXY ??
+    (process.env.RAILWAY_ENVIRONMENT ? '1' : undefined);
   if (trustProxy) {
     app.set(
       'trust proxy',
@@ -31,9 +32,7 @@ async function bootstrap() {
   app.enableShutdownHooks();
 
   // Exceções com payload { code, ...params } saem traduzidas no Accept-Language
-  app.useGlobalFilters(
-    new I18nHttpExceptionFilter(app.get(I18nService)),
-  );
+  app.useGlobalFilters(new I18nHttpExceptionFilter(app.get(I18nService)));
 
   app.useGlobalPipes(
     new ValidationPipe({

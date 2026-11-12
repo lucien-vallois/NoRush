@@ -1,6 +1,16 @@
-import { IsOptional, IsString, IsEnum, IsUUID, IsBoolean } from 'class-validator';
+import {
+  IsOptional,
+  IsString,
+  IsEnum,
+  IsUUID,
+  IsBoolean,
+} from 'class-validator';
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { SensorType, SensorProtocol, SensorStatus } from '../../../entities/sensor.entity';
+import {
+  SensorType,
+  SensorProtocol,
+  SensorStatus,
+} from '../../../entities/sensor.entity';
 
 export class SensorFiltersDto {
   @ApiPropertyOptional({

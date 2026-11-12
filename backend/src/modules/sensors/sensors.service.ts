@@ -1,7 +1,18 @@
-import { Injectable, NotFoundException, ConflictException, Logger, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  ConflictException,
+  Logger,
+  BadRequestException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, SelectQueryBuilder } from 'typeorm';
-import { Sensor, SensorStatus, SensorType, SensorProtocol } from '../../entities/sensor.entity';
+import {
+  Sensor,
+  SensorStatus,
+  SensorType,
+  SensorProtocol,
+} from '../../entities/sensor.entity';
 import { Tank } from '../../entities/tank.entity';
 import { Reading } from '../../entities/reading.entity';
 import { CreateSensorDto } from './dto/create-sensor.dto';
@@ -25,7 +36,9 @@ export class SensorsService {
     const { sensorId, tankId } = createSensorDto;
 
     // Verificar se o sensor já existe
-    const existingSensor = await this.sensorRepository.findOne({ where: { sensorId } });
+    const existingSensor = await this.sensorRepository.findOne({
+      where: { sensorId },
+    });
     if (existingSensor) {
       throw new ConflictException({ code: 'sensorIdAlreadyExists' });
     }
@@ -42,7 +55,9 @@ export class SensorsService {
     });
 
     const savedSensor = await this.sensorRepository.save(sensor);
-    this.logger.log(`Novo sensor criado: ${sensorId} - ${savedSensor.name} (Tanque: ${tank.name})`);
+    this.logger.log(
+      `Novo sensor criado: ${sensorId} - ${savedSensor.name} (Tanque: ${tank.name})`,
+    );
 
     return savedSensor;
   }
@@ -88,9 +103,12 @@ export class SensorsService {
     const sensor = await this.findById(id);
 
     // Verificar se o sensorId está sendo alterado e se já existe
-    if (updateSensorDto.sensorId && updateSensorDto.sensorId !== sensor.sensorId) {
+    if (
+      updateSensorDto.sensorId &&
+      updateSensorDto.sensorId !== sensor.sensorId
+    ) {
       const existingSensor = await this.sensorRepository.findOne({
-        where: { sensorId: updateSensorDto.sensorId }
+        where: { sensorId: updateSensorDto.sensorId },
       });
       if (existingSensor) {
         throw new ConflictException({ code: 'sensorIdAlreadyExists' });
@@ -100,17 +118,22 @@ export class SensorsService {
     // Verificar se o tanque está sendo alterado e se existe
     if (updateSensorDto.tankId && updateSensorDto.tankId !== sensor.tankId) {
       const tank = await this.tankRepository.findOne({
-        where: { id: updateSensorDto.tankId }
+        where: { id: updateSensorDto.tankId },
       });
       if (!tank) {
-        throw new NotFoundException({ code: 'tankNotFound', id: updateSensorDto.tankId });
+        throw new NotFoundException({
+          code: 'tankNotFound',
+          id: updateSensorDto.tankId,
+        });
       }
     }
 
     await this.sensorRepository.update(id, updateSensorDto);
 
     const updatedSensor = await this.findById(id);
-    this.logger.log(`Sensor atualizado: ${updatedSensor.sensorId} - ${updatedSensor.name}`);
+    this.logger.log(
+      `Sensor atualizado: ${updatedSensor.sensorId} - ${updatedSensor.name}`,
+    );
 
     return updatedSensor;
   }
@@ -120,12 +143,12 @@ export class SensorsService {
 
     // Verificar se há leituras associadas
     const readingCount = await this.readingRepository.count({
-      where: { sensorId: id }
+      where: { sensorId: id },
     });
 
     if (readingCount > 0) {
       throw new ConflictException(
-        `Não é possível excluir o sensor. Existem ${readingCount} leituras associadas.`
+        `Não é possível excluir o sensor. Existem ${readingCount} leituras associadas.`,
       );
     }
 
@@ -166,8 +189,9 @@ export class SensorsService {
     // Filtrar apenas sensores que transmitiram nos últimos 5 minutos
     const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
 
-    return sensors.filter(sensor =>
-      sensor.lastTransmissionAt && sensor.lastTransmissionAt > fiveMinutesAgo
+    return sensors.filter(
+      (sensor) =>
+        sensor.lastTransmissionAt && sensor.lastTransmissionAt > fiveMinutesAgo,
     );
   }
 
@@ -187,13 +211,18 @@ export class SensorsService {
     return this.sensorRepository
       .createQueryBuilder('sensor')
       .leftJoinAndSelect('sensor.tank', 'tank')
-      .where('sensor.batteryLevel <= :lowBatteryThreshold', { lowBatteryThreshold: 20 })
+      .where('sensor.batteryLevel <= :lowBatteryThreshold', {
+        lowBatteryThreshold: 20,
+      })
       .andWhere('sensor.batteryLevel IS NOT NULL')
       .orderBy('sensor.batteryLevel', 'ASC')
       .getMany();
   }
 
-  async updateCalibrationDate(id: string, calibrationDate: Date): Promise<Sensor> {
+  async updateCalibrationDate(
+    id: string,
+    calibrationDate: Date,
+  ): Promise<Sensor> {
     const sensor = await this.findById(id);
 
     // Calcular próxima calibração (geralmente a cada 6 meses ou 1 ano)
@@ -207,12 +236,17 @@ export class SensorsService {
     });
 
     const updatedSensor = await this.findById(id);
-    this.logger.log(`Data de calibração atualizada para sensor: ${updatedSensor.sensorId}`);
+    this.logger.log(
+      `Data de calibração atualizada para sensor: ${updatedSensor.sensorId}`,
+    );
 
     return updatedSensor;
   }
 
-  async updateFirmwareVersion(id: string, firmwareVersion: string): Promise<Sensor> {
+  async updateFirmwareVersion(
+    id: string,
+    firmwareVersion: string,
+  ): Promise<Sensor> {
     const sensor = await this.findById(id);
 
     await this.sensorRepository.update(id, {
@@ -221,7 +255,9 @@ export class SensorsService {
     });
 
     const updatedSensor = await this.findById(id);
-    this.logger.log(`Firmware atualizado para sensor: ${updatedSensor.sensorId} - ${firmwareVersion}`);
+    this.logger.log(
+      `Firmware atualizado para sensor: ${updatedSensor.sensorId} - ${firmwareVersion}`,
+    );
 
     return updatedSensor;
   }
@@ -290,13 +326,19 @@ export class SensorsService {
     };
   }
 
-  async bulkUpdateStatus(sensorIds: string[], status: SensorStatus): Promise<Sensor[]> {
+  async bulkUpdateStatus(
+    sensorIds: string[],
+    status: SensorStatus,
+  ): Promise<Sensor[]> {
     if (sensorIds.length === 0) {
       throw new BadRequestException({ code: 'emptySensorIdList' });
     }
 
     if (sensorIds.length > 100) {
-      throw new BadRequestException({ code: 'sensorBulkLimitExceeded', max: 100 });
+      throw new BadRequestException({
+        code: 'sensorBulkLimitExceeded',
+        max: 100,
+      });
     }
 
     // Verificar se todos os sensores existem
@@ -306,9 +348,12 @@ export class SensorsService {
       .getMany();
 
     if (sensors.length !== sensorIds.length) {
-      const foundIds = sensors.map(s => s.id);
-      const missingIds = sensorIds.filter(id => !foundIds.includes(id));
-      throw new NotFoundException({ code: 'sensorsNotFound', ids: missingIds.join(', ') });
+      const foundIds = sensors.map((s) => s.id);
+      const missingIds = sensorIds.filter((id) => !foundIds.includes(id));
+      throw new NotFoundException({
+        code: 'sensorsNotFound',
+        ids: missingIds.join(', '),
+      });
     }
 
     // Atualizar status em lote
@@ -320,11 +365,13 @@ export class SensorsService {
       .execute();
 
     const updatedSensors = await this.sensorRepository.find({
-      where: sensorIds.map(id => ({ id })),
+      where: sensorIds.map((id) => ({ id })),
       relations: ['tank'],
     });
 
-    this.logger.log(`${sensorIds.length} sensores atualizados para status: ${status}`);
+    this.logger.log(
+      `${sensorIds.length} sensores atualizados para status: ${status}`,
+    );
 
     return updatedSensors;
   }
@@ -339,10 +386,12 @@ export class SensorsService {
     ] = await Promise.all([
       this.sensorRepository.count(),
       this.sensorRepository.count({ where: { status: SensorStatus.ACTIVE } }),
-      this.getOnlineSensors().then(sensors => sensors.length),
+      this.getOnlineSensors().then((sensors) => sensors.length),
       // manutenção = status do sensor (não "precisando de calibração")
-      this.sensorRepository.count({ where: { status: SensorStatus.MAINTENANCE } }),
-      this.getSensorsWithLowBattery().then(sensors => sensors.length),
+      this.sensorRepository.count({
+        where: { status: SensorStatus.MAINTENANCE },
+      }),
+      this.getSensorsWithLowBattery().then((sensors) => sensors.length),
     ]);
 
     // offline = ativos que não transmitem há mais de 5min (o status continua
@@ -401,16 +450,18 @@ export class SensorsService {
     const lowBatteryRatio = stats.lowBatterySensors / stats.totalSensors;
 
     // Peso: 50% online, 30% manutenção, 20% bateria
-    const score = (
+    const score =
       onlineRatio * 50 +
       (1 - maintenanceRatio) * 30 +
-      (1 - lowBatteryRatio) * 20
-    );
+      (1 - lowBatteryRatio) * 20;
 
     return Math.round(Math.max(0, Math.min(100, score)));
   }
 
-  private applyFilters(queryBuilder: SelectQueryBuilder<Sensor>, filters?: SensorFiltersDto): void {
+  private applyFilters(
+    queryBuilder: SelectQueryBuilder<Sensor>,
+    filters?: SensorFiltersDto,
+  ): void {
     if (!filters) return;
 
     if (filters.type) {
@@ -418,15 +469,21 @@ export class SensorsService {
     }
 
     if (filters.protocol) {
-      queryBuilder.andWhere('sensor.protocol = :protocol', { protocol: filters.protocol });
+      queryBuilder.andWhere('sensor.protocol = :protocol', {
+        protocol: filters.protocol,
+      });
     }
 
     if (filters.status) {
-      queryBuilder.andWhere('sensor.status = :status', { status: filters.status });
+      queryBuilder.andWhere('sensor.status = :status', {
+        status: filters.status,
+      });
     }
 
     if (filters.tankId) {
-      queryBuilder.andWhere('sensor.tankId = :tankId', { tankId: filters.tankId });
+      queryBuilder.andWhere('sensor.tankId = :tankId', {
+        tankId: filters.tankId,
+      });
     }
 
     if (filters.model) {
@@ -434,31 +491,37 @@ export class SensorsService {
     }
 
     if (filters.manufacturer) {
-      queryBuilder.andWhere('sensor.manufacturer = :manufacturer', { manufacturer: filters.manufacturer });
+      queryBuilder.andWhere('sensor.manufacturer = :manufacturer', {
+        manufacturer: filters.manufacturer,
+      });
     }
 
     if (filters.search) {
       queryBuilder.andWhere(
         '(sensor.name ILIKE :search OR sensor.sensorId ILIKE :search)',
-        { search: `%${filters.search}%` }
+        { search: `%${filters.search}%` },
       );
     }
 
     if (filters.onlineOnly) {
       const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
-      queryBuilder.andWhere('sensor.lastTransmissionAt > :fiveMinutesAgo', { fiveMinutesAgo });
+      queryBuilder.andWhere('sensor.lastTransmissionAt > :fiveMinutesAgo', {
+        fiveMinutesAgo,
+      });
     }
 
     if (filters.needsCalibration) {
       const now = new Date();
       queryBuilder.andWhere(
         '(sensor.nextCalibrationDate <= :now OR sensor.calibrationDate IS NULL)',
-        { now }
+        { now },
       );
     }
 
     if (filters.lowBattery) {
-      queryBuilder.andWhere('sensor.batteryLevel <= :lowBatteryThreshold', { lowBatteryThreshold: 20 });
+      queryBuilder.andWhere('sensor.batteryLevel <= :lowBatteryThreshold', {
+        lowBatteryThreshold: 20,
+      });
     }
   }
 }

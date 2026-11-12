@@ -1,7 +1,17 @@
-import { Injectable, Logger, NotFoundException, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  Logger,
+  NotFoundException,
+  BadRequestException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { In, IsNull, Repository, SelectQueryBuilder } from 'typeorm';
-import { Alert, AlertStatus, AlertType, AlertSeverity } from '../../entities/alert.entity';
+import {
+  Alert,
+  AlertStatus,
+  AlertType,
+  AlertSeverity,
+} from '../../entities/alert.entity';
 import { Tank } from '../../entities/tank.entity';
 import { Sensor } from '../../entities/sensor.entity';
 import { User } from '../../entities/user.entity';
@@ -34,7 +44,9 @@ export class AlertsService {
 
     // Verificar se o sensor existe (se fornecido)
     if (sensorId) {
-      const sensor = await this.sensorRepository.findOne({ where: { id: sensorId } });
+      const sensor = await this.sensorRepository.findOne({
+        where: { id: sensorId },
+      });
       if (!sensor) {
         throw new NotFoundException({ code: 'sensorNotFound', id: sensorId });
       }
@@ -48,7 +60,7 @@ export class AlertsService {
     const savedAlert = await this.alertRepository.save(alert);
 
     this.logger.log(
-      `Novo alerta criado: ${savedAlert.type} - ${savedAlert.title} (Tanque: ${tank.name})`
+      `Novo alerta criado: ${savedAlert.type} - ${savedAlert.title} (Tanque: ${tank.name})`,
     );
 
     return savedAlert;
@@ -69,10 +81,7 @@ export class AlertsService {
     const offset = (page - 1) * limit;
     const totalPages = Math.ceil(total / limit);
 
-    const alerts = await queryBuilder
-      .skip(offset)
-      .take(limit)
-      .getMany();
+    const alerts = await queryBuilder.skip(offset).take(limit).getMany();
 
     return {
       alerts,
@@ -96,7 +105,11 @@ export class AlertsService {
     return alert;
   }
 
-  async acknowledgeAlert(id: string, userId: string, notes?: string): Promise<Alert> {
+  async acknowledgeAlert(
+    id: string,
+    userId: string,
+    notes?: string,
+  ): Promise<Alert> {
     const alert = await this.findById(id);
 
     if (alert.status !== AlertStatus.ACTIVE) {
@@ -116,12 +129,18 @@ export class AlertsService {
 
     const updatedAlert = await this.findById(id);
 
-    this.logger.log(`Alerta reconhecido: ${updatedAlert.title} por ${user.name}`);
+    this.logger.log(
+      `Alerta reconhecido: ${updatedAlert.title} por ${user.name}`,
+    );
 
     return updatedAlert;
   }
 
-  async resolveAlert(id: string, userId: string, resolutionNotes?: string): Promise<Alert> {
+  async resolveAlert(
+    id: string,
+    userId: string,
+    resolutionNotes?: string,
+  ): Promise<Alert> {
     const alert = await this.findById(id);
 
     if (alert.status === AlertStatus.RESOLVED) {
@@ -147,7 +166,10 @@ export class AlertsService {
     return updatedAlert;
   }
 
-  async getAlertsByTank(tankId: string, filters?: AlertFiltersDto): Promise<{
+  async getAlertsByTank(
+    tankId: string,
+    filters?: AlertFiltersDto,
+  ): Promise<{
     alerts: Alert[];
     total: number;
     page: number;
@@ -219,10 +241,12 @@ export class AlertsService {
     ] = await Promise.all([
       this.alertRepository.count(),
       this.alertRepository.count({ where: { status: AlertStatus.ACTIVE } }),
-      this.alertRepository.count({ where: { status: AlertStatus.ACKNOWLEDGED } }),
+      this.alertRepository.count({
+        where: { status: AlertStatus.ACKNOWLEDGED },
+      }),
       this.alertRepository.count({ where: { status: AlertStatus.RESOLVED } }),
       this.alertRepository.count({
-        where: { severity: AlertSeverity.CRITICAL, status: AlertStatus.ACTIVE }
+        where: { severity: AlertSeverity.CRITICAL, status: AlertStatus.ACTIVE },
       }),
     ]);
 
@@ -245,13 +269,19 @@ export class AlertsService {
     // Tempo médio de resolução
     const resolutionTimes = await this.alertRepository
       .createQueryBuilder('alert')
-      .select('EXTRACT(EPOCH FROM (alert.resolvedAt - alert.createdAt)) / 3600 as hours')
+      .select(
+        'EXTRACT(EPOCH FROM (alert.resolvedAt - alert.createdAt)) / 3600 as hours',
+      )
       .where('alert.resolvedAt IS NOT NULL')
       .getRawMany();
 
-    const avgResolutionTime = resolutionTimes.length > 0
-      ? resolutionTimes.reduce((sum, item) => sum + parseFloat(item.hours), 0) / resolutionTimes.length
-      : 0;
+    const avgResolutionTime =
+      resolutionTimes.length > 0
+        ? resolutionTimes.reduce(
+            (sum, item) => sum + parseFloat(item.hours),
+            0,
+          ) / resolutionTimes.length
+        : 0;
 
     return {
       overview: {
@@ -273,7 +303,8 @@ export class AlertsService {
       },
       performance: {
         avgResolutionTimeHours: Math.round(avgResolutionTime * 100) / 100,
-        resolutionRate: totalAlerts > 0 ? (resolvedAlerts / totalAlerts * 100) : 0,
+        resolutionRate:
+          totalAlerts > 0 ? (resolvedAlerts / totalAlerts) * 100 : 0,
       },
     };
   }
@@ -286,7 +317,7 @@ export class AlertsService {
     currentLevel?: number,
     currentVolume?: number,
     thresholdValue?: number,
-    metadata?: Record<string, any>
+    metadata?: Record<string, any>,
   ): Promise<Alert> {
     // One open alert per condition: while the same alarm is still active or
     // acknowledged on this tank/gauge, a repeat trip is not a new incident.
@@ -305,7 +336,12 @@ export class AlertsService {
     if (open) return open;
 
     // Gerar título e mensagem baseada no tipo
-    const alertInfo = this.generateAlertInfo(type, tankId, currentLevel, thresholdValue);
+    const alertInfo = this.generateAlertInfo(
+      type,
+      tankId,
+      currentLevel,
+      thresholdValue,
+    );
 
     const alertDto: CreateAlertDto = {
       type,
@@ -338,14 +374,21 @@ export class AlertsService {
         const result = await this.acknowledgeAlert(alertId, userId);
         results.push(result);
       } catch (error) {
-        this.logger.warn(`Erro ao reconhecer alerta ${alertId}:`, error.message);
+        this.logger.warn(
+          `Erro ao reconhecer alerta ${alertId}:`,
+          error.message,
+        );
       }
     }
 
     return results;
   }
 
-  async bulkResolve(alertIds: string[], userId: string, resolutionNotes?: string): Promise<Alert[]> {
+  async bulkResolve(
+    alertIds: string[],
+    userId: string,
+    resolutionNotes?: string,
+  ): Promise<Alert[]> {
     if (alertIds.length === 0) {
       throw new BadRequestException({ code: 'emptyIdList' });
     }
@@ -357,7 +400,11 @@ export class AlertsService {
     const results: Alert[] = [];
     for (const alertId of alertIds) {
       try {
-        const result = await this.resolveAlert(alertId, userId, resolutionNotes);
+        const result = await this.resolveAlert(
+          alertId,
+          userId,
+          resolutionNotes,
+        );
         results.push(result);
       } catch (error) {
         this.logger.warn(`Erro ao resolver alerta ${alertId}:`, error.message);
@@ -379,7 +426,7 @@ export class AlertsService {
       .where('alert.status = :active', { active: AlertStatus.ACTIVE })
       .andWhere(
         '(alert.severity = :critical) OR (alert.createdAt < :oneHourAgo)',
-        { critical: AlertSeverity.CRITICAL, oneHourAgo }
+        { critical: AlertSeverity.CRITICAL, oneHourAgo },
       )
       .orderBy('alert.severity', 'DESC')
       .addOrderBy('alert.createdAt', 'ASC')
@@ -396,10 +443,11 @@ export class AlertsService {
     type: AlertType,
     tankId: string,
     currentLevel?: number,
-    thresholdValue?: number
+    thresholdValue?: number,
   ): { title: string; message: string } {
     const levelInfo = currentLevel != null ? `${currentLevel}m` : 'unknown';
-    const thresholdInfo = thresholdValue != null ? `${thresholdValue}m` : 'unknown';
+    const thresholdInfo =
+      thresholdValue != null ? `${thresholdValue}m` : 'unknown';
 
     switch (type) {
       case AlertType.HIGH_LEVEL:
@@ -423,7 +471,8 @@ export class AlertsService {
       case AlertType.SENSOR_OFFLINE:
         return {
           title: 'Sensor Offline',
-          message: 'Sensor stopped sending data. Check connectivity and power supply.',
+          message:
+            'Sensor stopped sending data. Check connectivity and power supply.',
         };
 
       case AlertType.BATTERY_LOW:
@@ -435,7 +484,8 @@ export class AlertsService {
       case AlertType.SENSOR_ERROR:
         return {
           title: 'Sensor Error',
-          message: 'Sensor is reporting errors. Check configuration and calibration.',
+          message:
+            'Sensor is reporting errors. Check configuration and calibration.',
         };
 
       case AlertType.MAINTENANCE_DUE:
@@ -452,7 +502,9 @@ export class AlertsService {
     }
   }
 
-  private buildFilteredQuery(filters?: AlertFiltersDto): SelectQueryBuilder<Alert> {
+  private buildFilteredQuery(
+    filters?: AlertFiltersDto,
+  ): SelectQueryBuilder<Alert> {
     const queryBuilder = this.alertRepository
       .createQueryBuilder('alert')
       .leftJoinAndSelect('alert.tank', 'tank')
@@ -467,19 +519,27 @@ export class AlertsService {
     }
 
     if (filters.severity) {
-      queryBuilder.andWhere('alert.severity = :severity', { severity: filters.severity });
+      queryBuilder.andWhere('alert.severity = :severity', {
+        severity: filters.severity,
+      });
     }
 
     if (filters.status) {
-      queryBuilder.andWhere('alert.status = :status', { status: filters.status });
+      queryBuilder.andWhere('alert.status = :status', {
+        status: filters.status,
+      });
     }
 
     if (filters.tankId) {
-      queryBuilder.andWhere('alert.tankId = :tankId', { tankId: filters.tankId });
+      queryBuilder.andWhere('alert.tankId = :tankId', {
+        tankId: filters.tankId,
+      });
     }
 
     if (filters.sensorId) {
-      queryBuilder.andWhere('alert.sensorId = :sensorId', { sensorId: filters.sensorId });
+      queryBuilder.andWhere('alert.sensorId = :sensorId', {
+        sensorId: filters.sensorId,
+      });
     }
 
     if (filters.startDate && filters.endDate) {
@@ -500,16 +560,20 @@ export class AlertsService {
     if (filters.search) {
       queryBuilder.andWhere(
         '(alert.title ILIKE :search OR alert.message ILIKE :search)',
-        { search: `%${filters.search}%` }
+        { search: `%${filters.search}%` },
       );
     }
 
     if (filters.unacknowledgedOnly) {
-      queryBuilder.andWhere('alert.status = :active', { active: AlertStatus.ACTIVE });
+      queryBuilder.andWhere('alert.status = :active', {
+        active: AlertStatus.ACTIVE,
+      });
     }
 
     if (filters.criticalOnly) {
-      queryBuilder.andWhere('alert.severity = :critical', { critical: AlertSeverity.CRITICAL });
+      queryBuilder.andWhere('alert.severity = :critical', {
+        critical: AlertSeverity.CRITICAL,
+      });
     }
 
     // Ordenação

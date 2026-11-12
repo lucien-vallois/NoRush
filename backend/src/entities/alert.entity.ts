@@ -1,4 +1,13 @@
-import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn, ManyToOne, JoinColumn, Index } from 'typeorm';
+import {
+  Entity,
+  Column,
+  PrimaryGeneratedColumn,
+  CreateDateColumn,
+  UpdateDateColumn,
+  ManyToOne,
+  JoinColumn,
+  Index,
+} from 'typeorm';
 import { NumericTransformer } from '../common/transformers/numeric.transformer';
 import { Tank } from './tank.entity';
 import { User } from './user.entity';
@@ -42,7 +51,7 @@ export class Alert {
   @Column('uuid')
   tankId: string;
 
-  @ManyToOne(() => Tank, tank => tank.alerts, { onDelete: 'CASCADE' })
+  @ManyToOne(() => Tank, (tank) => tank.alerts, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'tankId' })
   tank: Tank;
 
@@ -73,13 +82,28 @@ export class Alert {
   message: string;
 
   // Dados relacionados ao alerta
-  @Column('decimal', { precision: 6, scale: 3, nullable: true, transformer: new NumericTransformer() })
+  @Column('decimal', {
+    precision: 6,
+    scale: 3,
+    nullable: true,
+    transformer: new NumericTransformer(),
+  })
   currentLevel: number; // Nível atual em metros
 
-  @Column('decimal', { precision: 10, scale: 3, nullable: true, transformer: new NumericTransformer() })
+  @Column('decimal', {
+    precision: 10,
+    scale: 3,
+    nullable: true,
+    transformer: new NumericTransformer(),
+  })
   currentVolume: number; // Volume atual em litros
 
-  @Column('decimal', { precision: 6, scale: 3, nullable: true, transformer: new NumericTransformer() })
+  @Column('decimal', {
+    precision: 6,
+    scale: 3,
+    nullable: true,
+    transformer: new NumericTransformer(),
+  })
   thresholdValue: number; // Valor do limite que foi atingido
 
   @Column({ nullable: true })

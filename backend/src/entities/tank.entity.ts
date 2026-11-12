@@ -1,4 +1,11 @@
-import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn, OneToMany } from 'typeorm';
+import {
+  Entity,
+  Column,
+  PrimaryGeneratedColumn,
+  CreateDateColumn,
+  UpdateDateColumn,
+  OneToMany,
+} from 'typeorm';
 import { NumericTransformer } from '../common/transformers/numeric.transformer';
 import { Sensor } from './sensor.entity';
 import { Alert } from './alert.entity';
@@ -41,10 +48,18 @@ export class Tank {
   @Column('jsonb', { nullable: true })
   arqueacaoTable: TankArqueacao[]; // Tabela de arqueação para conversão nível-volume
 
-  @Column('decimal', { precision: 10, scale: 8, transformer: new NumericTransformer() })
+  @Column('decimal', {
+    precision: 10,
+    scale: 8,
+    transformer: new NumericTransformer(),
+  })
   latitude: number;
 
-  @Column('decimal', { precision: 11, scale: 8, transformer: new NumericTransformer() })
+  @Column('decimal', {
+    precision: 11,
+    scale: 8,
+    transformer: new NumericTransformer(),
+  })
   longitude: number;
 
   @Column({
@@ -55,16 +70,36 @@ export class Tank {
   status: TankStatus;
 
   // Limites de alerta
-  @Column('decimal', { precision: 5, scale: 2, nullable: true, transformer: new NumericTransformer() })
+  @Column('decimal', {
+    precision: 5,
+    scale: 2,
+    nullable: true,
+    transformer: new NumericTransformer(),
+  })
   maxLevelThreshold: number; // Nível máximo em metros
 
-  @Column('decimal', { precision: 5, scale: 2, nullable: true, transformer: new NumericTransformer() })
+  @Column('decimal', {
+    precision: 5,
+    scale: 2,
+    nullable: true,
+    transformer: new NumericTransformer(),
+  })
   minLevelThreshold: number; // Nível mínimo em metros
 
-  @Column('decimal', { precision: 5, scale: 2, nullable: true, transformer: new NumericTransformer() })
+  @Column('decimal', {
+    precision: 5,
+    scale: 2,
+    nullable: true,
+    transformer: new NumericTransformer(),
+  })
   overflowThreshold: number; // Limite de transbordo em metros
 
-  @Column('decimal', { precision: 5, scale: 2, nullable: true, transformer: new NumericTransformer() })
+  @Column('decimal', {
+    precision: 5,
+    scale: 2,
+    nullable: true,
+    transformer: new NumericTransformer(),
+  })
   lowLevelThreshold: number; // Limite de nível baixo em metros
 
   @Column({ nullable: true })
@@ -83,10 +118,10 @@ export class Tank {
   updatedAt: Date;
 
   // Relacionamentos
-  @OneToMany(() => Sensor, sensor => sensor.tank)
+  @OneToMany(() => Sensor, (sensor) => sensor.tank)
   sensors: Sensor[];
 
-  @OneToMany(() => Alert, alert => alert.tank)
+  @OneToMany(() => Alert, (alert) => alert.tank)
   alerts: Alert[];
 
   // Métodos de instância
@@ -122,7 +157,8 @@ export class Tank {
 
     // Se nível estiver fora da tabela, usar o valor mais próximo
     if (level < sortedTable[0].level) return sortedTable[0].volume;
-    if (level > sortedTable[sortedTable.length - 1].level) return sortedTable[sortedTable.length - 1].volume;
+    if (level > sortedTable[sortedTable.length - 1].level)
+      return sortedTable[sortedTable.length - 1].volume;
 
     return 0;
   }
@@ -130,9 +166,9 @@ export class Tank {
   isAtRisk(level: number): boolean {
     return Boolean(
       (this.maxLevelThreshold && level >= this.maxLevelThreshold) ||
-      (this.minLevelThreshold && level <= this.minLevelThreshold) ||
-      (this.overflowThreshold && level >= this.overflowThreshold) ||
-      (this.lowLevelThreshold && level <= this.lowLevelThreshold)
+        (this.minLevelThreshold && level <= this.minLevelThreshold) ||
+        (this.overflowThreshold && level >= this.overflowThreshold) ||
+        (this.lowLevelThreshold && level <= this.lowLevelThreshold),
     );
   }
 }

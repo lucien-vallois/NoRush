@@ -79,7 +79,8 @@ export class I18nService implements OnModuleInit {
   ): { title: string; message: string } {
     const type = alert.type as AlertType;
     const base = `alertTypes.${type}`;
-    const hasType = this.t(`${base}.title`, { lng: DEFAULT_LANGUAGE }) !== `${base}.title`;
+    const hasType =
+      this.t(`${base}.title`, { lng: DEFAULT_LANGUAGE }) !== `${base}.title`;
 
     if (!hasType) {
       // Tipo fora do catálogo: devolve o texto persistido
@@ -124,7 +125,10 @@ export class I18nService implements OnModuleInit {
   }
 
   /** "2h05" / "45min" — formato compacto igual nas três línguas */
-  private formatEtaHours(lang: string | undefined, hours: number | undefined): string {
+  private formatEtaHours(
+    lang: string | undefined,
+    hours: number | undefined,
+  ): string {
     if (hours == null || !Number.isFinite(hours)) return '—';
     if (hours < 1) return `${Math.max(1, Math.round(hours * 60))}min`;
     const h = Math.floor(hours);

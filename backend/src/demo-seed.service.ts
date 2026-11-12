@@ -20,7 +20,8 @@ export class DemoSeedService implements OnModuleInit {
     @InjectRepository(User) private readonly userRepo: Repository<User>,
     @InjectRepository(Tank) private readonly tankRepo: Repository<Tank>,
     @InjectRepository(Sensor) private readonly sensorRepo: Repository<Sensor>,
-    @InjectRepository(Reading) private readonly readingRepo: Repository<Reading>,
+    @InjectRepository(Reading)
+    private readonly readingRepo: Repository<Reading>,
     @InjectRepository(Alert) private readonly alertRepo: Repository<Alert>,
   ) {}
 

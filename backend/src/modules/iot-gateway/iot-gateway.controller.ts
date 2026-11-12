@@ -83,8 +83,14 @@ export class IotGatewayController {
       'Endpoint para processar dados de múltiplos sensores em uma única requisição (backfill de armazenamento limitado)',
   })
   @ApiResponse({ status: 200, description: 'Lote processado com sucesso' })
-  @ApiResponse({ status: 400, description: 'Dados inválidos ou lote muito grande' })
-  @ApiBody({ type: [SensorMessageDto], description: 'Array de mensagens de sensores' })
+  @ApiResponse({
+    status: 400,
+    description: 'Dados inválidos ou lote muito grande',
+  })
+  @ApiBody({
+    type: [SensorMessageDto],
+    description: 'Array de mensagens de sensores',
+  })
   async receiveBatchData(
     // Validates every item against SensorMessageDto: the global
     // ValidationPipe does not check the elements of a plain array body.
@@ -127,8 +133,14 @@ export class IotGatewayController {
     description:
       'Publishes the command on devices/{sensorId}/commands (MQTT). The device answers on devices/{sensorId}/commands/responses; poll the status with the returned requestId. Commands act on the gauge only, never on field equipment.',
   })
-  @ApiResponse({ status: 202, description: 'Published; PENDING until the device answers' })
-  @ApiResponse({ status: 400, description: 'Unknown command or missing parameters' })
+  @ApiResponse({
+    status: 202,
+    description: 'Published; PENDING until the device answers',
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Unknown command or missing parameters',
+  })
   @ApiResponse({ status: 503, description: 'MQTT broker not connected' })
   @ApiBody({ type: SensorCommandDto })
   async sendCommand(@Body() command: SensorCommandDto) {
@@ -144,7 +156,10 @@ export class IotGatewayController {
   })
   @ApiResponse({ status: 200, description: 'Command status' })
   @ApiResponse({ status: 404, description: 'Unknown or expired requestId' })
-  @ApiParam({ name: 'requestId', description: 'requestId returned when the command was sent' })
+  @ApiParam({
+    name: 'requestId',
+    description: 'requestId returned when the command was sent',
+  })
   getCommandStatus(@Param('requestId') requestId: string) {
     return this.deviceCommands.status(requestId);
   }
@@ -176,7 +191,8 @@ export class IotGatewayController {
   @Roles(UserRole.ADMIN)
   @ApiOperation({
     summary: 'Effective ingestion settings (admin)',
-    description: 'Broker address, topics, endpoints and auth mode, without credentials.',
+    description:
+      'Broker address, topics, endpoints and auth mode, without credentials.',
   })
   @ApiResponse({ status: 200, description: 'Settings' })
   getGatewayConfig() {
@@ -186,9 +202,13 @@ export class IotGatewayController {
   @Get('gateway/health')
   @ApiOperation({
     summary: 'Verificação de saúde do Gateway IoT',
-    description: 'Verificar status de conectividade e saúde dos componentes do gateway',
+    description:
+      'Verificar status de conectividade e saúde dos componentes do gateway',
   })
-  @ApiResponse({ status: 200, description: 'Status de saúde obtido com sucesso' })
+  @ApiResponse({
+    status: 200,
+    description: 'Status de saúde obtido com sucesso',
+  })
   async getGatewayHealth() {
     return this.iotGateway.testConnectivity();
   }
@@ -200,7 +220,10 @@ export class IotGatewayController {
     summary: 'Reconnect to the MQTT broker (admin)',
     description: 'Drops the broker connection and reconnects right away.',
   })
-  @ApiResponse({ status: 200, description: 'Reconnection started (false when MQTT is disabled)' })
+  @ApiResponse({
+    status: 200,
+    description: 'Reconnection started (false when MQTT is disabled)',
+  })
   restartGateway() {
     return this.iotGateway.restartConnections();
   }
@@ -216,10 +239,21 @@ export class IotGatewayController {
       'Gerar dados simulados para teste do sistema (apenas desenvolvimento; recusado em produção)',
   })
   @ApiResponse({ status: 200, description: 'Simulação executada com sucesso' })
-  @ApiResponse({ status: 403, description: 'Somente admin, e nunca em produção' })
+  @ApiResponse({
+    status: 403,
+    description: 'Somente admin, e nunca em produção',
+  })
   @ApiQuery({ name: 'sensorId', description: 'ID do sensor para simulação' })
-  @ApiQuery({ name: 'protocol', enum: ['mqtt', 'http'], description: 'Protocolo a usar' })
-  @ApiQuery({ name: 'count', description: 'Número de mensagens a simular', required: false })
+  @ApiQuery({
+    name: 'protocol',
+    enum: ['mqtt', 'http'],
+    description: 'Protocolo a usar',
+  })
+  @ApiQuery({
+    name: 'count',
+    description: 'Número de mensagens a simular',
+    required: false,
+  })
   async simulateSensorData(
     @Query('sensorId') sensorId: string,
     @Query('protocol') protocol: 'mqtt' | 'http' = 'mqtt',
@@ -229,7 +263,10 @@ export class IotGatewayController {
       return { error: 'sensorId is required' };
     }
 
-    return this.iotGateway.simulateSensorData(sensorId, { protocol, count: count || 1 });
+    return this.iotGateway.simulateSensorData(sensorId, {
+      protocol,
+      count: count || 1,
+    });
   }
 
   @Get('test/echo')
@@ -237,10 +274,15 @@ export class IotGatewayController {
   @UseGuards(DevOnlyGuard)
   @ApiOperation({
     summary: 'Echo test endpoint',
-    description: 'Endpoint de teste para verificar conectividade do gateway (apenas desenvolvimento)',
+    description:
+      'Endpoint de teste para verificar conectividade do gateway (apenas desenvolvimento)',
   })
   @ApiResponse({ status: 200, description: 'Echo realizado com sucesso' })
-  @ApiQuery({ name: 'message', description: 'Mensagem para echo', required: false })
+  @ApiQuery({
+    name: 'message',
+    description: 'Mensagem para echo',
+    required: false,
+  })
   async echoTest(@Query('message') message: string = 'Hello IoT Gateway!') {
     this.logger.debug(`Echo test: ${message}`);
 

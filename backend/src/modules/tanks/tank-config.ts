@@ -1,7 +1,4 @@
-import type {
-  TankArqueacao,
-  TankDimensions,
-} from '../../entities/tank.entity';
+import type { TankArqueacao, TankDimensions } from '../../entities/tank.entity';
 
 /**
  * Regras de consistência de um tanque cadastrado pelo operador. Tudo em
@@ -29,7 +26,9 @@ const HEIGHT_TOLERANCE_M = 0.01;
 const finite = (v: unknown): v is number =>
   typeof v === 'number' && Number.isFinite(v);
 
-export function validateTankConfig(input: TankConfigInput): TankConfigError | null {
+export function validateTankConfig(
+  input: TankConfigInput,
+): TankConfigError | null {
   const height = input.dimensions?.height;
   const diameter = input.dimensions?.diameter;
   if (!finite(height) || height <= 0 || !finite(diameter) || diameter <= 0) {

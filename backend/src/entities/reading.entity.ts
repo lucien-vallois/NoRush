@@ -1,4 +1,12 @@
-import { Entity, Column, PrimaryColumn, CreateDateColumn, Index, ManyToOne, JoinColumn } from 'typeorm';
+import {
+  Entity,
+  Column,
+  PrimaryColumn,
+  CreateDateColumn,
+  Index,
+  ManyToOne,
+  JoinColumn,
+} from 'typeorm';
 import { NumericTransformer } from '../common/transformers/numeric.transformer';
 import { Sensor } from './sensor.entity';
 
@@ -32,15 +40,24 @@ export class Reading {
   @Column('uuid')
   sensorId: string;
 
-  @ManyToOne(() => Sensor, sensor => sensor.readings, { onDelete: 'CASCADE' })
+  @ManyToOne(() => Sensor, (sensor) => sensor.readings, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'sensorId' })
   sensor: Sensor;
 
   // Dados de medição primários
-  @Column('decimal', { precision: 6, scale: 3, transformer: new NumericTransformer() })
+  @Column('decimal', {
+    precision: 6,
+    scale: 3,
+    transformer: new NumericTransformer(),
+  })
   level: number; // Nível em metros
 
-  @Column('decimal', { precision: 10, scale: 3, nullable: true, transformer: new NumericTransformer() })
+  @Column('decimal', {
+    precision: 10,
+    scale: 3,
+    nullable: true,
+    transformer: new NumericTransformer(),
+  })
   volume: number; // Volume calculado em litros
 
   // Interface óleo-água (se aplicável)
@@ -52,7 +69,12 @@ export class Reading {
   metadata: ReadingMetadata;
 
   // Qualidade da medição
-  @Column('decimal', { precision: 5, scale: 2, nullable: true, transformer: new NumericTransformer() })
+  @Column('decimal', {
+    precision: 5,
+    scale: 2,
+    nullable: true,
+    transformer: new NumericTransformer(),
+  })
   quality: number; // Qualidade da medição (0-100%)
 
   @Column({ default: false })

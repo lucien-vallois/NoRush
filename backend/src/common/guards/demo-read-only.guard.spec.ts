@@ -28,7 +28,9 @@ const guard = (env: Record<string, string>) =>
 
 describe('DemoReadOnlyGuard', () => {
   it('changes nothing when the demo flag is off', () => {
-    expect(guard({}).canActivate(contextFor('DELETE', 'deleteTank'))).toBe(true);
+    expect(guard({}).canActivate(contextFor('DELETE', 'deleteTank'))).toBe(
+      true,
+    );
   });
 
   describe('with DEMO_READ_ONLY=true', () => {
@@ -55,7 +57,9 @@ describe('DemoReadOnlyGuard', () => {
 
     it('keeps public routes (sign-in, ingestion) and @AllowInDemo routes open', () => {
       expect(readOnly.canActivate(contextFor('POST', 'login'))).toBe(true);
-      expect(readOnly.canActivate(contextFor('POST', 'acknowledge'))).toBe(true);
+      expect(readOnly.canActivate(contextFor('POST', 'acknowledge'))).toBe(
+        true,
+      );
     });
   });
 });

@@ -12,7 +12,9 @@ describe('AlertsService.createAutomaticAlert', () => {
     create: jest.fn((value: object) => value),
     save: jest.fn(async (value: object) => ({ id: 'new-alert', ...value })),
   };
-  const tanks = { findOne: jest.fn(async () => ({ id: 'tank-1', name: 'FK-01' })) };
+  const tanks = {
+    findOne: jest.fn(async () => ({ id: 'tank-1', name: 'FK-01' })),
+  };
   const sensors = { findOne: jest.fn(async () => ({ id: 'sensor-1' })) };
   let service: AlertsService;
 

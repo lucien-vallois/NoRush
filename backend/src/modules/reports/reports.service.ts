@@ -1,5 +1,9 @@
 import { Injectable, Logger, BadRequestException } from '@nestjs/common';
-import { ReportType, ReportFormat, GenerateReportDto } from './dto/generate-report.dto';
+import {
+  ReportType,
+  ReportFormat,
+  GenerateReportDto,
+} from './dto/generate-report.dto';
 import { ReportDataService } from './services/report-data.service';
 import { PdfReportService } from './services/pdf-report.service';
 import { ExcelReportService } from './services/excel-report.service';
@@ -20,7 +24,9 @@ export class ReportsService {
     contentType: string;
   }> {
     try {
-      this.logger.log(`Gerando relatório: ${dto.type} em formato ${dto.format}`);
+      this.logger.log(
+        `Gerando relatório: ${dto.type} em formato ${dto.format}`,
+      );
 
       // Validar parâmetros
       this.validateReportParameters(dto);
@@ -45,15 +51,22 @@ export class ReportsService {
 
       switch (dto.format) {
         case ReportFormat.PDF:
-          buffer = await this.pdfReportService.generatePdf(dto.type, reportData);
+          buffer = await this.pdfReportService.generatePdf(
+            dto.type,
+            reportData,
+          );
           filename = this.generateFilename(dto.type, 'pdf', dto.title);
           contentType = 'application/pdf';
           break;
 
         case ReportFormat.EXCEL:
-          buffer = await this.excelReportService.generateExcel(dto.type, reportData);
+          buffer = await this.excelReportService.generateExcel(
+            dto.type,
+            reportData,
+          );
           filename = this.generateFilename(dto.type, 'xlsx', dto.title);
-          contentType = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+          contentType =
+            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
           break;
 
         case ReportFormat.CSV:
@@ -64,10 +77,15 @@ export class ReportsService {
           break;
 
         default:
-          throw new BadRequestException({ code: 'unsupportedReportFormat', format: dto.format });
+          throw new BadRequestException({
+            code: 'unsupportedReportFormat',
+            format: dto.format,
+          });
       }
 
-      this.logger.log(`Relatório gerado com sucesso: ${filename} (${buffer.length} bytes)`);
+      this.logger.log(
+        `Relatório gerado com sucesso: ${filename} (${buffer.length} bytes)`,
+      );
 
       return {
         buffer,
@@ -82,7 +100,10 @@ export class ReportsService {
 
   async getReportPreview(type: ReportType, filters?: any): Promise<any> {
     try {
-      const reportData = await this.reportDataService.generateReportData(type, filters);
+      const reportData = await this.reportDataService.generateReportData(
+        type,
+        filters,
+      );
 
       return {
         metadata: reportData.metadata,
@@ -108,19 +129,28 @@ export class ReportsService {
         title: 'Tank level history',
         description: 'Levels of every tank over the selected period',
         formats: ['pdf', 'excel', 'csv'],
-        parameters: { startDate: 'required', endDate: 'required', tankIds: 'optional' },
+        parameters: {
+          startDate: 'required',
+          endDate: 'required',
+          tankIds: 'optional',
+        },
       },
       {
         type: ReportType.SENSOR_PERFORMANCE,
         title: 'Gauge performance',
         description: 'Reading quality, transmissions and status of every gauge',
         formats: ['pdf', 'excel', 'csv'],
-        parameters: { startDate: 'required', endDate: 'required', sensorIds: 'optional' },
+        parameters: {
+          startDate: 'required',
+          endDate: 'required',
+          sensorIds: 'optional',
+        },
       },
       {
         type: ReportType.ALERT_SUMMARY,
         title: 'Alert summary',
-        description: 'Every alert raised in the period, with acknowledgment and resolution',
+        description:
+          'Every alert raised in the period, with acknowledgment and resolution',
         formats: ['pdf', 'excel', 'csv'],
         parameters: {
           startDate: 'required',
@@ -148,13 +178,18 @@ export class ReportsService {
         title: 'Production analysis',
         description: 'Production estimated from tank volumes',
         formats: ['pdf', 'excel', 'csv'],
-        parameters: { startDate: 'required', endDate: 'required', tankIds: 'optional' },
+        parameters: {
+          startDate: 'required',
+          endDate: 'required',
+          tankIds: 'optional',
+        },
       },
     ];
     return catalog.map((report) => ({
       ...report,
       formats: report.formats.filter(
-        (format) => format !== 'pdf' || this.pdfReportService.hasLayout(report.type),
+        (format) =>
+          format !== 'pdf' || this.pdfReportService.hasLayout(report.type),
       ),
     }));
   }
@@ -180,7 +215,8 @@ export class ReportsService {
 
       // Relatório semanal de performance (aos domingos)
       const today = new Date();
-      if (today.getDay() === 0) { // Domingo
+      if (today.getDay() === 0) {
+        // Domingo
         const weekStart = new Date(today);
         weekStart.setDate(today.getDate() - 7);
 
@@ -192,9 +228,10 @@ export class ReportsService {
           title: `Relatório Semanal de Performance - Semana ${this.getWeekNumber(today)}`,
         });
 
-        this.logger.log(`Relatório semanal gerado: ${performanceReport.filename}`);
+        this.logger.log(
+          `Relatório semanal gerado: ${performanceReport.filename}`,
+        );
       }
-
     } catch (error) {
       this.logger.error('Erro ao gerar relatórios agendados:', error);
     }
@@ -212,10 +249,14 @@ export class ReportsService {
 
       // Limitar período máximo (90 dias para relatórios detalhados)
       const maxPeriodDays = 90;
-      const periodDays = (end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24);
+      const periodDays =
+        (end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24);
 
       if (periodDays > maxPeriodDays) {
-        throw new BadRequestException({ code: 'reportPeriodTooLong', days: maxPeriodDays });
+        throw new BadRequestException({
+          code: 'reportPeriodTooLong',
+          days: maxPeriodDays,
+        });
       }
     }
 
@@ -241,10 +282,16 @@ export class ReportsService {
     }
   }
 
-  private generateFilename(type: ReportType, extension: string, customTitle?: string): string {
+  private generateFilename(
+    type: ReportType,
+    extension: string,
+    customTitle?: string,
+  ): string {
     const timestamp = new Date().toISOString().slice(0, 19).replace(/:/g, '-');
     const baseName = customTitle || this.getTypeName(type);
-    const sanitizedName = baseName.replace(/[^a-zA-Z0-9\s-]/g, '').replace(/\s+/g, '_');
+    const sanitizedName = baseName
+      .replace(/[^a-zA-Z0-9\s-]/g, '')
+      .replace(/\s+/g, '_');
 
     return `${sanitizedName}_${timestamp}.${extension}`;
   }
@@ -261,7 +308,10 @@ export class ReportsService {
     return names[type] || 'Relatorio';
   }
 
-  private async generateCsvReport(type: ReportType, data: any): Promise<Buffer> {
+  private async generateCsvReport(
+    type: ReportType,
+    data: any,
+  ): Promise<Buffer> {
     // Implementação básica de CSV - em produção usar biblioteca especializada
     let csv = '';
 
@@ -279,8 +329,8 @@ export class ReportsService {
       const headers = Object.keys(data.data[0]);
       csv += headers.join(',') + '\n';
 
-      data.data.forEach(row => {
-        const values = headers.map(header => {
+      data.data.forEach((row) => {
+        const values = headers.map((header) => {
           const value = row[header];
           if (typeof value === 'string' && value.includes(',')) {
             return `"${value}"`;
@@ -296,7 +346,8 @@ export class ReportsService {
 
   private getWeekNumber(date: Date): number {
     const firstDayOfYear = new Date(date.getFullYear(), 0, 1);
-    const pastDaysOfYear = (date.getTime() - firstDayOfYear.getTime()) / 86400000;
+    const pastDaysOfYear =
+      (date.getTime() - firstDayOfYear.getTime()) / 86400000;
     return Math.ceil((pastDaysOfYear + firstDayOfYear.getDay() + 1) / 7);
   }
 

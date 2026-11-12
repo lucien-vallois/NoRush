@@ -23,11 +23,7 @@ import { AlertsController } from './alerts.controller';
     ScheduleModule,
   ],
   controllers: [AlertsController],
-  providers: [
-    AlertsService,
-    AlertProcessorService,
-    NotificationService,
-  ],
+  providers: [AlertsService, AlertProcessorService, NotificationService],
   exports: [AlertsService, AlertProcessorService],
 })
 export class AlertsModule {}

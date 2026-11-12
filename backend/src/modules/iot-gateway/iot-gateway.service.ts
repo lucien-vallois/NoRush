@@ -38,7 +38,9 @@ export class IotGatewayService implements OnModuleInit {
   onModuleInit(): void {
     const mqtt = this.mqttService.getConnectionStatus();
     if (mqtt.enabled && !mqtt.connected) {
-      this.logger.warn('MQTT not connected yet at startup; retrying in the background');
+      this.logger.warn(
+        'MQTT not connected yet at startup; retrying in the background',
+      );
     }
   }
 

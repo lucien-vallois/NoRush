@@ -51,15 +51,27 @@ async function main(): Promise<number> {
     const existing = await users.findOne({ where: { email } });
     const passwordHash = await bcrypt.hash(password, 12);
     if (existing && !values.reset) {
-      console.error(`User ${email} already exists. Use --reset to set a new password and make it admin.`);
+      console.error(
+        `User ${email} already exists. Use --reset to set a new password and make it admin.`,
+      );
       return 1;
     }
     if (existing) {
-      await users.update(existing.id, { passwordHash, role: UserRole.ADMIN, isActive: true });
+      await users.update(existing.id, {
+        passwordHash,
+        role: UserRole.ADMIN,
+        isActive: true,
+      });
       console.log(`Updated ${email}: role admin, new password set.`);
     } else {
       await users.save(
-        users.create({ email, name, passwordHash, role: UserRole.ADMIN, isActive: true }),
+        users.create({
+          email,
+          name,
+          passwordHash,
+          role: UserRole.ADMIN,
+          isActive: true,
+        }),
       );
       console.log(`Created admin ${email}.`);
     }

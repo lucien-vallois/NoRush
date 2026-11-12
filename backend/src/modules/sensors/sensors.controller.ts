@@ -22,7 +22,12 @@ import { SensorsService } from './sensors.service';
 import { CreateSensorDto } from './dto/create-sensor.dto';
 import { UpdateSensorDto } from './dto/update-sensor.dto';
 import { SensorFiltersDto } from './dto/sensor-filters.dto';
-import { Sensor, SensorStatus, SensorType, SensorProtocol } from '../../entities/sensor.entity';
+import {
+  Sensor,
+  SensorStatus,
+  SensorType,
+  SensorProtocol,
+} from '../../entities/sensor.entity';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { UserRole } from '../../entities/user.entity';
 
@@ -35,7 +40,11 @@ export class SensorsController {
   @Roles(UserRole.ADMIN, UserRole.MAINTENANCE)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Criar novo sensor' })
-  @ApiResponse({ status: 201, description: 'Sensor criado com sucesso', type: Sensor })
+  @ApiResponse({
+    status: 201,
+    description: 'Sensor criado com sucesso',
+    type: Sensor,
+  })
   @ApiResponse({ status: 409, description: 'ID do sensor já existe' })
   @ApiResponse({ status: 404, description: 'Tanque não encontrado' })
   async create(@Body() createSensorDto: CreateSensorDto): Promise<Sensor> {
@@ -45,7 +54,11 @@ export class SensorsController {
   @Get()
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Listar sensores com filtros' })
-  @ApiResponse({ status: 200, description: 'Lista de sensores obtida com sucesso', type: [Sensor] })
+  @ApiResponse({
+    status: 200,
+    description: 'Lista de sensores obtida com sucesso',
+    type: [Sensor],
+  })
   @ApiQuery({ name: 'type', enum: SensorType, required: false })
   @ApiQuery({ name: 'protocol', enum: SensorProtocol, required: false })
   @ApiQuery({ name: 'status', enum: SensorStatus, required: false })
@@ -67,7 +80,11 @@ export class SensorsController {
   @Get('online')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Listar sensores online' })
-  @ApiResponse({ status: 200, description: 'Sensores online obtidos com sucesso', type: [Sensor] })
+  @ApiResponse({
+    status: 200,
+    description: 'Sensores online obtidos com sucesso',
+    type: [Sensor],
+  })
   async getOnlineSensors(): Promise<Sensor[]> {
     return this.sensorsService.getOnlineSensors();
   }
@@ -75,7 +92,11 @@ export class SensorsController {
   @Get('maintenance-needed')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Listar sensores que precisam de manutenção' })
-  @ApiResponse({ status: 200, description: 'Sensores que precisam de manutenção', type: [Sensor] })
+  @ApiResponse({
+    status: 200,
+    description: 'Sensores que precisam de manutenção',
+    type: [Sensor],
+  })
   async getSensorsNeedingMaintenance(): Promise<Sensor[]> {
     return this.sensorsService.getSensorsNeedingCalibration();
   }
@@ -83,7 +104,11 @@ export class SensorsController {
   @Get('low-battery')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Listar sensores com bateria baixa' })
-  @ApiResponse({ status: 200, description: 'Sensores com bateria baixa', type: [Sensor] })
+  @ApiResponse({
+    status: 200,
+    description: 'Sensores com bateria baixa',
+    type: [Sensor],
+  })
   async getSensorsWithLowBattery(): Promise<Sensor[]> {
     return this.sensorsService.getSensorsWithLowBattery();
   }
@@ -91,7 +116,11 @@ export class SensorsController {
   @Get('tank/:tankId')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Listar sensores de um tanque' })
-  @ApiResponse({ status: 200, description: 'Sensores do tanque obtidos com sucesso', type: [Sensor] })
+  @ApiResponse({
+    status: 200,
+    description: 'Sensores do tanque obtidos com sucesso',
+    type: [Sensor],
+  })
   @ApiParam({ name: 'tankId', description: 'ID do tanque' })
   async getSensorsByTank(@Param('tankId') tankId: string): Promise<Sensor[]> {
     return this.sensorsService.getSensorsByTank(tankId);
@@ -100,7 +129,11 @@ export class SensorsController {
   @Get('type/:type')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Listar sensores por tipo' })
-  @ApiResponse({ status: 200, description: 'Sensores do tipo obtidos com sucesso', type: [Sensor] })
+  @ApiResponse({
+    status: 200,
+    description: 'Sensores do tipo obtidos com sucesso',
+    type: [Sensor],
+  })
   @ApiParam({ name: 'type', enum: SensorType, description: 'Tipo do sensor' })
   async getSensorsByType(@Param('type') type: SensorType): Promise<Sensor[]> {
     return this.sensorsService.getSensorsByType(type);
@@ -109,9 +142,19 @@ export class SensorsController {
   @Get('status/:status')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Listar sensores por status' })
-  @ApiResponse({ status: 200, description: 'Sensores do status obtidos com sucesso', type: [Sensor] })
-  @ApiParam({ name: 'status', enum: SensorStatus, description: 'Status do sensor' })
-  async getSensorsByStatus(@Param('status') status: SensorStatus): Promise<Sensor[]> {
+  @ApiResponse({
+    status: 200,
+    description: 'Sensores do status obtidos com sucesso',
+    type: [Sensor],
+  })
+  @ApiParam({
+    name: 'status',
+    enum: SensorStatus,
+    description: 'Status do sensor',
+  })
+  async getSensorsByStatus(
+    @Param('status') status: SensorStatus,
+  ): Promise<Sensor[]> {
     return this.sensorsService.getSensorsByStatus(status);
   }
 
@@ -148,7 +191,11 @@ export class SensorsController {
   @Roles(UserRole.ADMIN, UserRole.MAINTENANCE)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Atualizar sensor' })
-  @ApiResponse({ status: 200, description: 'Sensor atualizado com sucesso', type: Sensor })
+  @ApiResponse({
+    status: 200,
+    description: 'Sensor atualizado com sucesso',
+    type: Sensor,
+  })
   @ApiResponse({ status: 404, description: 'Sensor não encontrado' })
   @ApiParam({ name: 'id', description: 'ID do sensor' })
   async update(
@@ -164,7 +211,10 @@ export class SensorsController {
   @ApiOperation({ summary: 'Deletar sensor' })
   @ApiResponse({ status: 204, description: 'Sensor deletado com sucesso' })
   @ApiResponse({ status: 404, description: 'Sensor não encontrado' })
-  @ApiResponse({ status: 409, description: 'Sensor possui leituras associadas' })
+  @ApiResponse({
+    status: 409,
+    description: 'Sensor possui leituras associadas',
+  })
   @ApiParam({ name: 'id', description: 'ID do sensor' })
   @HttpCode(HttpStatus.NO_CONTENT)
   async remove(@Param('id') id: string): Promise<void> {
@@ -175,7 +225,11 @@ export class SensorsController {
   @Roles(UserRole.ADMIN, UserRole.MAINTENANCE)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Registrar calibração realizada' })
-  @ApiResponse({ status: 200, description: 'Calibração registrada com sucesso', type: Sensor })
+  @ApiResponse({
+    status: 200,
+    description: 'Calibração registrada com sucesso',
+    type: Sensor,
+  })
   @ApiParam({ name: 'id', description: 'ID do sensor' })
   async registerCalibration(@Param('id') id: string): Promise<Sensor> {
     return this.sensorsService.updateCalibrationDate(id, new Date());
@@ -185,7 +239,11 @@ export class SensorsController {
   @Roles(UserRole.ADMIN, UserRole.MAINTENANCE)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Atualizar versão do firmware' })
-  @ApiResponse({ status: 200, description: 'Firmware atualizado com sucesso', type: Sensor })
+  @ApiResponse({
+    status: 200,
+    description: 'Firmware atualizado com sucesso',
+    type: Sensor,
+  })
   @ApiParam({ name: 'id', description: 'ID do sensor' })
   async updateFirmware(
     @Param('id') id: string,
@@ -198,7 +256,11 @@ export class SensorsController {
   @Roles(UserRole.ADMIN, UserRole.MAINTENANCE)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Atualizar status de múltiplos sensores' })
-  @ApiResponse({ status: 200, description: 'Sensores atualizados com sucesso', type: [Sensor] })
+  @ApiResponse({
+    status: 200,
+    description: 'Sensores atualizados com sucesso',
+    type: [Sensor],
+  })
   @ApiResponse({ status: 400, description: 'Lista vazia ou muito grande' })
   async bulkUpdateStatus(
     @Body() body: { sensorIds: string[]; status: SensorStatus },
@@ -211,13 +273,20 @@ export class SensorsController {
   @Roles(UserRole.ADMIN, UserRole.MAINTENANCE)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Registrar calibração para múltiplos sensores' })
-  @ApiResponse({ status: 200, description: 'Calibrações registradas com sucesso', type: [Sensor] })
+  @ApiResponse({
+    status: 200,
+    description: 'Calibrações registradas com sucesso',
+    type: [Sensor],
+  })
   async bulkRegisterCalibration(
     @Body() body: { sensorIds: string[] },
   ): Promise<Sensor[]> {
     const results: Sensor[] = [];
     for (const sensorId of body.sensorIds) {
-      const result = await this.sensorsService.updateCalibrationDate(sensorId, new Date());
+      const result = await this.sensorsService.updateCalibrationDate(
+        sensorId,
+        new Date(),
+      );
       results.push(result);
     }
     return results;

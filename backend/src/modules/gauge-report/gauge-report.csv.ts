@@ -10,7 +10,11 @@ const PERIOD_LABEL = {
 } as const;
 
 /** "2026-11-03 07:00" on the pad clock */
-export function formatLocal(iso: string, timeZone: string, withDate = true): string {
+export function formatLocal(
+  iso: string,
+  timeZone: string,
+  withDate = true,
+): string {
   const parts = new Intl.DateTimeFormat('en-US', {
     timeZone,
     hourCycle: 'h23',
@@ -22,7 +26,9 @@ export function formatLocal(iso: string, timeZone: string, withDate = true): str
   }).formatToParts(new Date(iso));
   const get = (type: string) => parts.find((p) => p.type === type)?.value ?? '';
   const time = `${get('hour')}:${get('minute')}`;
-  return withDate ? `${get('year')}-${get('month')}-${get('day')} ${time}` : time;
+  return withDate
+    ? `${get('year')}-${get('month')}-${get('day')} ${time}`
+    : time;
 }
 
 /** Text cell: quoted when needed, and never read as a formula by a spreadsheet. */
@@ -36,13 +42,20 @@ function number(value: number | null | undefined, digits: number): string {
   return value == null || !Number.isFinite(value) ? '' : value.toFixed(digits);
 }
 
-export function buildGaugeReportCsv(report: GaugeReport, units: ReportUnits): string {
+export function buildGaugeReportCsv(
+  report: GaugeReport,
+  units: ReportUnits,
+): string {
   const imperial = units === 'imperial';
   const tz = report.period.timeZone;
   const level = (m: number | null | undefined) =>
     m == null ? '' : imperial ? text(formatFeetInches(m)) : number(m, 3);
   const volume = (liters: number | null | undefined) =>
-    liters == null ? '' : imperial ? number(liters / L_PER_BBL, 2) : number(liters / 1000, 3);
+    liters == null
+      ? ''
+      : imperial
+        ? number(liters / L_PER_BBL, 2)
+        : number(liters / 1000, 3);
   const vu = imperial ? 'bbl' : 'm3';
   const lu = imperial ? 'ft-in' : 'm';
 
@@ -52,8 +65,10 @@ export function buildGaugeReportCsv(report: GaugeReport, units: ReportUnits): st
     else if (t.samples === 0) out.push('no readings in the period');
     if (t.gaugeId && !t.opening) out.push('no reading near the opening time');
     if (t.gaugeId && !t.closing) out.push('no reading near the closing time');
-    if (t.gaugeId && t.samples > 0 && !t.hasInterface) out.push('single-float gauge: total only');
-    if (t.samples > 0 && t.longestGapMinutes >= 60) out.push(`longest gap ${t.longestGapMinutes} min`);
+    if (t.gaugeId && t.samples > 0 && !t.hasInterface)
+      out.push('single-float gauge: total only');
+    if (t.samples > 0 && t.longestGapMinutes >= 60)
+      out.push(`longest gap ${t.longestGapMinutes} min`);
     for (const r of t.removals) {
       out.push(
         `${r.layer} out ${formatLocal(r.start, tz, false)}-${formatLocal(r.end, tz, false)}: ${volume(r.amountL)} ${vu}`,
@@ -67,8 +82,17 @@ export function buildGaugeReportCsv(report: GaugeReport, units: ReportUnits): st
     'NoRush gauge report',
     ['Period', PERIOD_LABEL[report.period.kind]].join(','),
     ['Gauge day', report.period.date].join(','),
-    ['From', formatLocal(report.period.start, tz), 'To', formatLocal(report.period.end, tz), 'Time zone', text(tz)].join(','),
-    ['Units', imperial ? 'level ft-in; volume bbl' : 'level m; volume m3'].join(','),
+    [
+      'From',
+      formatLocal(report.period.start, tz),
+      'To',
+      formatLocal(report.period.end, tz),
+      'Time zone',
+      text(tz),
+    ].join(','),
+    ['Units', imperial ? 'level ft-in; volume bbl' : 'level m; volume m3'].join(
+      ',',
+    ),
     ['Generated', report.generatedAt].join(','),
     [
       'Note',
@@ -134,7 +158,14 @@ export function buildGaugeReportCsv(report: GaugeReport, units: ReportUnits): st
   const s = report.totals;
   lines.push(
     [
-      'Total', '', '', '', '', '', '', '',
+      'Total',
+      '',
+      '',
+      '',
+      '',
+      '',
+      '',
+      '',
       volume(s.oilClosingL),
       volume(s.oilRemovedL),
       volume(s.oilProducedL),
@@ -143,7 +174,11 @@ export function buildGaugeReportCsv(report: GaugeReport, units: ReportUnits): st
       volume(s.waterRemovedL),
       volume(s.waterProducedL),
       volume(s.totalProducedL),
-      '', '', '', '', '',
+      '',
+      '',
+      '',
+      '',
+      '',
     ].join(','),
   );
 

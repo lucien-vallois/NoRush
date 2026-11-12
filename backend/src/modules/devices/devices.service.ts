@@ -79,7 +79,9 @@ export class DevicesService {
       throw error;
     }
 
-    this.logger.log(`Dispositivo provisionado: ${sensorId} (tank ${dto.tankId})`);
+    this.logger.log(
+      `Dispositivo provisionado: ${sensorId} (tank ${dto.tankId})`,
+    );
     return this.issueCredential(sensor, 'provisioned');
   }
 
@@ -88,7 +90,9 @@ export class DevicesService {
     return this.issueCredential(sensor, 'credential rotated');
   }
 
-  async revoke(sensorId: string): Promise<{ sensorId: string; revokedAt: string }> {
+  async revoke(
+    sensorId: string,
+  ): Promise<{ sensorId: string; revokedAt: string }> {
     const sensor = await this.findBySensorId(sensorId);
     // QueryDeepPartialEntity não aceita null na tipagem; em SQL o valor
     // transmitido é NULL para limpar a credencial.
@@ -148,7 +152,8 @@ export class DevicesService {
     const sensor = await this.sensorRepository.findOne({
       where: { sensorId },
     });
-    if (!sensor) throw new NotFoundException({ code: 'sensorNotFound', id: sensorId });
+    if (!sensor)
+      throw new NotFoundException({ code: 'sensorNotFound', id: sensorId });
     return sensor;
   }
 

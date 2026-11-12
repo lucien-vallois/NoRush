@@ -4,7 +4,11 @@ import { Repository, Between, MoreThanOrEqual, LessThanOrEqual } from 'typeorm';
 import { Tank } from '../../../entities/tank.entity';
 import { Sensor } from '../../../entities/sensor.entity';
 import { Reading } from '../../../entities/reading.entity';
-import { Alert, AlertSeverity, AlertType } from '../../../entities/alert.entity';
+import {
+  Alert,
+  AlertSeverity,
+  AlertType,
+} from '../../../entities/alert.entity';
 import { ReportType } from '../dto/generate-report.dto';
 
 interface ReportData {
@@ -48,7 +52,8 @@ export class ReportDataService {
     },
     customTitle?: string,
   ): Promise<ReportData> {
-    const startDate = filters.startDate || new Date(Date.now() - 30 * 24 * 60 * 60 * 1000); // 30 dias atrás
+    const startDate =
+      filters.startDate || new Date(Date.now() - 30 * 24 * 60 * 60 * 1000); // 30 dias atrás
     const endDate = filters.endDate || new Date();
 
     const metadata = {
@@ -63,37 +68,57 @@ export class ReportDataService {
         case ReportType.TANK_LEVEL_HISTORY:
           return {
             metadata,
-            ...await this.generateTankLevelHistoryData(startDate, endDate, filters),
+            ...(await this.generateTankLevelHistoryData(
+              startDate,
+              endDate,
+              filters,
+            )),
           };
 
         case ReportType.SENSOR_PERFORMANCE:
           return {
             metadata,
-            ...await this.generateSensorPerformanceData(startDate, endDate, filters),
+            ...(await this.generateSensorPerformanceData(
+              startDate,
+              endDate,
+              filters,
+            )),
           };
 
         case ReportType.ALERT_SUMMARY:
           return {
             metadata,
-            ...await this.generateAlertSummaryData(startDate, endDate, filters),
+            ...(await this.generateAlertSummaryData(
+              startDate,
+              endDate,
+              filters,
+            )),
           };
 
         case ReportType.SYSTEM_OVERVIEW:
           return {
             metadata,
-            ...await this.generateSystemOverviewData(startDate, endDate, filters),
+            ...(await this.generateSystemOverviewData(
+              startDate,
+              endDate,
+              filters,
+            )),
           };
 
         case ReportType.MAINTENANCE_SCHEDULE:
           return {
             metadata,
-            ...await this.generateMaintenanceScheduleData(),
+            ...(await this.generateMaintenanceScheduleData()),
           };
 
         case ReportType.PRODUCTION_ANALYSIS:
           return {
             metadata,
-            ...await this.generateProductionAnalysisData(startDate, endDate, filters),
+            ...(await this.generateProductionAnalysisData(
+              startDate,
+              endDate,
+              filters,
+            )),
           };
 
         default:
@@ -138,10 +163,11 @@ export class ReportDataService {
         tankName: tank.name,
         tankCode: tank.code,
         totalReadings: readings.length,
-        avgLevel: readings.reduce((sum, r) => sum + r.level, 0) / readings.length,
-        minLevel: Math.min(...readings.map(r => r.level)),
-        maxLevel: Math.max(...readings.map(r => r.level)),
-        readings: readings.map(r => ({
+        avgLevel:
+          readings.reduce((sum, r) => sum + r.level, 0) / readings.length,
+        minLevel: Math.min(...readings.map((r) => r.level)),
+        maxLevel: Math.max(...readings.map((r) => r.level)),
+        readings: readings.map((r) => ({
           timestamp: r.timestamp,
           level: r.level,
           volume: r.volume,
@@ -165,13 +191,15 @@ export class ReportDataService {
         avgLevel: Math.round(avgLevel * 100) / 100,
         minLevel: minLevel === Infinity ? 0 : Math.round(minLevel * 100) / 100,
         maxLevel: maxLevel === -Infinity ? 0 : Math.round(maxLevel * 100) / 100,
-        periodDays: Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)),
+        periodDays: Math.ceil(
+          (endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24),
+        ),
       },
       data: tankData,
       charts: {
-        levelTrends: tankData.map(tank => ({
+        levelTrends: tankData.map((tank) => ({
           name: tank.tankName,
-          data: tank.readings.map(r => ({
+          data: tank.readings.map((r) => ({
             x: r.timestamp.toISOString(),
             y: r.level,
           })),
@@ -204,8 +232,10 @@ export class ReportDataService {
 
       if (readings.length === 0) continue;
 
-      const qualityAvg = readings.reduce((sum, r) => sum + (r.quality || 0), 0) / readings.length;
-      const errorCount = readings.filter(r => (r.quality || 0) < 50).length;
+      const qualityAvg =
+        readings.reduce((sum, r) => sum + (r.quality || 0), 0) /
+        readings.length;
+      const errorCount = readings.filter((r) => (r.quality || 0) < 50).length;
 
       const sensorStats = {
         sensorId: sensor.id,
@@ -215,7 +245,10 @@ export class ReportDataService {
         totalReadings: readings.length,
         avgQuality: Math.round(qualityAvg * 100) / 100,
         errorCount,
-        errorRate: readings.length > 0 ? Math.round((errorCount / readings.length) * 10000) / 100 : 0,
+        errorRate:
+          readings.length > 0
+            ? Math.round((errorCount / readings.length) * 10000) / 100
+            : 0,
         transmissionCount: sensor.transmissionCount,
         lastTransmission: sensor.lastTransmissionAt,
         batteryLevel: sensor.batteryLevel,
@@ -236,13 +269,16 @@ export class ReportDataService {
         totalReadings,
         avgQuality: Math.round(avgQuality * 100) / 100,
         totalErrors,
-        errorRate: totalReadings > 0 ? Math.round((totalErrors / totalReadings) * 10000) / 100 : 0,
-        onlineSensors: sensorData.filter(s => s.isOnline).length,
-        offlineSensors: sensorData.filter(s => !s.isOnline).length,
+        errorRate:
+          totalReadings > 0
+            ? Math.round((totalErrors / totalReadings) * 10000) / 100
+            : 0,
+        onlineSensors: sensorData.filter((s) => s.isOnline).length,
+        offlineSensors: sensorData.filter((s) => !s.isOnline).length,
       },
       data: sensorData,
       charts: {
-        qualityDistribution: sensorData.map(sensor => ({
+        qualityDistribution: sensorData.map((sensor) => ({
           name: sensor.sensorName,
           quality: sensor.avgQuality,
           errors: sensor.errorCount,
@@ -250,11 +286,11 @@ export class ReportDataService {
         onlineStatus: [
           {
             name: 'Online',
-            value: sensorData.filter(s => s.isOnline).length,
+            value: sensorData.filter((s) => s.isOnline).length,
           },
           {
             name: 'Offline',
-            value: sensorData.filter(s => !s.isOnline).length,
+            value: sensorData.filter((s) => !s.isOnline).length,
           },
         ],
       },
@@ -293,40 +329,59 @@ export class ReportDataService {
       .getMany();
 
     // Estatísticas
-    const alertsByType = alerts.reduce((acc, alert) => {
-      acc[alert.type] = (acc[alert.type] || 0) + 1;
-      return acc;
-    }, {} as Record<string, number>);
+    const alertsByType = alerts.reduce(
+      (acc, alert) => {
+        acc[alert.type] = (acc[alert.type] || 0) + 1;
+        return acc;
+      },
+      {} as Record<string, number>,
+    );
 
-    const alertsBySeverity = alerts.reduce((acc, alert) => {
-      acc[alert.severity] = (acc[alert.severity] || 0) + 1;
-      return acc;
-    }, {} as Record<string, number>);
+    const alertsBySeverity = alerts.reduce(
+      (acc, alert) => {
+        acc[alert.severity] = (acc[alert.severity] || 0) + 1;
+        return acc;
+      },
+      {} as Record<string, number>,
+    );
 
-    const alertsByStatus = alerts.reduce((acc, alert) => {
-      acc[alert.status] = (acc[alert.status] || 0) + 1;
-      return acc;
-    }, {} as Record<string, number>);
+    const alertsByStatus = alerts.reduce(
+      (acc, alert) => {
+        acc[alert.status] = (acc[alert.status] || 0) + 1;
+        return acc;
+      },
+      {} as Record<string, number>,
+    );
 
     // Tempo médio de resolução
-    const resolvedAlerts = alerts.filter(a => a.resolvedAt && a.createdAt);
-    const avgResolutionTime = resolvedAlerts.length > 0
-      ? resolvedAlerts.reduce((sum, alert) => {
-          return sum + (alert.resolvedAt!.getTime() - alert.createdAt.getTime());
-        }, 0) / resolvedAlerts.length / (1000 * 60 * 60) // em horas
-      : 0;
+    const resolvedAlerts = alerts.filter((a) => a.resolvedAt && a.createdAt);
+    const avgResolutionTime =
+      resolvedAlerts.length > 0
+        ? resolvedAlerts.reduce((sum, alert) => {
+            return (
+              sum + (alert.resolvedAt!.getTime() - alert.createdAt.getTime())
+            );
+          }, 0) /
+          resolvedAlerts.length /
+          (1000 * 60 * 60) // em horas
+        : 0;
 
     return {
       summary: {
         totalAlerts: alerts.length,
-        resolvedAlerts: alerts.filter(a => a.status === 'resolved').length,
-        activeAlerts: alerts.filter(a => a.status === 'active').length,
-        acknowledgedAlerts: alerts.filter(a => a.status === 'acknowledged').length,
+        resolvedAlerts: alerts.filter((a) => a.status === 'resolved').length,
+        activeAlerts: alerts.filter((a) => a.status === 'active').length,
+        acknowledgedAlerts: alerts.filter((a) => a.status === 'acknowledged')
+          .length,
         avgResolutionTime: Math.round(avgResolutionTime * 100) / 100,
-        criticalAlerts: alerts.filter(a => a.severity === AlertSeverity.CRITICAL).length,
-        periodDays: Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)),
+        criticalAlerts: alerts.filter(
+          (a) => a.severity === AlertSeverity.CRITICAL,
+        ).length,
+        periodDays: Math.ceil(
+          (endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24),
+        ),
       },
-      data: alerts.map(alert => ({
+      data: alerts.map((alert) => ({
         id: alert.id,
         type: alert.type,
         severity: alert.severity,
@@ -347,10 +402,12 @@ export class ReportDataService {
           type,
           count,
         })),
-        alertsBySeverity: Object.entries(alertsBySeverity).map(([severity, count]) => ({
-          severity,
-          count,
-        })),
+        alertsBySeverity: Object.entries(alertsBySeverity).map(
+          ([severity, count]) => ({
+            severity,
+            count,
+          }),
+        ),
         alertsOverTime: this.groupAlertsByDate(alerts),
       },
     };
@@ -375,32 +432,53 @@ export class ReportDataService {
       },
     });
 
-    const onlineSensors = sensors.filter(s => s.isOnline()).length;
+    const onlineSensors = sensors.filter((s) => s.isOnline()).length;
     const offlineSensors = sensors.length - onlineSensors;
 
     const systemHealth = {
       tanks: {
         total: tanks.length,
-        active: tanks.filter(t => t.status === 'active').length,
-        maintenance: tanks.filter(t => t.status === 'maintenance').length,
-        error: tanks.filter(t => t.status === 'error').length,
+        active: tanks.filter((t) => t.status === 'active').length,
+        maintenance: tanks.filter((t) => t.status === 'maintenance').length,
+        error: tanks.filter((t) => t.status === 'error').length,
       },
       sensors: {
         total: sensors.length,
         online: onlineSensors,
         offline: offlineSensors,
-        byType: sensors.reduce((acc, sensor) => {
-          acc[sensor.type] = (acc[sensor.type] || 0) + 1;
-          return acc;
-        }, {} as Record<string, number>),
+        byType: sensors.reduce(
+          (acc, sensor) => {
+            acc[sensor.type] = (acc[sensor.type] || 0) + 1;
+            return acc;
+          },
+          {} as Record<string, number>,
+        ),
       },
       readings: {
         total: totalReadings,
-        avgPerDay: Math.round(totalReadings / Math.max(1, Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)))),
+        avgPerDay: Math.round(
+          totalReadings /
+            Math.max(
+              1,
+              Math.ceil(
+                (endDate.getTime() - startDate.getTime()) /
+                  (1000 * 60 * 60 * 24),
+              ),
+            ),
+        ),
       },
       alerts: {
         total: totalAlerts,
-        avgPerDay: Math.round(totalAlerts / Math.max(1, Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)))),
+        avgPerDay: Math.round(
+          totalAlerts /
+            Math.max(
+              1,
+              Math.ceil(
+                (endDate.getTime() - startDate.getTime()) /
+                  (1000 * 60 * 60 * 24),
+              ),
+            ),
+        ),
         critical: await this.alertRepository.count({
           where: {
             severity: AlertSeverity.CRITICAL,
@@ -413,7 +491,7 @@ export class ReportDataService {
     return {
       summary: systemHealth,
       data: {
-        tanks: tanks.map(tank => ({
+        tanks: tanks.map((tank) => ({
           id: tank.id,
           name: tank.name,
           code: tank.code,
@@ -422,7 +500,7 @@ export class ReportDataService {
           latitude: tank.latitude,
           longitude: tank.longitude,
         })),
-        sensors: sensors.map(sensor => ({
+        sensors: sensors.map((sensor) => ({
           id: sensor.id,
           name: sensor.name,
           type: sensor.type,
@@ -436,22 +514,30 @@ export class ReportDataService {
       charts: {
         systemStatus: [
           { name: 'Tanques Ativos', value: systemHealth.tanks.active },
-          { name: 'Tanques em Manutenção', value: systemHealth.tanks.maintenance },
+          {
+            name: 'Tanques em Manutenção',
+            value: systemHealth.tanks.maintenance,
+          },
           { name: 'Tanques com Erro', value: systemHealth.tanks.error },
         ],
         sensorStatus: [
           { name: 'Sensores Online', value: systemHealth.sensors.online },
           { name: 'Sensores Offline', value: systemHealth.sensors.offline },
         ],
-        sensorTypes: Object.entries(systemHealth.sensors.byType).map(([type, count]) => ({
-          type,
-          count,
-        })),
+        sensorTypes: Object.entries(systemHealth.sensors.byType).map(
+          ([type, count]) => ({
+            type,
+            count,
+          }),
+        ),
       },
     };
   }
 
-  private async generateMaintenanceScheduleData(): Promise<{ summary: any; data: any }> {
+  private async generateMaintenanceScheduleData(): Promise<{
+    summary: any;
+    data: any;
+  }> {
     // Tanques que precisam de manutenção
     const tanksNeedingMaintenance = await this.tankRepository
       .createQueryBuilder('tank')
@@ -473,7 +559,9 @@ export class ReportDataService {
     const lowBatterySensors = await this.sensorRepository
       .createQueryBuilder('sensor')
       .leftJoinAndSelect('sensor.tank', 'tank')
-      .where('sensor.batteryLevel <= :lowBatteryThreshold', { lowBatteryThreshold: 20 })
+      .where('sensor.batteryLevel <= :lowBatteryThreshold', {
+        lowBatteryThreshold: 20,
+      })
       .andWhere('sensor.batteryLevel IS NOT NULL')
       .orderBy('sensor.batteryLevel', 'ASC')
       .getMany();
@@ -483,10 +571,13 @@ export class ReportDataService {
         tanksNeedingMaintenance: tanksNeedingMaintenance.length,
         sensorsNeedingCalibration: sensorsNeedingCalibration.length,
         lowBatterySensors: lowBatterySensors.length,
-        totalItems: tanksNeedingMaintenance.length + sensorsNeedingCalibration.length + lowBatterySensors.length,
+        totalItems:
+          tanksNeedingMaintenance.length +
+          sensorsNeedingCalibration.length +
+          lowBatterySensors.length,
       },
       data: {
-        tanks: tanksNeedingMaintenance.map(tank => ({
+        tanks: tanksNeedingMaintenance.map((tank) => ({
           id: tank.id,
           name: tank.name,
           code: tank.code,
@@ -499,7 +590,7 @@ export class ReportDataService {
           description: 'Manutenção preventiva do tanque',
         })),
         sensors: [
-          ...sensorsNeedingCalibration.map(sensor => ({
+          ...sensorsNeedingCalibration.map((sensor) => ({
             id: sensor.id,
             name: sensor.name,
             tankName: sensor.tank?.name,
@@ -511,12 +602,15 @@ export class ReportDataService {
             nextMaintenance: sensor.nextCalibrationDate,
             description: 'Calibração do sensor',
           })),
-          ...lowBatterySensors.map(sensor => ({
+          ...lowBatterySensors.map((sensor) => ({
             id: sensor.id,
             name: sensor.name,
             tankName: sensor.tank?.name,
             type: 'battery',
-            priority: sensor.batteryLevel && sensor.batteryLevel <= 10 ? 'critical' : 'high',
+            priority:
+              sensor.batteryLevel && sensor.batteryLevel <= 10
+                ? 'critical'
+                : 'high',
             batteryLevel: sensor.batteryLevel,
             description: 'Substituir bateria do sensor',
           })),
@@ -571,44 +665,53 @@ export class ReportDataService {
     }
 
     // Calcular médias e variações
-    const productionData = Array.from(tankProduction.values()).map(tankData => {
-      const count = tankData.readings.length;
-      tankData.avgVolume = count > 0 ? tankData.totalVolume / count : 0;
-      tankData.volumeVariation = tankData.maxVolume - tankData.minVolume;
+    const productionData = Array.from(tankProduction.values()).map(
+      (tankData) => {
+        const count = tankData.readings.length;
+        tankData.avgVolume = count > 0 ? tankData.totalVolume / count : 0;
+        tankData.volumeVariation = tankData.maxVolume - tankData.minVolume;
 
-      return {
-        tankId: tankData.tankId,
-        tankName: tankData.tankName,
-        totalReadings: count,
-        totalVolume: Math.round(tankData.totalVolume * 100) / 100,
-        avgVolume: Math.round(tankData.avgVolume * 100) / 100,
-        minVolume: Math.round(tankData.minVolume * 100) / 100,
-        maxVolume: Math.round(tankData.maxVolume * 100) / 100,
-        volumeVariation: Math.round(tankData.volumeVariation * 100) / 100,
-        efficiency: this.calculateEfficiency(tankData),
-      };
-    });
+        return {
+          tankId: tankData.tankId,
+          tankName: tankData.tankName,
+          totalReadings: count,
+          totalVolume: Math.round(tankData.totalVolume * 100) / 100,
+          avgVolume: Math.round(tankData.avgVolume * 100) / 100,
+          minVolume: Math.round(tankData.minVolume * 100) / 100,
+          maxVolume: Math.round(tankData.maxVolume * 100) / 100,
+          volumeVariation: Math.round(tankData.volumeVariation * 100) / 100,
+          efficiency: this.calculateEfficiency(tankData),
+        };
+      },
+    );
 
-    const totalProduction = productionData.reduce((sum, tank) => sum + tank.totalVolume, 0);
-    const avgEfficiency = productionData.length > 0
-      ? productionData.reduce((sum, tank) => sum + tank.efficiency, 0) / productionData.length
-      : 0;
+    const totalProduction = productionData.reduce(
+      (sum, tank) => sum + tank.totalVolume,
+      0,
+    );
+    const avgEfficiency =
+      productionData.length > 0
+        ? productionData.reduce((sum, tank) => sum + tank.efficiency, 0) /
+          productionData.length
+        : 0;
 
     return {
       summary: {
         totalTanks: productionData.length,
         totalProduction: Math.round(totalProduction * 100) / 100,
         avgEfficiency: Math.round(avgEfficiency * 100) / 100,
-        periodDays: Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)),
+        periodDays: Math.ceil(
+          (endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24),
+        ),
         totalReadings: readings.length,
       },
       data: productionData,
       charts: {
-        productionByTank: productionData.map(tank => ({
+        productionByTank: productionData.map((tank) => ({
           name: tank.tankName,
           value: tank.totalVolume,
         })),
-        efficiencyByTank: productionData.map(tank => ({
+        efficiencyByTank: productionData.map((tank) => ({
           name: tank.tankName,
           efficiency: tank.efficiency,
         })),
@@ -619,7 +722,7 @@ export class ReportDataService {
   private async getFilteredTanks(tankIds?: string[]): Promise<Tank[]> {
     if (tankIds && tankIds.length > 0) {
       return this.tankRepository.find({
-        where: tankIds.map(id => ({ id })),
+        where: tankIds.map((id) => ({ id })),
         relations: ['sensors'],
       });
     }
@@ -629,7 +732,7 @@ export class ReportDataService {
   private async getFilteredSensors(sensorIds?: string[]): Promise<Sensor[]> {
     if (sensorIds && sensorIds.length > 0) {
       return this.sensorRepository.find({
-        where: sensorIds.map(id => ({ id })),
+        where: sensorIds.map((id) => ({ id })),
         relations: ['tank'],
       });
     }
@@ -648,12 +751,16 @@ export class ReportDataService {
     return titles[type] || 'Relatório do Sistema';
   }
 
-  private calculatePriority(dueDate: Date): 'low' | 'medium' | 'high' | 'critical' {
+  private calculatePriority(
+    dueDate: Date,
+  ): 'low' | 'medium' | 'high' | 'critical' {
     const now = new Date();
-    const daysUntilDue = Math.ceil((dueDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+    const daysUntilDue = Math.ceil(
+      (dueDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24),
+    );
 
     if (daysUntilDue < 0) return 'critical'; // Vencido
-    if (daysUntilDue <= 7) return 'high';    // 7 dias ou menos
+    if (daysUntilDue <= 7) return 'high'; // 7 dias ou menos
     if (daysUntilDue <= 30) return 'medium'; // 30 dias ou menos
     return 'low'; // Mais de 30 dias
   }
@@ -662,26 +769,31 @@ export class ReportDataService {
     // Eficiência baseada na consistência dos volumes
     if (tankData.readings.length < 2) return 100;
 
-    const volumes = tankData.readings.map(r => r.volume);
+    const volumes = tankData.readings.map((r) => r.volume);
     const avgVolume = tankData.avgVolume;
-    const variations = volumes.map(v => Math.abs(v - avgVolume));
-    const avgVariation = variations.reduce((sum, v) => sum + v, 0) / variations.length;
+    const variations = volumes.map((v) => Math.abs(v - avgVolume));
+    const avgVariation =
+      variations.reduce((sum, v) => sum + v, 0) / variations.length;
 
     // Eficiência = 100 - (variação média / volume médio * 100)
-    const efficiency = Math.max(0, 100 - (avgVariation / avgVolume * 100));
+    const efficiency = Math.max(0, 100 - (avgVariation / avgVolume) * 100);
     return Math.round(efficiency * 100) / 100;
   }
 
   private groupAlertsByDate(alerts: Alert[]): any[] {
-    const grouped = alerts.reduce((acc, alert) => {
-      const date = alert.createdAt.toISOString().split('T')[0];
-      if (!acc[date]) {
-        acc[date] = { date, count: 0, bySeverity: {} };
-      }
-      acc[date].count++;
-      acc[date].bySeverity[alert.severity] = (acc[date].bySeverity[alert.severity] || 0) + 1;
-      return acc;
-    }, {} as Record<string, any>);
+    const grouped = alerts.reduce(
+      (acc, alert) => {
+        const date = alert.createdAt.toISOString().split('T')[0];
+        if (!acc[date]) {
+          acc[date] = { date, count: 0, bySeverity: {} };
+        }
+        acc[date].count++;
+        acc[date].bySeverity[alert.severity] =
+          (acc[date].bySeverity[alert.severity] || 0) + 1;
+        return acc;
+      },
+      {} as Record<string, any>,
+    );
 
     return Object.values(grouped).sort((a, b) => a.date.localeCompare(b.date));
   }

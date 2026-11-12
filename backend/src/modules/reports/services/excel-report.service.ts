@@ -90,7 +90,10 @@ export class ExcelReportService {
     XLSX.utils.book_append_sheet(workbook, worksheet, 'Resumo');
   }
 
-  private addTankLevelHistorySheets(workbook: XLSX.WorkBook, data: ReportData): void {
+  private addTankLevelHistorySheets(
+    workbook: XLSX.WorkBook,
+    data: ReportData,
+  ): void {
     if (!data.data || !Array.isArray(data.data)) return;
 
     // Planilha principal de dados
@@ -104,7 +107,7 @@ export class ExcelReportService {
       'Nível Máximo',
     ];
 
-    const tankData = data.data.map(tank => [
+    const tankData = data.data.map((tank) => [
       tank.tankId,
       tank.tankName,
       tank.tankCode,
@@ -122,29 +125,34 @@ export class ExcelReportService {
     if (data.data.length > 0 && data.data[0].readings) {
       data.data.forEach((tank, index) => {
         if (tank.readings && tank.readings.length > 0) {
-          const readingsHeaders = [
-            'Timestamp',
-            'Nível',
-            'Volume',
-            'Qualidade',
-          ];
+          const readingsHeaders = ['Timestamp', 'Nível', 'Volume', 'Qualidade'];
 
-          const readingsData = tank.readings.map(reading => [
+          const readingsData = tank.readings.map((reading) => [
             this.formatDate(new Date(reading.timestamp)),
             this.formatNumber(reading.level),
             reading.volume ? this.formatNumber(reading.volume) : 'N/A',
             reading.quality || 'N/A',
           ]);
 
-          const readingsSheet = XLSX.utils.aoa_to_sheet([readingsHeaders, ...readingsData]);
+          const readingsSheet = XLSX.utils.aoa_to_sheet([
+            readingsHeaders,
+            ...readingsData,
+          ]);
           this.applyDataTableStyles(readingsSheet, readingsData.length + 1);
-          XLSX.utils.book_append_sheet(workbook, readingsSheet, `Leituras_${tank.tankCode}`);
+          XLSX.utils.book_append_sheet(
+            workbook,
+            readingsSheet,
+            `Leituras_${tank.tankCode}`,
+          );
         }
       });
     }
   }
 
-  private addSensorPerformanceSheets(workbook: XLSX.WorkBook, data: ReportData): void {
+  private addSensorPerformanceSheets(
+    workbook: XLSX.WorkBook,
+    data: ReportData,
+  ): void {
     if (!data.data || !Array.isArray(data.data)) return;
 
     const headers = [
@@ -162,7 +170,7 @@ export class ExcelReportService {
       'Última Transmissão',
     ];
 
-    const sensorData = data.data.map(sensor => [
+    const sensorData = data.data.map((sensor) => [
       sensor.sensorId,
       sensor.sensorName,
       this.formatSensorType(sensor.sensorType),
@@ -174,7 +182,9 @@ export class ExcelReportService {
       sensor.transmissionCount,
       sensor.isOnline ? 'Sim' : 'Não',
       sensor.batteryLevel || 'N/A',
-      sensor.lastTransmission ? this.formatDate(sensor.lastTransmission) : 'Nunca',
+      sensor.lastTransmission
+        ? this.formatDate(sensor.lastTransmission)
+        : 'Nunca',
     ]);
 
     const worksheet = XLSX.utils.aoa_to_sheet([headers, ...sensorData]);
@@ -182,7 +192,10 @@ export class ExcelReportService {
     XLSX.utils.book_append_sheet(workbook, worksheet, 'Sensores');
   }
 
-  private addAlertSummarySheets(workbook: XLSX.WorkBook, data: ReportData): void {
+  private addAlertSummarySheets(
+    workbook: XLSX.WorkBook,
+    data: ReportData,
+  ): void {
     if (!data.data || !Array.isArray(data.data)) return;
 
     const headers = [
@@ -201,7 +214,7 @@ export class ExcelReportService {
       'Limite',
     ];
 
-    const alertData = data.data.map(alert => [
+    const alertData = data.data.map((alert) => [
       alert.id,
       this.formatAlertType(alert.type),
       this.formatSeverity(alert.severity),
@@ -210,7 +223,9 @@ export class ExcelReportService {
       alert.tankName,
       alert.sensorName,
       this.formatDate(new Date(alert.createdAt)),
-      alert.acknowledgedAt ? this.formatDate(new Date(alert.acknowledgedAt)) : '',
+      alert.acknowledgedAt
+        ? this.formatDate(new Date(alert.acknowledgedAt))
+        : '',
       alert.resolvedAt ? this.formatDate(new Date(alert.resolvedAt)) : '',
       alert.currentLevel ? this.formatNumber(alert.currentLevel) : '',
       alert.currentVolume ? this.formatNumber(alert.currentVolume) : '',
@@ -222,7 +237,10 @@ export class ExcelReportService {
     XLSX.utils.book_append_sheet(workbook, worksheet, 'Alertas');
   }
 
-  private addSystemOverviewSheets(workbook: XLSX.WorkBook, data: ReportData): void {
+  private addSystemOverviewSheets(
+    workbook: XLSX.WorkBook,
+    data: ReportData,
+  ): void {
     // Planilha de tanques
     if (data.data?.tanks && Array.isArray(data.data.tanks)) {
       const tankHeaders = [
@@ -235,7 +253,7 @@ export class ExcelReportService {
         'Longitude',
       ];
 
-      const tankData = data.data.tanks.map(tank => [
+      const tankData = data.data.tanks.map((tank) => [
         tank.id,
         tank.name,
         tank.code,
@@ -263,7 +281,7 @@ export class ExcelReportService {
         'Última Transmissão',
       ];
 
-      const sensorData = data.data.sensors.map(sensor => [
+      const sensorData = data.data.sensors.map((sensor) => [
         sensor.id,
         sensor.name,
         this.formatSensorType(sensor.type),
@@ -271,16 +289,24 @@ export class ExcelReportService {
         this.formatSensorStatus(sensor.status),
         sensor.isOnline ? 'Sim' : 'Não',
         sensor.batteryLevel || 'N/A',
-        sensor.lastTransmission ? this.formatDate(sensor.lastTransmission) : 'Nunca',
+        sensor.lastTransmission
+          ? this.formatDate(sensor.lastTransmission)
+          : 'Nunca',
       ]);
 
-      const sensorSheet = XLSX.utils.aoa_to_sheet([sensorHeaders, ...sensorData]);
+      const sensorSheet = XLSX.utils.aoa_to_sheet([
+        sensorHeaders,
+        ...sensorData,
+      ]);
       this.applyDataTableStyles(sensorSheet, sensorData.length + 1);
       XLSX.utils.book_append_sheet(workbook, sensorSheet, 'Sensores');
     }
   }
 
-  private addMaintenanceScheduleSheets(workbook: XLSX.WorkBook, data: ReportData): void {
+  private addMaintenanceScheduleSheets(
+    workbook: XLSX.WorkBook,
+    data: ReportData,
+  ): void {
     if (!data.data) return;
 
     // Planilha de tanques
@@ -296,14 +322,16 @@ export class ExcelReportService {
         'Descrição',
       ];
 
-      const tankData = data.data.tanks.map(tank => [
+      const tankData = data.data.tanks.map((tank) => [
         tank.id,
         tank.name,
         tank.code,
         'Tanque',
         tank.priority,
         tank.lastMaintenance ? this.formatDate(tank.lastMaintenance) : 'Nunca',
-        tank.nextMaintenance ? this.formatDate(tank.nextMaintenance) : 'Pendente',
+        tank.nextMaintenance
+          ? this.formatDate(tank.nextMaintenance)
+          : 'Pendente',
         tank.description,
       ]);
 
@@ -326,25 +354,39 @@ export class ExcelReportService {
         'Descrição',
       ];
 
-      const sensorData = data.data.sensors.map(sensor => [
+      const sensorData = data.data.sensors.map((sensor) => [
         sensor.id,
         sensor.name,
         sensor.tankName,
         sensor.type,
         sensor.priority,
-        sensor.lastMaintenance ? this.formatDate(sensor.lastMaintenance) : 'Nunca',
-        sensor.nextMaintenance ? this.formatDate(sensor.nextMaintenance) : 'Pendente',
+        sensor.lastMaintenance
+          ? this.formatDate(sensor.lastMaintenance)
+          : 'Nunca',
+        sensor.nextMaintenance
+          ? this.formatDate(sensor.nextMaintenance)
+          : 'Pendente',
         sensor.batteryLevel || 'N/A',
         sensor.description,
       ]);
 
-      const sensorSheet = XLSX.utils.aoa_to_sheet([sensorHeaders, ...sensorData]);
+      const sensorSheet = XLSX.utils.aoa_to_sheet([
+        sensorHeaders,
+        ...sensorData,
+      ]);
       this.applyDataTableStyles(sensorSheet, sensorData.length + 1);
-      XLSX.utils.book_append_sheet(workbook, sensorSheet, 'Manutenção_Sensores');
+      XLSX.utils.book_append_sheet(
+        workbook,
+        sensorSheet,
+        'Manutenção_Sensores',
+      );
     }
   }
 
-  private addProductionAnalysisSheets(workbook: XLSX.WorkBook, data: ReportData): void {
+  private addProductionAnalysisSheets(
+    workbook: XLSX.WorkBook,
+    data: ReportData,
+  ): void {
     if (!data.data || !Array.isArray(data.data)) return;
 
     const headers = [
@@ -359,7 +401,7 @@ export class ExcelReportService {
       'Eficiência (%)',
     ];
 
-    const productionData = data.data.map(tank => [
+    const productionData = data.data.map((tank) => [
       tank.tankId,
       tank.tankName,
       tank.totalReadings,
@@ -396,7 +438,10 @@ export class ExcelReportService {
     }
   }
 
-  private applyDataTableStyles(worksheet: XLSX.WorkSheet, rowCount: number): void {
+  private applyDataTableStyles(
+    worksheet: XLSX.WorkSheet,
+    rowCount: number,
+  ): void {
     // Definir larguras das colunas automaticamente
     const columnWidths: { wch: number }[] = [];
     const range = XLSX.utils.decode_range(worksheet['!ref'] || 'A1');
@@ -441,7 +486,7 @@ export class ExcelReportService {
   private formatKey(key: string): string {
     return key
       .replace(/([A-Z])/g, ' $1')
-      .replace(/^./, str => str.toUpperCase())
+      .replace(/^./, (str) => str.toUpperCase())
       .trim();
   }
 

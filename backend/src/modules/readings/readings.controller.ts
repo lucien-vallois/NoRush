@@ -33,7 +33,11 @@ export class ReadingsController {
   @Roles(UserRole.ADMIN, UserRole.MAINTENANCE)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Criar nova leitura' })
-  @ApiResponse({ status: 201, description: 'Leitura criada com sucesso', type: Reading })
+  @ApiResponse({
+    status: 201,
+    description: 'Leitura criada com sucesso',
+    type: Reading,
+  })
   @ApiResponse({ status: 404, description: 'Sensor não encontrado' })
   async create(@Body() createReadingDto: CreateReadingDto): Promise<Reading> {
     return this.readingsService.create(createReadingDto);
@@ -56,7 +60,10 @@ export class ReadingsController {
   @Get('sensor/:sensorId')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Listar leituras de um sensor' })
-  @ApiResponse({ status: 200, description: 'Leituras do sensor obtidas com sucesso' })
+  @ApiResponse({
+    status: 200,
+    description: 'Leituras do sensor obtidas com sucesso',
+  })
   @ApiParam({ name: 'sensorId', description: 'ID do sensor' })
   @ApiQuery({ name: 'limit', required: false })
   @ApiQuery({ name: 'startDate', required: false })
@@ -71,7 +78,10 @@ export class ReadingsController {
   @Get('tank/:tankId')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Listar leituras de um tanque' })
-  @ApiResponse({ status: 200, description: 'Leituras do tanque obtidas com sucesso' })
+  @ApiResponse({
+    status: 200,
+    description: 'Leituras do tanque obtidas com sucesso',
+  })
   @ApiParam({ name: 'tankId', description: 'ID do tanque' })
   @ApiQuery({ name: 'limit', required: false })
   @ApiQuery({ name: 'startDate', required: false })
@@ -89,7 +99,10 @@ export class ReadingsController {
     summary: 'Série temporal agregada (TimescaleDB continuous aggregates)',
     description: 'Consultas rápidas de histórico longo. bucket=5m|1h|raw',
   })
-  @ApiResponse({ status: 200, description: 'Série temporal obtida com sucesso' })
+  @ApiResponse({
+    status: 200,
+    description: 'Série temporal obtida com sucesso',
+  })
   @ApiQuery({ name: 'sensorId', required: false })
   @ApiQuery({ name: 'tankId', required: false })
   @ApiQuery({ name: 'bucket', required: false, enum: ['5m', '1h', 'raw'] })
@@ -104,7 +117,10 @@ export class ReadingsController {
     @Query('to') to?: string,
     @Query('limit') limit?: string,
   ) {
-    for (const [name, value] of [['from', from], ['to', to]] as const) {
+    for (const [name, value] of [
+      ['from', from],
+      ['to', to],
+    ] as const) {
       if (value !== undefined && isNaN(Date.parse(value))) {
         throw new BadRequestException({ code: 'invalidDateParam', name });
       }
@@ -122,7 +138,11 @@ export class ReadingsController {
   @Get(':id')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Obter leitura por ID' })
-  @ApiResponse({ status: 200, description: 'Leitura encontrada', type: Reading })
+  @ApiResponse({
+    status: 200,
+    description: 'Leitura encontrada',
+    type: Reading,
+  })
   @ApiResponse({ status: 404, description: 'Leitura não encontrada' })
   @ApiParam({ name: 'id', description: 'ID da leitura' })
   async findOne(@Param('id') id: string): Promise<Reading> {
@@ -132,9 +152,17 @@ export class ReadingsController {
   @Get('sensor/:sensorId/latest')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Obter últimas leituras de um sensor' })
-  @ApiResponse({ status: 200, description: 'Últimas leituras obtidas com sucesso', type: [Reading] })
+  @ApiResponse({
+    status: 200,
+    description: 'Últimas leituras obtidas com sucesso',
+    type: [Reading],
+  })
   @ApiParam({ name: 'sensorId', description: 'ID do sensor' })
-  @ApiQuery({ name: 'limit', description: 'Número de leituras', required: false })
+  @ApiQuery({
+    name: 'limit',
+    description: 'Número de leituras',
+    required: false,
+  })
   async getLatestBySensor(
     @Param('sensorId') sensorId: string,
     @Query('limit') limit?: number,
@@ -145,9 +173,17 @@ export class ReadingsController {
   @Get('tank/:tankId/latest')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Obter últimas leituras de um tanque' })
-  @ApiResponse({ status: 200, description: 'Últimas leituras obtidas com sucesso', type: [Reading] })
+  @ApiResponse({
+    status: 200,
+    description: 'Últimas leituras obtidas com sucesso',
+    type: [Reading],
+  })
   @ApiParam({ name: 'tankId', description: 'ID do tanque' })
-  @ApiQuery({ name: 'limit', description: 'Número de leituras', required: false })
+  @ApiQuery({
+    name: 'limit',
+    description: 'Número de leituras',
+    required: false,
+  })
   async getLatestByTank(
     @Param('tankId') tankId: string,
     @Query('limit') limit?: number,
@@ -170,7 +206,12 @@ export class ReadingsController {
     const start = startDate ? new Date(startDate) : undefined;
     const end = endDate ? new Date(endDate) : undefined;
 
-    return this.readingsService.getReadingStats(sensorId, undefined, start, end);
+    return this.readingsService.getReadingStats(
+      sensorId,
+      undefined,
+      start,
+      end,
+    );
   }
 
   @Get('tank/:tankId/stats')
@@ -196,12 +237,20 @@ export class ReadingsController {
   @ApiOperation({ summary: 'Agregados horários das leituras de um sensor' })
   @ApiResponse({ status: 200, description: 'Agregados obtidos com sucesso' })
   @ApiParam({ name: 'sensorId', description: 'ID do sensor' })
-  @ApiQuery({ name: 'hours', description: 'Horas para agregar', required: false })
+  @ApiQuery({
+    name: 'hours',
+    description: 'Horas para agregar',
+    required: false,
+  })
   async getSensorHourlyAggregates(
     @Param('sensorId') sensorId: string,
     @Query('hours') hours?: number,
   ) {
-    return this.readingsService.getHourlyAggregates(sensorId, undefined, hours || 24);
+    return this.readingsService.getHourlyAggregates(
+      sensorId,
+      undefined,
+      hours || 24,
+    );
   }
 
   @Get('tank/:tankId/hourly')
@@ -209,12 +258,20 @@ export class ReadingsController {
   @ApiOperation({ summary: 'Agregados horários das leituras de um tanque' })
   @ApiResponse({ status: 200, description: 'Agregados obtidos com sucesso' })
   @ApiParam({ name: 'tankId', description: 'ID do tanque' })
-  @ApiQuery({ name: 'hours', description: 'Horas para agregar', required: false })
+  @ApiQuery({
+    name: 'hours',
+    description: 'Horas para agregar',
+    required: false,
+  })
   async getTankHourlyAggregates(
     @Param('tankId') tankId: string,
     @Query('hours') hours?: number,
   ) {
-    return this.readingsService.getHourlyAggregates(undefined, tankId, hours || 24);
+    return this.readingsService.getHourlyAggregates(
+      undefined,
+      tankId,
+      hours || 24,
+    );
   }
 
   @Post('maintenance/recalculate-volumes')
@@ -223,9 +280,14 @@ export class ReadingsController {
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Recalcular volumes de leituras' })
   @ApiResponse({ status: 200, description: 'Volumes recalculados com sucesso' })
-  @ApiQuery({ name: 'sensorId', description: 'ID do sensor (opcional)', required: false })
+  @ApiQuery({
+    name: 'sensorId',
+    description: 'ID do sensor (opcional)',
+    required: false,
+  })
   async recalculateVolumes(@Query('sensorId') sensorId?: string) {
-    const updatedCount = await this.readingsService.recalculateVolumes(sensorId);
+    const updatedCount =
+      await this.readingsService.recalculateVolumes(sensorId);
 
     return {
       message: 'Volumes recalculados com sucesso',
@@ -238,10 +300,19 @@ export class ReadingsController {
   @HttpCode(HttpStatus.OK)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Limpar leituras antigas' })
-  @ApiResponse({ status: 200, description: 'Leituras antigas removidas com sucesso' })
-  @ApiQuery({ name: 'daysToKeep', description: 'Dias para manter', required: false })
+  @ApiResponse({
+    status: 200,
+    description: 'Leituras antigas removidas com sucesso',
+  })
+  @ApiQuery({
+    name: 'daysToKeep',
+    description: 'Dias para manter',
+    required: false,
+  })
   async cleanupOldReadings(@Query('daysToKeep') daysToKeep?: number) {
-    const deletedCount = await this.readingsService.deleteOldReadings(daysToKeep || 90);
+    const deletedCount = await this.readingsService.deleteOldReadings(
+      daysToKeep || 90,
+    );
 
     return {
       message: 'Leituras antigas removidas com sucesso',
@@ -253,7 +324,10 @@ export class ReadingsController {
   @Get('global/stats')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Estatísticas globais de leituras' })
-  @ApiResponse({ status: 200, description: 'Estatísticas globais obtidas com sucesso' })
+  @ApiResponse({
+    status: 200,
+    description: 'Estatísticas globais obtidas com sucesso',
+  })
   @ApiQuery({ name: 'startDate', required: false })
   @ApiQuery({ name: 'endDate', required: false })
   async getGlobalStats(
@@ -263,15 +337,31 @@ export class ReadingsController {
     const start = startDate ? new Date(startDate) : undefined;
     const end = endDate ? new Date(endDate) : undefined;
 
-    return this.readingsService.getReadingStats(undefined, undefined, start, end);
+    return this.readingsService.getReadingStats(
+      undefined,
+      undefined,
+      start,
+      end,
+    );
   }
 
   @Get('global/hourly')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Agregados horários globais' })
-  @ApiResponse({ status: 200, description: 'Agregados globais obtidos com sucesso' })
-  @ApiQuery({ name: 'hours', description: 'Horas para agregar', required: false })
+  @ApiResponse({
+    status: 200,
+    description: 'Agregados globais obtidos com sucesso',
+  })
+  @ApiQuery({
+    name: 'hours',
+    description: 'Horas para agregar',
+    required: false,
+  })
   async getGlobalHourlyAggregates(@Query('hours') hours?: number) {
-    return this.readingsService.getHourlyAggregates(undefined, undefined, hours || 24);
+    return this.readingsService.getHourlyAggregates(
+      undefined,
+      undefined,
+      hours || 24,
+    );
   }
 }

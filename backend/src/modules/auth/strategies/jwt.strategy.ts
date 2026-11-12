@@ -35,7 +35,8 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
 
     const user = await this.userService.findById(payload.sub);
     if (!user) throw new UnauthorizedException({ code: 'userNotFound' });
-    if (!user.isActive) throw new UnauthorizedException({ code: 'userInactive' });
+    if (!user.isActive)
+      throw new UnauthorizedException({ code: 'userInactive' });
 
     // Signed out (this session, or everywhere): refused until it expires
     if (!(await this.authService.isSessionCurrent(payload, user))) {

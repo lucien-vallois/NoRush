@@ -64,7 +64,9 @@ export function makeVolumeFn(
         const b = table[i + 1];
         if (level >= a.level && level <= b.level) {
           const span = b.level - a.level;
-          return span > 0 ? a.volume + ((level - a.level) / span) * (b.volume - a.volume) : a.volume;
+          return span > 0
+            ? a.volume + ((level - a.level) / span) * (b.volume - a.volume)
+            : a.volume;
         }
       }
       return last.volume;
@@ -76,7 +78,11 @@ export function makeVolumeFn(
 }
 
 /** Volume of `inches` of level at the tank's average cross-section. */
-export function deadbandLiters(volume: VolumeFn, height: number, inches = DEFAULT_DEADBAND_IN): number {
+export function deadbandLiters(
+  volume: VolumeFn,
+  height: number,
+  inches = DEFAULT_DEADBAND_IN,
+): number {
   if (!(height > 0)) return 0;
   const perMeter = (volume(height) - volume(0)) / height;
   return Math.max(0, perMeter * inches * M_PER_IN);
@@ -113,8 +119,15 @@ function wallTime(utcMs: number, tz: string): WallTime {
     hour: '2-digit',
     minute: '2-digit',
   }).formatToParts(new Date(utcMs));
-  const get = (type: string) => Number(parts.find((p) => p.type === type)?.value);
-  return { y: get('year'), m: get('month'), d: get('day'), h: get('hour'), mi: get('minute') };
+  const get = (type: string) =>
+    Number(parts.find((p) => p.type === type)?.value);
+  return {
+    y: get('year'),
+    m: get('month'),
+    d: get('day'),
+    h: get('hour'),
+    mi: get('minute'),
+  };
 }
 
 /** Local-minus-UTC offset of `tz` at that instant, in ms. */
@@ -125,7 +138,13 @@ function offsetMs(utcMs: number, tz: string): number {
 }
 
 /** The UTC instant of a local wall-clock hour in `tz` (handles daylight saving). */
-export function zonedHourToUtc(y: number, m: number, d: number, hour: number, tz: string): number {
+export function zonedHourToUtc(
+  y: number,
+  m: number,
+  d: number,
+  hour: number,
+  tz: string,
+): number {
   const guess = Date.UTC(y, m - 1, d, hour);
   const first = offsetMs(guess, tz);
   const candidate = guess - first;
@@ -138,7 +157,12 @@ function parseDate(date: string): { y: number; m: number; d: number } | null {
   if (!match) return null;
   const [y, m, d] = [Number(match[1]), Number(match[2]), Number(match[3])];
   const check = new Date(Date.UTC(y, m - 1, d));
-  if (check.getUTCFullYear() !== y || check.getUTCMonth() !== m - 1 || check.getUTCDate() !== d) return null;
+  if (
+    check.getUTCFullYear() !== y ||
+    check.getUTCMonth() !== m - 1 ||
+    check.getUTCDate() !== d
+  )
+    return null;
   return { y, m, d };
 }
 
@@ -183,11 +207,19 @@ export function periodBounds(
 }
 
 /** The gauge-day date of the most recent period of this kind that has already ended. */
-export function lastCompletedDate(kind: ReportPeriodKind, nowMs: number, startHour: number, tz: string): string {
+export function lastCompletedDate(
+  kind: ReportPeriodKind,
+  nowMs: number,
+  startHour: number,
+  tz: string,
+): string {
   const today = wallTime(nowMs, tz);
   for (let back = 0; back <= 3; back++) {
-    const candidate = formatDate(addDays({ y: today.y, m: today.m, d: today.d }, -back));
-    if (periodBounds(kind, candidate, startHour, tz).end <= nowMs) return candidate;
+    const candidate = formatDate(
+      addDays({ y: today.y, m: today.m, d: today.d }, -back),
+    );
+    if (periodBounds(kind, candidate, startHour, tz).end <= nowMs)
+      return candidate;
   }
   return formatDate(addDays({ y: today.y, m: today.m, d: today.d }, -3));
 }
@@ -203,10 +235,18 @@ function median(values: number[]): number {
 }
 
 /** Centered moving median; the window shrinks at the ends. */
-export function medianFilter(values: number[], window = MEDIAN_WINDOW): number[] {
+export function medianFilter(
+  values: number[],
+  window = MEDIAN_WINDOW,
+): number[] {
   const half = Math.floor(window / 2);
   return values.map((_, i) =>
-    median(values.slice(Math.max(0, i - half), Math.min(values.length, i + half + 1))),
+    median(
+      values.slice(
+        Math.max(0, i - half),
+        Math.min(values.length, i + half + 1),
+      ),
+    ),
   );
 }
 
@@ -218,10 +258,15 @@ export interface BoundaryGauge {
 }
 
 /** Gauge at a period boundary: median within ±10 min, else the nearest reading within ±30 min. */
-export function gaugeAt(samples: GaugeSample[], at: number): BoundaryGauge | null {
+export function gaugeAt(
+  samples: GaugeSample[],
+  at: number,
+): BoundaryGauge | null {
   const near = samples.filter((s) => Math.abs(s.t - at) <= BOUNDARY_WINDOW_MS);
   if (near.length) {
-    const interfaces = near.map((s) => s.interfaceLevel).filter((v): v is number => v != null);
+    const interfaces = near
+      .map((s) => s.interfaceLevel)
+      .filter((v): v is number => v != null);
     return {
       at,
       level: median(near.map((s) => s.level)),
@@ -231,9 +276,15 @@ export function gaugeAt(samples: GaugeSample[], at: number): BoundaryGauge | nul
   let best: GaugeSample | null = null;
   for (const s of samples) {
     const distance = Math.abs(s.t - at);
-    if (distance <= BOUNDARY_TOLERANCE_MS && (!best || distance < Math.abs(best.t - at))) best = s;
+    if (
+      distance <= BOUNDARY_TOLERANCE_MS &&
+      (!best || distance < Math.abs(best.t - at))
+    )
+      best = s;
   }
-  return best ? { at: best.t, level: best.level, interfaceLevel: best.interfaceLevel } : null;
+  return best
+    ? { at: best.t, level: best.level, interfaceLevel: best.interfaceLevel }
+    : null;
 }
 
 export interface RemovalEvent {
@@ -247,7 +298,10 @@ export interface RemovalEvent {
  * point near the peak to the lowest point, and ends when the series climbs
  * back by more than the deadband (or the series ends).
  */
-export function detectRemovals(series: { t: number; v: number }[], deadbandL: number): RemovalEvent[] {
+export function detectRemovals(
+  series: { t: number; v: number }[],
+  deadbandL: number,
+): RemovalEvent[] {
   const events: RemovalEvent[] = [];
   if (series.length < 2 || !(deadbandL > 0)) return events;
   let peak = series[0];
@@ -269,13 +323,22 @@ export function detectRemovals(series: { t: number; v: number }[], deadbandL: nu
     } else if (p.v < trough.v) {
       trough = p; // the drop ends the first time it reaches its lowest point
     } else if (p.v - trough.v > deadbandL) {
-      events.push({ start: nearPeakT, end: trough.t, amountL: peak.v - trough.v });
+      events.push({
+        start: nearPeakT,
+        end: trough.t,
+        amountL: peak.v - trough.v,
+      });
       peak = p;
       nearPeakT = p.t;
       falling = false;
     }
   }
-  if (falling) events.push({ start: nearPeakT, end: trough.t, amountL: peak.v - trough.v });
+  if (falling)
+    events.push({
+      start: nearPeakT,
+      end: trough.t,
+      amountL: peak.v - trough.v,
+    });
   return events;
 }
 
@@ -319,11 +382,18 @@ export interface TankPeriodFigures {
   longestGapMinutes: number;
 }
 
-function point(gauge: BoundaryGauge | null, volume: VolumeFn): GaugePoint | null {
+function point(
+  gauge: BoundaryGauge | null,
+  volume: VolumeFn,
+): GaugePoint | null {
   if (!gauge) return null;
   const totalL = volume(gauge.level);
-  if (gauge.interfaceLevel == null) return { ...gauge, totalL, oilL: null, waterL: null };
-  const interfaceLevel = Math.min(Math.max(gauge.interfaceLevel, 0), gauge.level);
+  if (gauge.interfaceLevel == null)
+    return { ...gauge, totalL, oilL: null, waterL: null };
+  const interfaceLevel = Math.min(
+    Math.max(gauge.interfaceLevel, 0),
+    gauge.level,
+  );
   const waterL = volume(interfaceLevel);
   return { ...gauge, totalL, waterL, oilL: Math.max(0, totalL - waterL) };
 }
@@ -359,12 +429,17 @@ export function buildTankFigures(
 
   const stamps = [period.start, ...inside.map((s) => s.t), period.end];
   let longestGap = 0;
-  for (let i = 1; i < stamps.length; i++) longestGap = Math.max(longestGap, stamps[i] - stamps[i - 1]);
+  for (let i = 1; i < stamps.length; i++)
+    longestGap = Math.max(longestGap, stamps[i] - stamps[i - 1]);
 
   const level = medianFilter(inside.map((s) => s.level));
-  const interfaceKnown = inside.length > 0 && inside.every((s) => s.interfaceLevel != null);
+  const interfaceKnown =
+    inside.length > 0 && inside.every((s) => s.interfaceLevel != null);
   const hasInterface =
-    interfaceKnown || (inside.length === 0 && opening?.interfaceLevel != null && closing?.interfaceLevel != null);
+    interfaceKnown ||
+    (inside.length === 0 &&
+      opening?.interfaceLevel != null &&
+      closing?.interfaceLevel != null);
 
   const removals: (RemovalEvent & { layer: Layer })[] = [];
   let total: LayerFigures;
@@ -373,16 +448,27 @@ export function buildTankFigures(
 
   if (hasInterface) {
     const iface = medianFilter(inside.map((s) => s.interfaceLevel as number));
-    const waterSeries = inside.map((s, i) => ({ t: s.t, v: volume(Math.min(iface[i], level[i])) }));
-    const oilSeries = inside.map((s, i) => ({ t: s.t, v: Math.max(0, volume(level[i]) - waterSeries[i].v) }));
+    const waterSeries = inside.map((s, i) => ({
+      t: s.t,
+      v: volume(Math.min(iface[i], level[i])),
+    }));
+    const oilSeries = inside.map((s, i) => ({
+      t: s.t,
+      v: Math.max(0, volume(level[i]) - waterSeries[i].v),
+    }));
     const oilOut = detectRemovals(oilSeries, deadbandL);
     const waterOut = detectRemovals(waterSeries, deadbandL);
     removals.push(...oilOut.map((e) => ({ ...e, layer: 'oil' as const })));
     removals.push(...waterOut.map((e) => ({ ...e, layer: 'water' as const })));
-    const sum = (events: RemovalEvent[]) => events.reduce((acc, e) => acc + e.amountL, 0);
+    const sum = (events: RemovalEvent[]) =>
+      events.reduce((acc, e) => acc + e.amountL, 0);
     oil = figures(opening?.oilL, closing?.oilL, sum(oilOut));
     water = figures(opening?.waterL, closing?.waterL, sum(waterOut));
-    total = figures(opening?.totalL, closing?.totalL, oil.removed + water.removed);
+    total = figures(
+      opening?.totalL,
+      closing?.totalL,
+      oil.removed + water.removed,
+    );
   } else {
     const totalOut = detectRemovals(
       inside.map((s, i) => ({ t: s.t, v: volume(level[i]) })),

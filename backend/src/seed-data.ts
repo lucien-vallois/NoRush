@@ -37,12 +37,54 @@ function buildArqueacao(): TankArqueacao[] {
 }
 
 const TANKS = [
-  { code: 'FK-01', name: 'Flowback Tank 01', lat: 47.98, lng: -103.42, status: TankStatus.ACTIVE, level: 1.85 },
-  { code: 'FK-02', name: 'Flowback Tank 02', lat: 47.9795, lng: -103.4194, status: TankStatus.ACTIVE, level: 2.4 },
-  { code: 'FK-03', name: 'Flowback Tank 03', lat: 47.9806, lng: -103.4188, status: TankStatus.ACTIVE, level: 0.9 },
-  { code: 'FK-04', name: 'Flowback Tank 04', lat: 47.9803, lng: -103.4209, status: TankStatus.ACTIVE, level: 3.1 },
-  { code: 'FK-05', name: 'Flowback Tank 05', lat: 47.979, lng: -103.4203, status: TankStatus.ACTIVE, level: 4.35 },
-  { code: 'FK-06', name: 'Flowback Tank 06', lat: 47.981, lng: -103.4197, status: TankStatus.MAINTENANCE, level: 0.25 },
+  {
+    code: 'FK-01',
+    name: 'Flowback Tank 01',
+    lat: 47.98,
+    lng: -103.42,
+    status: TankStatus.ACTIVE,
+    level: 1.85,
+  },
+  {
+    code: 'FK-02',
+    name: 'Flowback Tank 02',
+    lat: 47.9795,
+    lng: -103.4194,
+    status: TankStatus.ACTIVE,
+    level: 2.4,
+  },
+  {
+    code: 'FK-03',
+    name: 'Flowback Tank 03',
+    lat: 47.9806,
+    lng: -103.4188,
+    status: TankStatus.ACTIVE,
+    level: 0.9,
+  },
+  {
+    code: 'FK-04',
+    name: 'Flowback Tank 04',
+    lat: 47.9803,
+    lng: -103.4209,
+    status: TankStatus.ACTIVE,
+    level: 3.1,
+  },
+  {
+    code: 'FK-05',
+    name: 'Flowback Tank 05',
+    lat: 47.979,
+    lng: -103.4203,
+    status: TankStatus.ACTIVE,
+    level: 4.35,
+  },
+  {
+    code: 'FK-06',
+    name: 'Flowback Tank 06',
+    lat: 47.981,
+    lng: -103.4197,
+    status: TankStatus.MAINTENANCE,
+    level: 0.25,
+  },
 ];
 
 /**
@@ -63,7 +105,9 @@ export async function seedDatabase(
 
   const existing = await tankRepo.count();
   if (existing > 0 && !force) {
-    logger.log('Banco já possui dados. Use FORCE_SEED=1 npm run seed para re-semear.');
+    logger.log(
+      'Banco já possui dados. Use FORCE_SEED=1 npm run seed para re-semear.',
+    );
     return;
   }
 
@@ -110,7 +154,9 @@ export async function seedDatabase(
       dimensions: {
         height: TANK_HEIGHT,
         diameter: TANK_DIAMETER,
-        volume: Math.round(Math.PI * (TANK_DIAMETER / 2) ** 2 * TANK_HEIGHT * 1000),
+        volume: Math.round(
+          Math.PI * (TANK_DIAMETER / 2) ** 2 * TANK_HEIGHT * 1000,
+        ),
       },
       arqueacaoTable: arqueacao,
       latitude: t.lat,
@@ -137,7 +183,10 @@ export async function seedDatabase(
         manufacturer: 'Simulated device',
         firmwareVersion: '1.0.0',
         tankId: savedTank.id,
-        status: t.status === TankStatus.MAINTENANCE ? SensorStatus.MAINTENANCE : SensorStatus.ACTIVE,
+        status:
+          t.status === TankStatus.MAINTENANCE
+            ? SensorStatus.MAINTENANCE
+            : SensorStatus.ACTIVE,
         // SENSOR-004 (FK-04) com bateria crítica para o dashboard
         batteryLevel: sensorId === 'SENSOR-004' ? 12 : 68 + Math.random() * 30,
         batteryLastUpdate: new Date(),
@@ -152,7 +201,13 @@ export async function seedDatabase(
   await sensorRepo.save(sensors);
 
   logger.log('Seed concluído:');
-  logger.log(`  Usuários: admin@flowback.com / admin123 e operador@flowback.com / operador123`);
-  logger.log(`  Tanques: ${TANKS.length} (c/ arqueação de ${arqueacao.length} pontos)`);
-  logger.log(`  Sensores: ${sensors.length} (uma haste de duas boias por tanque)`);
+  logger.log(
+    `  Usuários: admin@flowback.com / admin123 e operador@flowback.com / operador123`,
+  );
+  logger.log(
+    `  Tanques: ${TANKS.length} (c/ arqueação de ${arqueacao.length} pontos)`,
+  );
+  logger.log(
+    `  Sensores: ${sensors.length} (uma haste de duas boias por tanque)`,
+  );
 }

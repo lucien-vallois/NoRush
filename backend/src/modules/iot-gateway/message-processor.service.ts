@@ -310,13 +310,13 @@ export class MessageProcessorService {
           (value) => Number.isFinite(value) && value >= 0,
         )
       ) {
-        errors.push(
-          'Interface values must be finite, non-negative numbers',
-        );
+        errors.push('Interface values must be finite, non-negative numbers');
       }
       // Millimetre sensor resolution must not be compared with exact float equality.
       if (Math.abs(oilLevel + waterLevel - message.level) > 0.001) {
-        errors.push('Oil + water thickness must equal the total level (1 mm tolerance)');
+        errors.push(
+          'Oil + water thickness must equal the total level (1 mm tolerance)',
+        );
       }
 
       // oilLevel/waterLevel são espessuras das camadas; interfaceLevel é a
@@ -324,7 +324,9 @@ export class MessageProcessorService {
       // líquido — tanques de flowback costumam ter mais água que óleo, então
       // interfaceLevel > oilLevel é um caso normal.
       if (interfaceLevel > message.level + 0.001) {
-        errors.push('interfaceLevel must be between the tank bottom and the total level');
+        errors.push(
+          'interfaceLevel must be between the tank bottom and the total level',
+        );
       }
     }
 
@@ -596,7 +598,12 @@ export class MessageProcessorService {
    */
   async processHeartbeat(
     heartbeat: HeartbeatDto,
-  ): Promise<{ received: boolean; sensorId: string; receivedAt: string; reason?: string }> {
+  ): Promise<{
+    received: boolean;
+    sensorId: string;
+    receivedAt: string;
+    reason?: string;
+  }> {
     const sensor = await this.findAndValidateSensor(heartbeat.sensorId);
     const auth = this.deviceCredentials.authenticate(
       sensor,
@@ -608,7 +615,9 @@ export class MessageProcessorService {
         : auth.ok
           ? 'unexpected'
           : auth.code;
-      this.logger.warn(`Heartbeat recusado: sensor=${heartbeat.sensorId} motivo=${reason}`);
+      this.logger.warn(
+        `Heartbeat recusado: sensor=${heartbeat.sensorId} motivo=${reason}`,
+      );
       return {
         received: false,
         sensorId: heartbeat.sensorId,

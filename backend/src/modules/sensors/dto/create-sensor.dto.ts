@@ -11,7 +11,11 @@ import {
   IsBoolean,
 } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { SensorType, SensorProtocol, SensorStatus } from '../../../entities/sensor.entity';
+import {
+  SensorType,
+  SensorProtocol,
+  SensorStatus,
+} from '../../../entities/sensor.entity';
 
 export class CreateSensorDto {
   @ApiProperty({

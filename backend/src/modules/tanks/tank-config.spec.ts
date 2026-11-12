@@ -19,7 +19,9 @@ describe('Tank configuration rules', () => {
     expect(validateTankConfig({ dimensions: { height: 0, diameter: 3 } })).toBe(
       'tankDimensionsInvalid',
     );
-    expect(validateTankConfig({ dimensions: null })).toBe('tankDimensionsInvalid');
+    expect(validateTankConfig({ dimensions: null })).toBe(
+      'tankDimensionsInvalid',
+    );
   });
 
   it('rejects limits out of order or above the tank height', () => {
@@ -37,9 +39,9 @@ describe('Tank configuration rules', () => {
         maxLevelThreshold: 2,
       }),
     ).toBe('tankThresholdsOrder');
-    expect(
-      validateTankConfig({ dimensions: dims, overflowThreshold: 7 }),
-    ).toBe('tankThresholdAboveHeight');
+    expect(validateTankConfig({ dimensions: dims, overflowThreshold: 7 })).toBe(
+      'tankThresholdAboveHeight',
+    );
   });
 
   it('validates the strapping table shape', () => {
@@ -48,7 +50,9 @@ describe('Tank configuration rules', () => {
       { level: 3, volume: 31000 },
       { level: 6.1, volume: 64000 },
     ];
-    expect(validateTankConfig({ dimensions: dims, arqueacaoTable: ok })).toBeNull();
+    expect(
+      validateTankConfig({ dimensions: dims, arqueacaoTable: ok }),
+    ).toBeNull();
     expect(
       validateTankConfig({ dimensions: dims, arqueacaoTable: [ok[0]] }),
     ).toBe('strappingTableInvalid');

@@ -24,7 +24,10 @@ function noise(seed: number, sigma: number) {
     t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
     return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
   };
-  return () => sigma * Math.sqrt(-2 * Math.log(uniform() || 1e-12)) * Math.cos(2 * Math.PI * uniform());
+  return () =>
+    sigma *
+    Math.sqrt(-2 * Math.log(uniform() || 1e-12)) *
+    Math.cos(2 * Math.PI * uniform());
 }
 
 describe('formatFeetInches', () => {
@@ -57,7 +60,10 @@ describe('makeVolumeFn', () => {
 
   it('turns 2 inches of level into liters at the average cross-section', () => {
     const v = makeVolumeFn({ height: 5, diameter: 3.2 });
-    expect(deadbandLiters(v, 5)).toBeCloseTo(Math.PI * 1.6 * 1.6 * 1000 * 0.0508, 3);
+    expect(deadbandLiters(v, 5)).toBeCloseTo(
+      Math.PI * 1.6 * 1.6 * 1000 * 0.0508,
+      3,
+    );
   });
 });
 
@@ -100,11 +106,19 @@ describe('periodBounds', () => {
 describe('lastCompletedDate', () => {
   it('picks the most recent period that has ended', () => {
     const now = Date.parse('2026-11-04T15:00:00Z'); // 09:00 in Chicago
-    expect(lastCompletedDate('daily', now, 7, 'America/Chicago')).toBe('2026-11-03');
-    expect(lastCompletedDate('night', now, 7, 'America/Chicago')).toBe('2026-11-03');
-    expect(lastCompletedDate('day', now, 7, 'America/Chicago')).toBe('2026-11-03');
+    expect(lastCompletedDate('daily', now, 7, 'America/Chicago')).toBe(
+      '2026-11-03',
+    );
+    expect(lastCompletedDate('night', now, 7, 'America/Chicago')).toBe(
+      '2026-11-03',
+    );
+    expect(lastCompletedDate('day', now, 7, 'America/Chicago')).toBe(
+      '2026-11-03',
+    );
     const evening = Date.parse('2026-11-05T02:00:00Z'); // 20:00 on Nov 4
-    expect(lastCompletedDate('day', evening, 7, 'America/Chicago')).toBe('2026-11-04');
+    expect(lastCompletedDate('day', evening, 7, 'America/Chicago')).toBe(
+      '2026-11-04',
+    );
   });
 });
 
@@ -121,20 +135,37 @@ describe('medianFilter and gaugeAt', () => {
       { t: at + 5 * MIN, level: 2.1, interfaceLevel: 1.2 },
     ];
     expect(gaugeAt(close, at)).toEqual({ at, level: 2.1, interfaceLevel: 1.1 });
-    const far: GaugeSample[] = [{ t: at + 25 * MIN, level: 3, interfaceLevel: null }];
-    expect(gaugeAt(far, at)).toEqual({ at: at + 25 * MIN, level: 3, interfaceLevel: null });
-    expect(gaugeAt([{ t: at + 45 * MIN, level: 3, interfaceLevel: null }], at)).toBeNull();
+    const far: GaugeSample[] = [
+      { t: at + 25 * MIN, level: 3, interfaceLevel: null },
+    ];
+    expect(gaugeAt(far, at)).toEqual({
+      at: at + 25 * MIN,
+      level: 3,
+      interfaceLevel: null,
+    });
+    expect(
+      gaugeAt([{ t: at + 45 * MIN, level: 3, interfaceLevel: null }], at),
+    ).toBeNull();
   });
 });
 
 describe('detectRemovals', () => {
   it('ignores noise smaller than the deadband and finds a haul', () => {
-    const flat = Array.from({ length: 50 }, (_, i) => ({ t: i * MIN, v: 1000 + (i % 2 ? 20 : -20) }));
+    const flat = Array.from({ length: 50 }, (_, i) => ({
+      t: i * MIN,
+      v: 1000 + (i % 2 ? 20 : -20),
+    }));
     expect(detectRemovals(flat, 100)).toEqual([]);
     const haul = [
       ...Array.from({ length: 10 }, (_, i) => ({ t: i * MIN, v: 5000 + i })),
-      ...Array.from({ length: 6 }, (_, i) => ({ t: (10 + i) * MIN, v: 5009 - (i + 1) * 500 })),
-      ...Array.from({ length: 10 }, (_, i) => ({ t: (16 + i) * MIN, v: 2009 + i * 30 })),
+      ...Array.from({ length: 6 }, (_, i) => ({
+        t: (10 + i) * MIN,
+        v: 5009 - (i + 1) * 500,
+      })),
+      ...Array.from({ length: 10 }, (_, i) => ({
+        t: (16 + i) * MIN,
+        v: 2009 + i * 30,
+      })),
     ];
     const events = detectRemovals(haul, 100);
     expect(events).toHaveLength(1);
@@ -155,7 +186,11 @@ describe('buildTankFigures', () => {
   function flowbackTank(withInterface = true): GaugeSample[] {
     const n = noise(42, 0.005);
     const samples: GaugeSample[] = [];
-    for (let t = period.start - 30 * MIN; t <= period.end + 30 * MIN; t += 5 * MIN) {
+    for (
+      let t = period.start - 30 * MIN;
+      t <= period.end + 30 * MIN;
+      t += 5 * MIN
+    ) {
       const h = (t - period.start) / HOUR;
       const hauled = h <= 10 ? 0 : h >= 10.5 ? 1 : (h - 10) / 0.5;
       const water = 1 + 0.04 * h - hauled;
@@ -188,7 +223,10 @@ describe('buildTankFigures', () => {
     expect(r.oil!.produced! / area).toBeLessThan(0.28);
 
     for (const layer of [r.oil!, r.water!, r.total]) {
-      expect(layer.produced!).toBeCloseTo(layer.closing! - layer.opening! + layer.removed, 6);
+      expect(layer.produced!).toBeCloseTo(
+        layer.closing! - layer.opening! + layer.removed,
+        6,
+      );
     }
     expect(r.total.removed).toBeCloseTo(r.oil!.removed + r.water!.removed, 6);
   });

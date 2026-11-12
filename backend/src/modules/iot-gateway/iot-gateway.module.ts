@@ -41,7 +41,9 @@ import { DevOnlyGuard } from '../../common/guards/dev-only.guard';
         useFactory: async (configService: ConfigService) => ({
           transport: Transport.RMQ,
           options: {
-            urls: [`amqp://${configService.get('RABBITMQ_USER', 'guest')}:${configService.get('RABBITMQ_PASS', 'guest')}@${configService.get('RABBITMQ_HOST', 'localhost')}:${configService.get('RABBITMQ_PORT', 5672)}/${configService.get('RABBITMQ_VHOST', '')}`],
+            urls: [
+              `amqp://${configService.get('RABBITMQ_USER', 'guest')}:${configService.get('RABBITMQ_PASS', 'guest')}@${configService.get('RABBITMQ_HOST', 'localhost')}:${configService.get('RABBITMQ_PORT', 5672)}/${configService.get('RABBITMQ_VHOST', '')}`,
+            ],
             queue: 'sensor_data_queue',
             queueOptions: {
               durable: true,

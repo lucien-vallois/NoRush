@@ -45,7 +45,12 @@ export class TanksService {
       dimensions: {
         height,
         diameter,
-        volume: volume ?? nominalVolumeLiters({ height, diameter }, createTankDto.arqueacaoTable),
+        volume:
+          volume ??
+          nominalVolumeLiters(
+            { height, diameter },
+            createTankDto.arqueacaoTable,
+          ),
       },
       latitude: parseFloat(latitude.toString()),
       longitude: parseFloat(longitude.toString()),
@@ -96,10 +101,13 @@ export class TanksService {
     // Verifica se o código está sendo alterado e se já existe
     if (updateTankDto.code && updateTankDto.code !== tank.code) {
       const existingTank = await this.tankRepository.findOne({
-        where: { code: updateTankDto.code }
+        where: { code: updateTankDto.code },
       });
       if (existingTank) {
-        throw new ConflictException({ code: 'tankCodeExists', tankCode: updateTankDto.code });
+        throw new ConflictException({
+          code: 'tankCodeExists',
+          tankCode: updateTankDto.code,
+        });
       }
     }
 
@@ -108,11 +116,21 @@ export class TanksService {
     const merged = {
       dimensions: updateTankDto.dimensions ?? tank.dimensions,
       arqueacaoTable:
-        updateTankDto.arqueacaoTable !== undefined ? updateTankDto.arqueacaoTable : tank.arqueacaoTable,
-      minLevelThreshold: num(updateTankDto.minLevelThreshold ?? tank.minLevelThreshold),
-      lowLevelThreshold: num(updateTankDto.lowLevelThreshold ?? tank.lowLevelThreshold),
-      maxLevelThreshold: num(updateTankDto.maxLevelThreshold ?? tank.maxLevelThreshold),
-      overflowThreshold: num(updateTankDto.overflowThreshold ?? tank.overflowThreshold),
+        updateTankDto.arqueacaoTable !== undefined
+          ? updateTankDto.arqueacaoTable
+          : tank.arqueacaoTable,
+      minLevelThreshold: num(
+        updateTankDto.minLevelThreshold ?? tank.minLevelThreshold,
+      ),
+      lowLevelThreshold: num(
+        updateTankDto.lowLevelThreshold ?? tank.lowLevelThreshold,
+      ),
+      maxLevelThreshold: num(
+        updateTankDto.maxLevelThreshold ?? tank.maxLevelThreshold,
+      ),
+      overflowThreshold: num(
+        updateTankDto.overflowThreshold ?? tank.overflowThreshold,
+      ),
     };
     const configError = validateTankConfig({
       ...merged,
@@ -138,11 +156,14 @@ export class TanksService {
           }
         : {}),
       latitude: latitude != null ? parseFloat(latitude.toString()) : undefined,
-      longitude: longitude != null ? parseFloat(longitude.toString()) : undefined,
+      longitude:
+        longitude != null ? parseFloat(longitude.toString()) : undefined,
     });
 
     const updatedTank = await this.findById(id);
-    this.logger.log(`Tanque atualizado: ${updatedTank.code} - ${updatedTank.name}`);
+    this.logger.log(
+      `Tanque atualizado: ${updatedTank.code} - ${updatedTank.name}`,
+    );
 
     return updatedTank;
   }
@@ -152,11 +173,14 @@ export class TanksService {
 
     // Verifica se há sensores associados
     const sensorCount = await this.sensorRepository.count({
-      where: { tankId: id }
+      where: { tankId: id },
     });
 
     if (sensorCount > 0) {
-      throw new ConflictException({ code: 'tankHasSensors', count: sensorCount });
+      throw new ConflictException({
+        code: 'tankHasSensors',
+        count: sensorCount,
+      });
     }
 
     await this.tankRepository.delete(id);
@@ -197,7 +221,7 @@ export class TanksService {
 
     // Conta alertas ativos
     const activeAlertsCount = await this.alertRepository.count({
-      where: { tankId: id, status: AlertStatus.ACTIVE }
+      where: { tankId: id, status: AlertStatus.ACTIVE },
     });
 
     // Última leitura (simplificada - em produção você pode otimizar isso)
@@ -210,7 +234,7 @@ export class TanksService {
         'reading.level',
         'reading.volume',
         'reading.timestamp',
-        'sensor.name as sensorName'
+        'sensor.name as sensorName',
       ])
       .getRawOne();
 
@@ -235,11 +259,15 @@ export class TanksService {
     };
   }
 
-  async getNearbyTanks(latitude: number, longitude: number, radiusKm: number = 10): Promise<Tank[]> {
+  async getNearbyTanks(
+    latitude: number,
+    longitude: number,
+    radiusKm: number = 10,
+  ): Promise<Tank[]> {
     // Esta é uma implementação simplificada
     // Em produção, você pode usar PostGIS ou uma função de distância mais precisa
     const latDiff = radiusKm / 111; // Aproximadamente 111km por grau de latitude
-    const lngDiff = radiusKm / (111 * Math.cos(latitude * Math.PI / 180));
+    const lngDiff = radiusKm / (111 * Math.cos((latitude * Math.PI) / 180));
 
     return this.tankRepository
       .createQueryBuilder('tank')
@@ -255,27 +283,40 @@ export class TanksService {
       .getMany();
   }
 
-  async updateMaintenanceDate(id: string, maintenanceDate: Date): Promise<Tank> {
+  async updateMaintenanceDate(
+    id: string,
+    maintenanceDate: Date,
+  ): Promise<Tank> {
     const tank = await this.findById(id);
 
     await this.tankRepository.update(id, {
       lastMaintenanceDate: maintenanceDate,
       // Define próxima manutenção para 6 meses depois
-      nextMaintenanceDate: new Date(maintenanceDate.getTime() + 180 * 24 * 60 * 60 * 1000),
+      nextMaintenanceDate: new Date(
+        maintenanceDate.getTime() + 180 * 24 * 60 * 60 * 1000,
+      ),
     });
 
     const updatedTank = await this.findById(id);
-    this.logger.log(`Data de manutenção atualizada para tanque: ${updatedTank.code}`);
+    this.logger.log(
+      `Data de manutenção atualizada para tanque: ${updatedTank.code}`,
+    );
 
     return updatedTank;
   }
 
-  async validateTankConfiguration(id: string): Promise<{ valid: boolean; issues: string[] }> {
+  async validateTankConfiguration(
+    id: string,
+  ): Promise<{ valid: boolean; issues: string[] }> {
     const tank = await this.findById(id);
     const issues: string[] = [];
 
     // Verifica dimensões
-    if (!tank.dimensions || tank.dimensions.height <= 0 || tank.dimensions.diameter <= 0) {
+    if (
+      !tank.dimensions ||
+      tank.dimensions.height <= 0 ||
+      tank.dimensions.diameter <= 0
+    ) {
       issues.push('Dimensões do tanque inválidas');
     }
 
@@ -285,7 +326,10 @@ export class TanksService {
     }
 
     // Verifica limites de alerta
-    if (tank.maxLevelThreshold && tank.maxLevelThreshold > tank.dimensions.height) {
+    if (
+      tank.maxLevelThreshold &&
+      tank.maxLevelThreshold > tank.dimensions.height
+    ) {
       issues.push('Limite máximo de nível maior que a altura do tanque');
     }
 

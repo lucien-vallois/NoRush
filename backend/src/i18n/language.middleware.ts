@@ -1,6 +1,10 @@
 import { Injectable, NestMiddleware } from '@nestjs/common';
 import { Request, Response, NextFunction } from 'express';
-import { normalizeLanguage, AppLanguage, DEFAULT_LANGUAGE } from './i18n.service';
+import {
+  normalizeLanguage,
+  AppLanguage,
+  DEFAULT_LANGUAGE,
+} from './i18n.service';
 
 export const REQUEST_LANG_KEY = 'norushLang';
 
@@ -12,7 +16,9 @@ export const REQUEST_LANG_KEY = 'norushLang';
 @Injectable()
 export class LanguageMiddleware implements NestMiddleware {
   use(req: Request, res: Response, next: NextFunction): void {
-    req[REQUEST_LANG_KEY] = resolveAcceptLanguage(req.headers['accept-language']);
+    req[REQUEST_LANG_KEY] = resolveAcceptLanguage(
+      req.headers['accept-language'],
+    );
     res.setHeader('Content-Language', req[REQUEST_LANG_KEY]);
     next();
   }
@@ -35,7 +41,11 @@ export function resolveAcceptLanguage(header: string | undefined): AppLanguage {
 
   for (const candidate of candidates) {
     const lower = candidate.tag.toLowerCase();
-    if (lower.startsWith('pt') || lower.startsWith('es') || lower.startsWith('en')) {
+    if (
+      lower.startsWith('pt') ||
+      lower.startsWith('es') ||
+      lower.startsWith('en')
+    ) {
       return normalizeLanguage(lower);
     }
   }

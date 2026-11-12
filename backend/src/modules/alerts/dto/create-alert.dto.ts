@@ -1,4 +1,12 @@
-import { IsString, IsUUID, IsOptional, IsNumber, IsEnum, IsObject, IsDateString } from 'class-validator';
+import {
+  IsString,
+  IsUUID,
+  IsOptional,
+  IsNumber,
+  IsEnum,
+  IsObject,
+  IsDateString,
+} from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { AlertType, AlertSeverity } from '../../../entities/alert.entity';
 
@@ -28,7 +36,8 @@ export class CreateAlertDto {
 
   @ApiProperty({
     description: 'Mensagem detalhada do alerta',
-    example: 'O nível do tanque TANK-001 atingiu 4.2m, próximo ao limite máximo de 4.5m',
+    example:
+      'O nível do tanque TANK-001 atingiu 4.2m, próximo ao limite máximo de 4.5m',
   })
   @IsString()
   message: string;
@@ -57,7 +66,7 @@ export class CreateAlertDto {
 
   @ApiPropertyOptional({
     description: 'Volume atual no momento do alerta',
-    example: 2950.50,
+    example: 2950.5,
   })
   @IsOptional()
   @IsNumber()

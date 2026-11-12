@@ -22,7 +22,12 @@ import { AlertProcessorService } from './alert-processor.service';
 import { NotificationService } from './notification.service';
 import { CreateAlertDto } from './dto/create-alert.dto';
 import { AlertFiltersDto } from './dto/alert-filters.dto';
-import { Alert, AlertStatus, AlertSeverity, AlertType } from '../../entities/alert.entity';
+import {
+  Alert,
+  AlertStatus,
+  AlertSeverity,
+  AlertType,
+} from '../../entities/alert.entity';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { AllowInDemo } from '../../common/decorators/allow-in-demo.decorator';
 import { UserRole } from '../../entities/user.entity';
@@ -51,11 +56,10 @@ export class AlertsController {
    */
   private localized(alert: Alert, lang: string, units: UnitPreference): Alert {
     const { title, message } = this.i18n.localizeAlert(alert, lang, units);
-    return Object.assign(
-      Object.create(Object.getPrototypeOf(alert)),
-      alert,
-      { title, message },
-    );
+    return Object.assign(Object.create(Object.getPrototypeOf(alert)), alert, {
+      title,
+      message,
+    });
   }
 
   private localizedList(
@@ -70,7 +74,11 @@ export class AlertsController {
   @Roles(UserRole.ADMIN, UserRole.MAINTENANCE)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Create a new alert' })
-  @ApiResponse({ status: 201, description: 'Alert created successfully', type: Alert })
+  @ApiResponse({
+    status: 201,
+    description: 'Alert created successfully',
+    type: Alert,
+  })
   @ApiResponse({ status: 404, description: 'Tank not found' })
   async create(
     @Body() createAlertDto: CreateAlertDto,
@@ -101,7 +109,10 @@ export class AlertsController {
     @CurrentUnits() units: UnitPreference,
   ) {
     const result = await this.alertsService.findAll(filters);
-    return { ...result, alerts: this.localizedList(result.alerts, lang, units) };
+    return {
+      ...result,
+      alerts: this.localizedList(result.alerts, lang, units),
+    };
   }
 
   @Get('dashboard')
@@ -115,7 +126,11 @@ export class AlertsController {
   @Get('active')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'List active alerts' })
-  @ApiResponse({ status: 200, description: 'Active alerts fetched successfully', type: [Alert] })
+  @ApiResponse({
+    status: 200,
+    description: 'Active alerts fetched successfully',
+    type: [Alert],
+  })
   async getActiveAlerts(
     @CurrentLang() lang: string,
     @CurrentUnits() units: UnitPreference,
@@ -130,7 +145,11 @@ export class AlertsController {
   @Get('critical')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'List critical alerts' })
-  @ApiResponse({ status: 200, description: 'Critical alerts fetched successfully', type: [Alert] })
+  @ApiResponse({
+    status: 200,
+    description: 'Critical alerts fetched successfully',
+    type: [Alert],
+  })
   async getCriticalAlerts(
     @CurrentLang() lang: string,
     @CurrentUnits() units: UnitPreference,
@@ -145,7 +164,11 @@ export class AlertsController {
   @Get('unacknowledged')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'List unacknowledged alerts' })
-  @ApiResponse({ status: 200, description: 'Unacknowledged alerts fetched successfully', type: [Alert] })
+  @ApiResponse({
+    status: 200,
+    description: 'Unacknowledged alerts fetched successfully',
+    type: [Alert],
+  })
   async getUnacknowledgedAlerts(
     @CurrentLang() lang: string,
     @CurrentUnits() units: UnitPreference,
@@ -160,7 +183,11 @@ export class AlertsController {
   @Get('requiring-action')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'List alerts requiring action' })
-  @ApiResponse({ status: 200, description: 'Alerts fetched successfully', type: [Alert] })
+  @ApiResponse({
+    status: 200,
+    description: 'Alerts fetched successfully',
+    type: [Alert],
+  })
   async getAlertsRequiringAction(
     @CurrentLang() lang: string,
     @CurrentUnits() units: UnitPreference,
@@ -184,13 +211,20 @@ export class AlertsController {
     @CurrentUnits() units: UnitPreference,
   ) {
     const result = await this.alertsService.getAlertsByTank(tankId, filters);
-    return { ...result, alerts: this.localizedList(result.alerts, lang, units) };
+    return {
+      ...result,
+      alerts: this.localizedList(result.alerts, lang, units),
+    };
   }
 
   @Get('type/:type')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'List alerts by type' })
-  @ApiResponse({ status: 200, description: 'Alerts fetched successfully', type: [Alert] })
+  @ApiResponse({
+    status: 200,
+    description: 'Alerts fetched successfully',
+    type: [Alert],
+  })
   @ApiParam({ name: 'type', enum: AlertType, description: 'Alert type' })
   async getAlertsByType(
     @Param('type') type: AlertType,
@@ -207,8 +241,16 @@ export class AlertsController {
   @Get('severity/:severity')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'List alerts by severity' })
-  @ApiResponse({ status: 200, description: 'Alerts fetched successfully', type: [Alert] })
-  @ApiParam({ name: 'severity', enum: AlertSeverity, description: 'Alert severity' })
+  @ApiResponse({
+    status: 200,
+    description: 'Alerts fetched successfully',
+    type: [Alert],
+  })
+  @ApiParam({
+    name: 'severity',
+    enum: AlertSeverity,
+    description: 'Alert severity',
+  })
   async getAlertsBySeverity(
     @Param('severity') severity: AlertSeverity,
     @CurrentLang() lang: string,
@@ -224,7 +266,11 @@ export class AlertsController {
   @Get('status/:status')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'List alerts by status' })
-  @ApiResponse({ status: 200, description: 'Alerts fetched successfully', type: [Alert] })
+  @ApiResponse({
+    status: 200,
+    description: 'Alerts fetched successfully',
+    type: [Alert],
+  })
   @ApiParam({ name: 'status', enum: AlertStatus, description: 'Alert status' })
   async getAlertsByStatus(
     @Param('status') status: AlertStatus,
@@ -259,7 +305,11 @@ export class AlertsController {
   @HttpCode(HttpStatus.OK)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Acknowledge multiple alerts' })
-  @ApiResponse({ status: 200, description: 'Alerts acknowledged successfully', type: [Alert] })
+  @ApiResponse({
+    status: 200,
+    description: 'Alerts acknowledged successfully',
+    type: [Alert],
+  })
   async bulkAcknowledge(
     @Body() body: { alertIds: string[]; notes?: string },
     @CurrentUser() user: User,
@@ -278,7 +328,11 @@ export class AlertsController {
   @HttpCode(HttpStatus.OK)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Resolve multiple alerts' })
-  @ApiResponse({ status: 200, description: 'Alerts resolved successfully', type: [Alert] })
+  @ApiResponse({
+    status: 200,
+    description: 'Alerts resolved successfully',
+    type: [Alert],
+  })
   async bulkResolve(
     @Body() body: { alertIds: string[]; resolutionNotes?: string },
     @CurrentUser() user: User,
@@ -286,7 +340,11 @@ export class AlertsController {
     @CurrentUnits() units: UnitPreference,
   ): Promise<Alert[]> {
     return this.localizedList(
-      await this.alertsService.bulkResolve(body.alertIds, user.id, body.resolutionNotes),
+      await this.alertsService.bulkResolve(
+        body.alertIds,
+        user.id,
+        body.resolutionNotes,
+      ),
       lang,
       units,
     );
@@ -297,8 +355,15 @@ export class AlertsController {
   @HttpCode(HttpStatus.OK)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Acknowledge alert' })
-  @ApiResponse({ status: 200, description: 'Alert acknowledged successfully', type: Alert })
-  @ApiResponse({ status: 400, description: 'Alert already acknowledged or resolved' })
+  @ApiResponse({
+    status: 200,
+    description: 'Alert acknowledged successfully',
+    type: Alert,
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Alert already acknowledged or resolved',
+  })
   @ApiParam({ name: 'id', description: 'Alert ID' })
   async acknowledgeAlert(
     @Param('id') id: string,
@@ -319,7 +384,11 @@ export class AlertsController {
   @HttpCode(HttpStatus.OK)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Resolve alert' })
-  @ApiResponse({ status: 200, description: 'Alert resolved successfully', type: Alert })
+  @ApiResponse({
+    status: 200,
+    description: 'Alert resolved successfully',
+    type: Alert,
+  })
   @ApiResponse({ status: 400, description: 'Alert already resolved' })
   @ApiParam({ name: 'id', description: 'Alert ID' })
   async resolveAlert(
@@ -358,7 +427,10 @@ export class AlertsController {
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Test a notification channel' })
   @ApiResponse({ status: 200, description: 'Test executed successfully' })
-  @ApiParam({ name: 'channel', description: 'Channel to test (email, sms, push, slack)' })
+  @ApiParam({
+    name: 'channel',
+    description: 'Channel to test (email, sms, push, slack)',
+  })
   async testNotificationChannel(
     @Param('channel') channel: string,
     @CurrentLang() lang: string,
@@ -370,7 +442,9 @@ export class AlertsController {
       success,
       message: this.i18n.translate(
         lang,
-        success ? 'exceptions.notificationTestOk' : 'exceptions.notificationTestFail',
+        success
+          ? 'exceptions.notificationTestOk'
+          : 'exceptions.notificationTestFail',
         { channel },
       ),
     };

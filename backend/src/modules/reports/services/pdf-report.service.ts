@@ -41,7 +41,10 @@ export class PdfReportService {
       const template = this.templates.get(type);
       if (!template) {
         // No PDF layout for this report type: a client error, not a crash
-        throw new BadRequestException({ code: 'unsupportedReportFormat', format: 'pdf' });
+        throw new BadRequestException({
+          code: 'unsupportedReportFormat',
+          format: 'pdf',
+        });
       }
 
       // Preparar dados para o template

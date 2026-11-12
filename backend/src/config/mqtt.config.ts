@@ -25,13 +25,18 @@ export const mqttConfig = (configService: ConfigService): MqttConfig => ({
   username: configService.get<string>('MQTT_USER'),
   password: configService.get<string>('MQTT_PASS'),
   clientId: `flowback-backend-${Date.now()}`,
-  protocol: configService.get<string>('MQTT_PROTOCOL', 'mqtt') as 'mqtt' | 'mqtts',
+  protocol: configService.get<string>('MQTT_PROTOCOL', 'mqtt') as
+    | 'mqtt'
+    | 'mqtts',
   // mqtts (8883) valida o certificado do broker por padrão; aceitar
   // self-signed (false) é decisão explícita do bring-up local, via env.
   rejectUnauthorized:
     configService.get<string>('MQTT_REJECT_UNAUTHORIZED', 'true') === 'true',
   topics: {
-    sensorData: configService.get<string>('MQTT_TOPIC_SENSOR_DATA', 'sensors/data'),
+    sensorData: configService.get<string>(
+      'MQTT_TOPIC_SENSOR_DATA',
+      'sensors/data',
+    ),
     alerts: configService.get<string>('MQTT_TOPIC_ALERTS', 'alerts'),
     commands: configService.get<string>('MQTT_TOPIC_COMMANDS', 'commands'),
   },

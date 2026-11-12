@@ -34,7 +34,11 @@ export class TanksController {
   @Roles(UserRole.ADMIN, UserRole.MAINTENANCE)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Criar novo tanque' })
-  @ApiResponse({ status: 201, description: 'Tanque criado com sucesso', type: Tank })
+  @ApiResponse({
+    status: 201,
+    description: 'Tanque criado com sucesso',
+    type: Tank,
+  })
   @ApiResponse({ status: 409, description: 'Código do tanque já existe' })
   async create(@Body() createTankDto: CreateTankDto): Promise<Tank> {
     return this.tanksService.create(createTankDto);
@@ -43,7 +47,11 @@ export class TanksController {
   @Get()
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Listar todos os tanques' })
-  @ApiResponse({ status: 200, description: 'Lista de tanques obtida com sucesso', type: [Tank] })
+  @ApiResponse({
+    status: 200,
+    description: 'Lista de tanques obtida com sucesso',
+    type: [Tank],
+  })
   @ApiQuery({ name: 'status', enum: TankStatus, required: false })
   async findAll(@Query('status') status?: TankStatus): Promise<Tank[]> {
     if (status) {
@@ -55,10 +63,19 @@ export class TanksController {
   @Get('nearby')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Buscar tanques próximos a uma localização' })
-  @ApiResponse({ status: 200, description: 'Tanques próximos encontrados', type: [Tank] })
+  @ApiResponse({
+    status: 200,
+    description: 'Tanques próximos encontrados',
+    type: [Tank],
+  })
   @ApiQuery({ name: 'lat', type: Number, description: 'Latitude' })
   @ApiQuery({ name: 'lng', type: Number, description: 'Longitude' })
-  @ApiQuery({ name: 'radius', type: Number, description: 'Raio em km', required: false })
+  @ApiQuery({
+    name: 'radius',
+    type: Number,
+    description: 'Raio em km',
+    required: false,
+  })
   async getNearbyTanks(
     @Query('lat') lat: number,
     @Query('lng') lng: number,
@@ -70,7 +87,11 @@ export class TanksController {
   @Get('maintenance-needed')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Listar tanques que precisam de manutenção' })
-  @ApiResponse({ status: 200, description: 'Tanques que precisam de manutenção', type: [Tank] })
+  @ApiResponse({
+    status: 200,
+    description: 'Tanques que precisam de manutenção',
+    type: [Tank],
+  })
   async getTanksNeedingMaintenance(): Promise<Tank[]> {
     return this.tanksService.getTanksNeedingMaintenance();
   }
@@ -108,7 +129,11 @@ export class TanksController {
   @Roles(UserRole.ADMIN, UserRole.MAINTENANCE)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Atualizar tanque' })
-  @ApiResponse({ status: 200, description: 'Tanque atualizado com sucesso', type: Tank })
+  @ApiResponse({
+    status: 200,
+    description: 'Tanque atualizado com sucesso',
+    type: Tank,
+  })
   @ApiResponse({ status: 404, description: 'Tanque não encontrado' })
   @ApiParam({ name: 'id', description: 'ID do tanque' })
   async update(
@@ -124,7 +149,10 @@ export class TanksController {
   @ApiOperation({ summary: 'Deletar tanque' })
   @ApiResponse({ status: 204, description: 'Tanque deletado com sucesso' })
   @ApiResponse({ status: 404, description: 'Tanque não encontrado' })
-  @ApiResponse({ status: 409, description: 'Tanque possui sensores associados' })
+  @ApiResponse({
+    status: 409,
+    description: 'Tanque possui sensores associados',
+  })
   @ApiParam({ name: 'id', description: 'ID do tanque' })
   @HttpCode(HttpStatus.NO_CONTENT)
   async remove(@Param('id') id: string): Promise<void> {
@@ -135,7 +163,11 @@ export class TanksController {
   @Roles(UserRole.ADMIN, UserRole.MAINTENANCE)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Registrar manutenção realizada' })
-  @ApiResponse({ status: 200, description: 'Manutenção registrada com sucesso', type: Tank })
+  @ApiResponse({
+    status: 200,
+    description: 'Manutenção registrada com sucesso',
+    type: Tank,
+  })
   @ApiParam({ name: 'id', description: 'ID do tanque' })
   async registerMaintenance(@Param('id') id: string): Promise<Tank> {
     return this.tanksService.updateMaintenanceDate(id, new Date());

@@ -40,7 +40,9 @@ export class MqttService implements OnModuleInit, OnModuleDestroy {
 
   async onModuleInit() {
     if (!this.enabled) {
-      this.logger.log('MQTT disabled (MQTT_ENABLED=false): HTTP ingestion only');
+      this.logger.log(
+        'MQTT disabled (MQTT_ENABLED=false): HTTP ingestion only',
+      );
       return;
     }
     await this.connect();
@@ -223,10 +225,7 @@ export class MqttService implements OnModuleInit, OnModuleDestroy {
     }
   }
 
-  private async handleDeviceTopic(
-    topic: string,
-    data: any,
-  ): Promise<void> {
+  private async handleDeviceTopic(topic: string, data: any): Promise<void> {
     const topicSensorId = this.deviceTopicId(topic);
     if (!topicSensorId) {
       this.logger.warn(`Tópico de dispositivo malformado: ${topic}`);

@@ -49,9 +49,11 @@ export class AlertProcessorService {
       for (const alarm of evaluateLevelAlarms(tank, reading.level)) {
         await this.createLevelAlertIfNotCooldown(alarm, tank, sensor, reading);
       }
-
     } catch (error) {
-      this.logger.error(`Erro ao processar alertas para leitura ${reading.id}:`, error);
+      this.logger.error(
+        `Erro ao processar alertas para leitura ${reading.id}:`,
+        error,
+      );
     }
   }
 
@@ -67,11 +69,13 @@ export class AlertProcessorService {
 
       for (const sensor of sensors) {
         // Verificar se o sensor está offline
-        if (!sensor.lastTransmissionAt || sensor.lastTransmissionAt < fiveMinutesAgo) {
+        if (
+          !sensor.lastTransmissionAt ||
+          sensor.lastTransmissionAt < fiveMinutesAgo
+        ) {
           await this.createOfflineAlert(sensor);
         }
       }
-
     } catch (error) {
       this.logger.error('Erro ao verificar sensores offline:', error);
     }
@@ -82,14 +86,15 @@ export class AlertProcessorService {
       const sensors = await this.sensorRepository
         .createQueryBuilder('sensor')
         .leftJoinAndSelect('sensor.tank', 'tank')
-        .where('sensor.batteryLevel <= :lowBatteryThreshold', { lowBatteryThreshold: 20 })
+        .where('sensor.batteryLevel <= :lowBatteryThreshold', {
+          lowBatteryThreshold: 20,
+        })
         .andWhere('sensor.batteryLevel IS NOT NULL')
         .getMany();
 
       for (const sensor of sensors) {
         await this.createLowBatteryAlert(sensor);
       }
-
     } catch (error) {
       this.logger.error('Erro ao verificar bateria baixa:', error);
     }
@@ -120,7 +125,6 @@ export class AlertProcessorService {
       for (const sensor of sensorsNeedingCalibration) {
         await this.createCalibrationAlert(sensor);
       }
-
     } catch (error) {
       this.logger.error('Erro ao verificar manutenções:', error);
     }
@@ -138,7 +142,6 @@ export class AlertProcessorService {
       for (const sensor of sensorsWithErrors) {
         await this.createSensorErrorAlert(sensor);
       }
-
     } catch (error) {
       this.logger.error('Erro ao verificar erros de sensor:', error);
     }
@@ -172,12 +175,13 @@ export class AlertProcessorService {
         }
       });
 
-      keysToDelete.forEach(key => this.lastAlertTimes.delete(key));
+      keysToDelete.forEach((key) => this.lastAlertTimes.delete(key));
 
       if (keysToDelete.length > 0) {
-        this.logger.debug(`Limpos ${keysToDelete.length} registros de cooldown antigos`);
+        this.logger.debug(
+          `Limpos ${keysToDelete.length} registros de cooldown antigos`,
+        );
       }
-
     } catch (error) {
       this.logger.error('Erro ao limpar dados antigos de alertas:', error);
     }
@@ -196,7 +200,8 @@ export class AlertProcessorService {
     const now = new Date();
 
     if (lastAlertTime) {
-      const minutesSinceLast = (now.getTime() - lastAlertTime.getTime()) / 60000;
+      const minutesSinceLast =
+        (now.getTime() - lastAlertTime.getTime()) / 60000;
       if (minutesSinceLast < LEVEL_ALARM_COOLDOWN_MIN[alarm.key]) return;
     }
 
@@ -221,7 +226,10 @@ export class AlertProcessorService {
         `Level alarm ${alarm.key} on tank ${tank.name} (${alarm.reason}, severity ${alarm.severity})`,
       );
     } catch (error) {
-      this.logger.error(`Could not create level alarm ${alarm.key} for tank ${tank.id}:`, error);
+      this.logger.error(
+        `Could not create level alarm ${alarm.key} for tank ${tank.id}:`,
+        error,
+      );
     }
   }
 
@@ -232,7 +240,8 @@ export class AlertProcessorService {
 
     // Cooldown de 30 minutos para alertas offline
     if (lastAlertTime) {
-      const timeSinceLastAlert = (now.getTime() - lastAlertTime.getTime()) / (1000 * 60);
+      const timeSinceLastAlert =
+        (now.getTime() - lastAlertTime.getTime()) / (1000 * 60);
       if (timeSinceLastAlert < 30) {
         return;
       }
@@ -251,16 +260,21 @@ export class AlertProcessorService {
           sensorId: sensor.id,
           lastTransmission: sensor.lastTransmissionAt,
           timeOffline: sensor.lastTransmissionAt
-            ? Math.round((now.getTime() - sensor.lastTransmissionAt.getTime()) / (1000 * 60))
+            ? Math.round(
+                (now.getTime() - sensor.lastTransmissionAt.getTime()) /
+                  (1000 * 60),
+              )
             : 'unknown',
-        }
+        },
       );
 
       this.lastAlertTimes.set(alertKey, now);
       this.logger.log(`Alerta offline criado para sensor ${sensor.sensorId}`);
-
     } catch (error) {
-      this.logger.error(`Erro ao criar alerta offline para sensor ${sensor.id}:`, error);
+      this.logger.error(
+        `Erro ao criar alerta offline para sensor ${sensor.id}:`,
+        error,
+      );
     }
   }
 
@@ -271,7 +285,8 @@ export class AlertProcessorService {
 
     // Cooldown de 2 horas para alertas de bateria
     if (lastAlertTime) {
-      const timeSinceLastAlert = (now.getTime() - lastAlertTime.getTime()) / (1000 * 60);
+      const timeSinceLastAlert =
+        (now.getTime() - lastAlertTime.getTime()) / (1000 * 60);
       if (timeSinceLastAlert < 120) {
         return;
       }
@@ -290,14 +305,18 @@ export class AlertProcessorService {
           sensorId: sensor.id,
           batteryLevel: sensor.batteryLevel,
           lastUpdate: sensor.batteryLastUpdate,
-        }
+        },
       );
 
       this.lastAlertTimes.set(alertKey, now);
-      this.logger.log(`Alerta bateria baixa criado para sensor ${sensor.sensorId}`);
-
+      this.logger.log(
+        `Alerta bateria baixa criado para sensor ${sensor.sensorId}`,
+      );
     } catch (error) {
-      this.logger.error(`Erro ao criar alerta bateria baixa para sensor ${sensor.id}:`, error);
+      this.logger.error(
+        `Erro ao criar alerta bateria baixa para sensor ${sensor.id}:`,
+        error,
+      );
     }
   }
 
@@ -308,7 +327,8 @@ export class AlertProcessorService {
 
     // Cooldown de 24 horas para alertas de manutenção
     if (lastAlertTime) {
-      const timeSinceLastAlert = (now.getTime() - lastAlertTime.getTime()) / (1000 * 60);
+      const timeSinceLastAlert =
+        (now.getTime() - lastAlertTime.getTime()) / (1000 * 60);
       if (timeSinceLastAlert < 1440) {
         return;
       }
@@ -327,14 +347,16 @@ export class AlertProcessorService {
           tankId: tank.id,
           lastMaintenance: tank.lastMaintenanceDate,
           nextMaintenance: tank.nextMaintenanceDate,
-        }
+        },
       );
 
       this.lastAlertTimes.set(alertKey, now);
       this.logger.log(`Alerta manutenção criado para tanque ${tank.name}`);
-
     } catch (error) {
-      this.logger.error(`Erro ao criar alerta manutenção para tanque ${tank.id}:`, error);
+      this.logger.error(
+        `Erro ao criar alerta manutenção para tanque ${tank.id}:`,
+        error,
+      );
     }
   }
 
@@ -345,7 +367,8 @@ export class AlertProcessorService {
 
     // Cooldown de 24 horas para alertas de calibração
     if (lastAlertTime) {
-      const timeSinceLastAlert = (now.getTime() - lastAlertTime.getTime()) / (1000 * 60);
+      const timeSinceLastAlert =
+        (now.getTime() - lastAlertTime.getTime()) / (1000 * 60);
       if (timeSinceLastAlert < 1440) {
         return;
       }
@@ -364,14 +387,18 @@ export class AlertProcessorService {
           sensorId: sensor.id,
           lastCalibration: sensor.calibrationDate,
           nextCalibration: sensor.nextCalibrationDate,
-        }
+        },
       );
 
       this.lastAlertTimes.set(alertKey, now);
-      this.logger.log(`Alerta calibração criado para sensor ${sensor.sensorId}`);
-
+      this.logger.log(
+        `Alerta calibração criado para sensor ${sensor.sensorId}`,
+      );
     } catch (error) {
-      this.logger.error(`Erro ao criar alerta calibração para sensor ${sensor.id}:`, error);
+      this.logger.error(
+        `Erro ao criar alerta calibração para sensor ${sensor.id}:`,
+        error,
+      );
     }
   }
 
@@ -382,7 +409,8 @@ export class AlertProcessorService {
 
     // Cooldown de 1 hora para alertas de erro
     if (lastAlertTime) {
-      const timeSinceLastAlert = (now.getTime() - lastAlertTime.getTime()) / (1000 * 60);
+      const timeSinceLastAlert =
+        (now.getTime() - lastAlertTime.getTime()) / (1000 * 60);
       if (timeSinceLastAlert < 60) {
         return;
       }
@@ -402,14 +430,16 @@ export class AlertProcessorService {
           errorCount: sensor.errorCount,
           lastError: sensor.lastErrorAt,
           lastErrorMessage: sensor.lastErrorMessage,
-        }
+        },
       );
 
       this.lastAlertTimes.set(alertKey, now);
       this.logger.log(`Alerta erro criado para sensor ${sensor.sensorId}`);
-
     } catch (error) {
-      this.logger.error(`Erro ao criar alerta erro para sensor ${sensor.id}:`, error);
+      this.logger.error(
+        `Erro ao criar alerta erro para sensor ${sensor.id}:`,
+        error,
+      );
     }
   }
 

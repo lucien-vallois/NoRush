@@ -18,7 +18,13 @@ export const DEVICE_SECRET_PREFIX = 'nrk_';
 
 export type CredentialCheck =
   | { ok: true }
-  | { ok: false; code: 'invalidIngestCredential' | 'invalidDeviceCredential' | 'deviceNotProvisioned' };
+  | {
+      ok: false;
+      code:
+        | 'invalidIngestCredential'
+        | 'invalidDeviceCredential'
+        | 'deviceNotProvisioned';
+    };
 
 @Injectable()
 export class DeviceCredentialsService {
@@ -56,9 +62,7 @@ export class DeviceCredentialsService {
     );
   }
 
-  private matchesSharedKey(
-    authToken: string | undefined,
-  ): boolean {
+  private matchesSharedKey(authToken: string | undefined): boolean {
     const key = this.configService.get<string>('IOT_INGEST_KEY');
     if (!key || !authToken) return false;
     const a = createHash('sha256').update(key).digest();
@@ -88,7 +92,8 @@ export class DeviceCredentialsService {
           : { ok: false, code: 'invalidIngestCredential' };
       }
       case 'device': {
-        if (this.matchesDeviceCredential(sensor, authToken)) return { ok: true };
+        if (this.matchesDeviceCredential(sensor, authToken))
+          return { ok: true };
         return {
           ok: false,
           code: sensor?.credentialHash
@@ -97,7 +102,8 @@ export class DeviceCredentialsService {
         };
       }
       case 'hybrid': {
-        if (this.matchesDeviceCredential(sensor, authToken)) return { ok: true };
+        if (this.matchesDeviceCredential(sensor, authToken))
+          return { ok: true };
         if (this.matchesSharedKey(authToken)) return { ok: true };
         if (!sharedKey && !isProduction && !authToken) return { ok: true };
         return { ok: false, code: 'invalidIngestCredential' };

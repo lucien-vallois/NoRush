@@ -58,8 +58,10 @@ export class I18nHttpExceptionFilter implements ExceptionFilter {
     }
 
     // Payload tradicional: devolve a resposta original do Nest
-    response.status(status).json(
-      typeof body === 'string' ? { statusCode: status, message: body } : body,
-    );
+    response
+      .status(status)
+      .json(
+        typeof body === 'string' ? { statusCode: status, message: body } : body,
+      );
   }
 }

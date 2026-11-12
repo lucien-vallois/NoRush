@@ -63,15 +63,19 @@ export class NotificationService {
       }
 
       // Encontrar regra de notificação
-      const rule = this.notificationRules.find(r => r.severity === alert.severity);
+      const rule = this.notificationRules.find(
+        (r) => r.severity === alert.severity,
+      );
 
       if (!rule) {
-        this.logger.warn(`Nenhuma regra de notificação encontrada para severidade ${alert.severity}`);
+        this.logger.warn(
+          `Nenhuma regra de notificação encontrada para severidade ${alert.severity}`,
+        );
         return;
       }
 
       // Enviar notificações pelos canais configurados
-      const notifications = rule.channels.map(channelName => {
+      const notifications = rule.channels.map((channelName) => {
         const channel = this.channels.get(channelName);
         if (channel && channel.enabled) {
           return channel.send(alert, users);
@@ -82,31 +86,41 @@ export class NotificationService {
       await Promise.allSettled(notifications);
 
       this.logger.log(
-        `Notificações enviadas para alerta ${alert.id}: ${rule.channels.join(', ')} (${users.length} usuários)`
+        `Notificações enviadas para alerta ${alert.id}: ${rule.channels.join(', ')} (${users.length} usuários)`,
       );
-
     } catch (error) {
-      this.logger.error(`Erro ao enviar notificações para alerta ${alert.id}:`, error);
+      this.logger.error(
+        `Erro ao enviar notificações para alerta ${alert.id}:`,
+        error,
+      );
     }
   }
 
   async notifyAlertBatch(alerts: Alert[]): Promise<void> {
     // Agrupar alertas por severidade
-    const alertsBySeverity = alerts.reduce((acc, alert) => {
-      if (!acc[alert.severity]) {
-        acc[alert.severity] = [];
-      }
-      acc[alert.severity].push(alert);
-      return acc;
-    }, {} as Record<AlertSeverity, Alert[]>);
+    const alertsBySeverity = alerts.reduce(
+      (acc, alert) => {
+        if (!acc[alert.severity]) {
+          acc[alert.severity] = [];
+        }
+        acc[alert.severity].push(alert);
+        return acc;
+      },
+      {} as Record<AlertSeverity, Alert[]>,
+    );
 
     // Enviar notificações em lote por severidade
     for (const [severity, severityAlerts] of Object.entries(alertsBySeverity)) {
-      const rule = this.notificationRules.find(r => r.severity === severity as AlertSeverity);
+      const rule = this.notificationRules.find(
+        (r) => r.severity === (severity as AlertSeverity),
+      );
 
       if (rule && !rule.immediate) {
         // Enviar resumo em lote
-        await this.sendBatchNotification(severity as AlertSeverity, severityAlerts);
+        await this.sendBatchNotification(
+          severity as AlertSeverity,
+          severityAlerts,
+        );
       }
     }
   }
@@ -127,7 +141,9 @@ export class NotificationService {
         users = await this.userRepository
           .createQueryBuilder('user')
           .where('user.isActive = true')
-          .andWhere('user.role IN (:...roles)', { roles: ['admin', 'operator'] })
+          .andWhere('user.role IN (:...roles)', {
+            roles: ['admin', 'operator'],
+          })
           .getMany();
         break;
 
@@ -146,10 +162,13 @@ export class NotificationService {
     return users;
   }
 
-  private async sendBatchNotification(severity: AlertSeverity, alerts: Alert[]): Promise<void> {
+  private async sendBatchNotification(
+    severity: AlertSeverity,
+    alerts: Alert[],
+  ): Promise<void> {
     try {
       const users = await this.getUsersForAlert({ severity } as Alert);
-      const rule = this.notificationRules.find(r => r.severity === severity);
+      const rule = this.notificationRules.find((r) => r.severity === severity);
 
       if (!rule || users.length === 0) return;
 
@@ -162,35 +181,43 @@ export class NotificationService {
         await emailChannel.send(summaryMessage as any, users);
       }
 
-      this.logger.log(`Notificação em lote enviada: ${alerts.length} alertas (${severity})`);
-
+      this.logger.log(
+        `Notificação em lote enviada: ${alerts.length} alertas (${severity})`,
+      );
     } catch (error) {
       this.logger.error('Erro ao enviar notificação em lote:', error);
     }
   }
 
-  private createBatchSummaryMessage(severity: AlertSeverity, alerts: Alert[]): any {
-    const alertTypes = alerts.reduce((acc, alert) => {
-      acc[alert.type] = (acc[alert.type] || 0) + 1;
-      return acc;
-    }, {} as Record<string, number>);
+  private createBatchSummaryMessage(
+    severity: AlertSeverity,
+    alerts: Alert[],
+  ): any {
+    const alertTypes = alerts.reduce(
+      (acc, alert) => {
+        acc[alert.type] = (acc[alert.type] || 0) + 1;
+        return acc;
+      },
+      {} as Record<string, number>,
+    );
 
     return {
       id: `batch_${Date.now()}`,
       type: 'BATCH_SUMMARY',
       severity,
       title: `Resumo de Alertas - ${severity.toUpperCase()}`,
-      message: `Foram detectados ${alerts.length} alertas de severidade ${severity} no período.\n\n` +
-               `Tipos de alertas:\n${Object.entries(alertTypes)
-                 .map(([type, count]) => `- ${type}: ${count}`)
-                 .join('\n')}\n\n` +
-               `Verifique o sistema para mais detalhes.`,
+      message:
+        `Foram detectados ${alerts.length} alertas de severidade ${severity} no período.\n\n` +
+        `Tipos de alertas:\n${Object.entries(alertTypes)
+          .map(([type, count]) => `- ${type}: ${count}`)
+          .join('\n')}\n\n` +
+        `Verifique o sistema para mais detalhes.`,
       metadata: {
         alertCount: alerts.length,
         alertTypes,
         period: {
-          start: Math.min(...alerts.map(a => a.createdAt.getTime())),
-          end: Math.max(...alerts.map(a => a.createdAt.getTime())),
+          start: Math.min(...alerts.map((a) => a.createdAt.getTime())),
+          end: Math.max(...alerts.map((a) => a.createdAt.getTime())),
         },
       },
     };
@@ -233,59 +260,70 @@ export class NotificationService {
       },
     });
 
-    this.logger.log(`Canais de notificação inicializados: ${Array.from(this.channels.keys()).join(', ')}`);
+    this.logger.log(
+      `Canais de notificação inicializados: ${Array.from(this.channels.keys()).join(', ')}`,
+    );
   }
 
-  private async sendEmailNotification(alert: Alert, users: User[]): Promise<void> {
+  private async sendEmailNotification(
+    alert: Alert,
+    users: User[],
+  ): Promise<void> {
     try {
       // Simulação de envio de email
       // Em produção, integrar com SendGrid, AWS SES, etc.
 
       const emailData = {
-        to: users.map(u => u.email),
+        to: users.map((u) => u.email),
         subject: `[${alert.severity.toUpperCase()}] ${alert.title}`,
         html: this.generateEmailTemplate(alert),
         text: this.generateEmailText(alert),
       };
 
       // Simular delay de envio
-      await new Promise(resolve => setTimeout(resolve, 100));
+      await new Promise((resolve) => setTimeout(resolve, 100));
 
-      this.logger.log(`Email enviado para ${users.length} usuários: ${alert.title}`);
-
+      this.logger.log(
+        `Email enviado para ${users.length} usuários: ${alert.title}`,
+      );
     } catch (error) {
       this.logger.error('Erro ao enviar email:', error);
       throw error;
     }
   }
 
-  private async sendSmsNotification(alert: Alert, users: User[]): Promise<void> {
+  private async sendSmsNotification(
+    alert: Alert,
+    users: User[],
+  ): Promise<void> {
     try {
       // Simulação de envio SMS
       // Em produção, integrar com Twilio, AWS SNS, etc.
 
       const smsData = {
-        to: users.map(u => u.email), // Usando email como placeholder para telefone
+        to: users.map((u) => u.email), // Usando email como placeholder para telefone
         message: this.generateSmsMessage(alert),
       };
 
-      await new Promise(resolve => setTimeout(resolve, 50));
+      await new Promise((resolve) => setTimeout(resolve, 50));
 
       this.logger.log(`SMS enviado para ${users.length} usuários`);
-
     } catch (error) {
       this.logger.error('Erro ao enviar SMS:', error);
       throw error;
     }
   }
 
-  private async sendPushNotification(alert: Alert, users: User[]): Promise<void> {
+  private async sendPushNotification(
+    alert: Alert,
+    users: User[],
+  ): Promise<void> {
     try {
       // Simulação de push notification
       // Em produção, integrar com Firebase, OneSignal, etc.
 
       const pushData = {
-        to: users.map(u => u.id), // IDs dos usuários
+        to: users.map((u) => u.id), // IDs dos usuários
         title: alert.title,
         body: alert.message.substring(0, 100) + '...',
         data: {
@@ -295,10 +333,11 @@ export class NotificationService {
         },
       };
 
-      await new Promise(resolve => setTimeout(resolve, 30));
+      await new Promise((resolve) => setTimeout(resolve, 30));
 
-      this.logger.log(`Push notification enviado para ${users.length} usuários`);
-
+      this.logger.log(
+        `Push notification enviado para ${users.length} usuários`,
+      );
     } catch (error) {
       this.logger.error('Erro ao enviar push notification:', error);
       throw error;
@@ -325,17 +364,22 @@ export class NotificationService {
             fields: [
               { type: 'mrkdwn', text: `*Tipo:* ${alert.type}` },
               { type: 'mrkdwn', text: `*Severidade:* ${alert.severity}` },
-              { type: 'mrkdwn', text: `*Tanque:* ${alert.tank?.name || 'N/A'}` },
-              { type: 'mrkdwn', text: `*Horário:* ${alert.createdAt.toISOString()}` },
+              {
+                type: 'mrkdwn',
+                text: `*Tanque:* ${alert.tank?.name || 'N/A'}`,
+              },
+              {
+                type: 'mrkdwn',
+                text: `*Horário:* ${alert.createdAt.toISOString()}`,
+              },
             ],
           },
         ],
       };
 
-      await new Promise(resolve => setTimeout(resolve, 20));
+      await new Promise((resolve) => setTimeout(resolve, 20));
 
       this.logger.log('Notificação Slack enviada');
-
     } catch (error) {
       this.logger.error('Erro ao enviar notificação Slack:', error);
       throw error;
@@ -488,6 +532,8 @@ Verifique o sistema para mais detalhes.
   // Método para configurar regras de notificação
   setNotificationRules(rules: NotificationRule[]): void {
     this.notificationRules = rules;
-    this.logger.log(`Regras de notificação atualizadas: ${rules.length} regras`);
+    this.logger.log(
+      `Regras de notificação atualizadas: ${rules.length} regras`,
+    );
   }
 }

@@ -82,7 +82,8 @@ export class AuthController {
   @ApiBearerAuth()
   @ApiOperation({
     summary: 'Sign out everywhere',
-    description: "Refuses every token issued to the user so far, on every device.",
+    description:
+      'Refuses every token issued to the user so far, on every device.',
   })
   @ApiResponse({ status: 200, description: 'Every session signed out' })
   async logoutEverywhere(

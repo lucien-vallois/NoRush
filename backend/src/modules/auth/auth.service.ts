@@ -73,7 +73,8 @@ export class AuthService {
 
       const user = await this.userService.findById(payload.sub);
       if (!user) throw new UnauthorizedException({ code: 'userNotFound' });
-      if (!user.isActive) throw new UnauthorizedException({ code: 'userInactive' });
+      if (!user.isActive)
+        throw new UnauthorizedException({ code: 'userInactive' });
       if (!(await this.isSessionCurrent(payload, user))) {
         throw new UnauthorizedException({ code: 'invalidRefreshToken' });
       }
@@ -112,7 +113,8 @@ export class AuthService {
    */
   async isSessionCurrent(payload: TokenClaims, user: User): Promise<boolean> {
     if ((payload.tokenVersion ?? 0) !== (user.tokenVersion ?? 0)) return false;
-    if (payload.sid && (await this.sessions.isRevoked(payload.sid))) return false;
+    if (payload.sid && (await this.sessions.isRevoked(payload.sid)))
+      return false;
     return true;
   }
 
@@ -127,7 +129,9 @@ export class AuthService {
       await this.logoutEverywhere(userId);
       return;
     }
-    const expiresAt = new Date(Date.now() + this.refreshLifetimeSeconds() * 1000);
+    const expiresAt = new Date(
+      Date.now() + this.refreshLifetimeSeconds() * 1000,
+    );
     await this.sessions.revoke(sid, userId, expiresAt);
     this.logger.log(`Signed out session ${sid.slice(0, 8)} of user ${userId}`);
   }

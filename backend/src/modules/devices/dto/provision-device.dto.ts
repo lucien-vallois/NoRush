@@ -43,7 +43,10 @@ export class ProvisionDeviceDto {
   @IsUUID()
   tankId?: string;
 
-  @ApiPropertyOptional({ enum: SensorType, default: SensorType.MAGNETOSTRICTIVE })
+  @ApiPropertyOptional({
+    enum: SensorType,
+    default: SensorType.MAGNETOSTRICTIVE,
+  })
   @IsOptional()
   @IsEnum(SensorType)
   type?: SensorType;
@@ -65,7 +68,9 @@ export class ProvisionDeviceDto {
   @MaxLength(80)
   manufacturer?: string;
 
-  @ApiPropertyOptional({ description: 'Versão de firmware reportada no bring-up' })
+  @ApiPropertyOptional({
+    description: 'Versão de firmware reportada no bring-up',
+  })
   @IsOptional()
   @IsString()
   @MaxLength(40)
@@ -86,7 +91,10 @@ export class ProvisionDeviceDto {
 }
 
 export class HeartbeatDto {
-  @ApiProperty({ description: 'ID público do dispositivo', example: 'SENSOR-101' })
+  @ApiProperty({
+    description: 'ID público do dispositivo',
+    example: 'SENSOR-101',
+  })
   @IsString()
   sensorId: string;
 

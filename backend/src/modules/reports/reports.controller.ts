@@ -18,7 +18,11 @@ import {
 } from '@nestjs/swagger';
 import type { Response } from 'express';
 import { ReportsService } from './reports.service';
-import { GenerateReportDto, ReportType, ReportFormat } from './dto/generate-report.dto';
+import {
+  GenerateReportDto,
+  ReportType,
+  ReportFormat,
+} from './dto/generate-report.dto';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { UserRole } from '../../entities/user.entity';
 
@@ -32,20 +36,21 @@ export class ReportsController {
   @ApiBearerAuth()
   @ApiOperation({
     summary: 'Gerar relatório',
-    description: 'Gera um relatório no formato especificado (PDF, Excel ou CSV)',
+    description:
+      'Gera um relatório no formato especificado (PDF, Excel ou CSV)',
   })
   @ApiResponse({ status: 200, description: 'Relatório gerado com sucesso' })
   @ApiResponse({ status: 400, description: 'Parâmetros inválidos' })
   @ApiResponse({ status: 404, description: 'Dados não encontrados' })
   @ApiBody({ type: GenerateReportDto })
-  async generateReport(
-    @Body() dto: GenerateReportDto,
-    @Res() res: Response,
-  ) {
+  async generateReport(@Body() dto: GenerateReportDto, @Res() res: Response) {
     const result = await this.reportsService.generateReport(dto);
 
     res.setHeader('Content-Type', result.contentType);
-    res.setHeader('Content-Disposition', `attachment; filename="${result.filename}"`);
+    res.setHeader(
+      'Content-Disposition',
+      `attachment; filename="${result.filename}"`,
+    );
     res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
     res.setHeader('Pragma', 'no-cache');
     res.setHeader('Expires', '0');
@@ -61,11 +66,23 @@ export class ReportsController {
     description: 'Obtém informações sobre um relatório sem gerá-lo',
   })
   @ApiResponse({ status: 200, description: 'Preview obtido com sucesso' })
-  @ApiQuery({ name: 'type', enum: ReportType, description: 'Tipo do relatório' })
+  @ApiQuery({
+    name: 'type',
+    enum: ReportType,
+    description: 'Tipo do relatório',
+  })
   @ApiQuery({ name: 'startDate', required: false, description: 'Data inicial' })
   @ApiQuery({ name: 'endDate', required: false, description: 'Data final' })
-  @ApiQuery({ name: 'tankIds', required: false, description: 'IDs dos tanques' })
-  @ApiQuery({ name: 'sensorIds', required: false, description: 'IDs dos sensores' })
+  @ApiQuery({
+    name: 'tankIds',
+    required: false,
+    description: 'IDs dos tanques',
+  })
+  @ApiQuery({
+    name: 'sensorIds',
+    required: false,
+    description: 'IDs dos sensores',
+  })
   async getReportPreview(
     @Query('type') type: ReportType,
     @Query('startDate') startDate?: string,
@@ -112,9 +129,13 @@ export class ReportsController {
   @ApiBearerAuth()
   @ApiOperation({
     summary: 'Gerar relatórios agendados',
-    description: 'Executa geração manual de relatórios agendados (apenas admin)',
+    description:
+      'Executa geração manual de relatórios agendados (apenas admin)',
   })
-  @ApiResponse({ status: 200, description: 'Relatórios agendados gerados com sucesso' })
+  @ApiResponse({
+    status: 200,
+    description: 'Relatórios agendados gerados com sucesso',
+  })
   async generateScheduledReports() {
     await this.reportsService.generateScheduledReports();
     return {
@@ -146,7 +167,8 @@ export class ReportsController {
     },
   })
   async generateTankLevelHistory(
-    @Body() body: {
+    @Body()
+    body: {
       format: ReportFormat;
       startDate: string;
       endDate: string;
@@ -167,7 +189,10 @@ export class ReportsController {
     const result = await this.reportsService.generateReport(dto);
 
     res.setHeader('Content-Type', result.contentType);
-    res.setHeader('Content-Disposition', `attachment; filename="${result.filename}"`);
+    res.setHeader(
+      'Content-Disposition',
+      `attachment; filename="${result.filename}"`,
+    );
     res.send(result.buffer);
   }
 
@@ -180,7 +205,8 @@ export class ReportsController {
   })
   @ApiResponse({ status: 200, description: 'Relatório gerado com sucesso' })
   async generateSensorPerformance(
-    @Body() body: {
+    @Body()
+    body: {
       format: ReportFormat;
       startDate: string;
       endDate: string;
@@ -201,7 +227,10 @@ export class ReportsController {
     const result = await this.reportsService.generateReport(dto);
 
     res.setHeader('Content-Type', result.contentType);
-    res.setHeader('Content-Disposition', `attachment; filename="${result.filename}"`);
+    res.setHeader(
+      'Content-Disposition',
+      `attachment; filename="${result.filename}"`,
+    );
     res.send(result.buffer);
   }
 
@@ -214,7 +243,8 @@ export class ReportsController {
   })
   @ApiResponse({ status: 200, description: 'Relatório gerado com sucesso' })
   async generateAlertSummary(
-    @Body() body: {
+    @Body()
+    body: {
       format: ReportFormat;
       startDate: string;
       endDate: string;
@@ -237,7 +267,10 @@ export class ReportsController {
     const result = await this.reportsService.generateReport(dto);
 
     res.setHeader('Content-Type', result.contentType);
-    res.setHeader('Content-Disposition', `attachment; filename="${result.filename}"`);
+    res.setHeader(
+      'Content-Disposition',
+      `attachment; filename="${result.filename}"`,
+    );
     res.send(result.buffer);
   }
 
@@ -250,7 +283,8 @@ export class ReportsController {
   })
   @ApiResponse({ status: 200, description: 'Relatório gerado com sucesso' })
   async generateSystemOverview(
-    @Body() body: {
+    @Body()
+    body: {
       format: ReportFormat;
       startDate?: string;
       endDate?: string;
@@ -269,7 +303,10 @@ export class ReportsController {
     const result = await this.reportsService.generateReport(dto);
 
     res.setHeader('Content-Type', result.contentType);
-    res.setHeader('Content-Disposition', `attachment; filename="${result.filename}"`);
+    res.setHeader(
+      'Content-Disposition',
+      `attachment; filename="${result.filename}"`,
+    );
     res.send(result.buffer);
   }
 
@@ -282,7 +319,8 @@ export class ReportsController {
   })
   @ApiResponse({ status: 200, description: 'Relatório gerado com sucesso' })
   async generateMaintenanceSchedule(
-    @Body() body: {
+    @Body()
+    body: {
       format: ReportFormat;
       title?: string;
     },
@@ -297,7 +335,10 @@ export class ReportsController {
     const result = await this.reportsService.generateReport(dto);
 
     res.setHeader('Content-Type', result.contentType);
-    res.setHeader('Content-Disposition', `attachment; filename="${result.filename}"`);
+    res.setHeader(
+      'Content-Disposition',
+      `attachment; filename="${result.filename}"`,
+    );
     res.send(result.buffer);
   }
 
@@ -310,7 +351,8 @@ export class ReportsController {
   })
   @ApiResponse({ status: 200, description: 'Relatório gerado com sucesso' })
   async generateProductionAnalysis(
-    @Body() body: {
+    @Body()
+    body: {
       format: ReportFormat;
       startDate: string;
       endDate: string;
@@ -331,7 +373,10 @@ export class ReportsController {
     const result = await this.reportsService.generateReport(dto);
 
     res.setHeader('Content-Type', result.contentType);
-    res.setHeader('Content-Disposition', `attachment; filename="${result.filename}"`);
+    res.setHeader(
+      'Content-Disposition',
+      `attachment; filename="${result.filename}"`,
+    );
     res.send(result.buffer);
   }
 }
