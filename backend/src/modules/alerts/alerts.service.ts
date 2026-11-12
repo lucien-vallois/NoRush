@@ -405,13 +405,13 @@ export class AlertsService {
       case AlertType.HIGH_LEVEL:
         return {
           title: 'High Level Detected',
-          message: `Tank level reached ${levelInfo}, near the maximum limit of ${thresholdInfo}`,
+          message: `Tank level reached ${levelInfo}, at or above its alarm limit of ${thresholdInfo}`,
         };
 
       case AlertType.LOW_LEVEL:
         return {
           title: 'Low Level Detected',
-          message: `Tank level reached ${levelInfo}, below the minimum limit of ${thresholdInfo}`,
+          message: `Tank level reached ${levelInfo}, at or below its alarm limit of ${thresholdInfo}`,
         };
 
       case AlertType.OVERFLOW_RISK:

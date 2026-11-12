@@ -60,11 +60,11 @@
   "alertTypes": {
     "high_level": {
       "title": "High Level Detected",
-      "message": "Tank level reached {{level}} {{levelUnit}}, near the maximum limit of {{threshold}} {{levelUnit}}"
+      "message": "Tank level reached {{level}} {{levelUnit}}, at or above its alarm limit of {{threshold}} {{levelUnit}}"
     },
     "low_level": {
       "title": "Low Level Detected",
-      "message": "Tank level reached {{level}} {{levelUnit}}, below the minimum limit of {{threshold}} {{levelUnit}}"
+      "message": "Tank level reached {{level}} {{levelUnit}}, at or below its alarm limit of {{threshold}} {{levelUnit}}"
     },
     "overflow_risk": {
       "title": "Overflow Risk",

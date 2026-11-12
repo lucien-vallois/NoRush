@@ -60,11 +60,11 @@
   "alertTypes": {
     "high_level": {
       "title": "Nivel Alto Detectado",
-      "message": "El nivel del tanque alcanzó {{level}} {{levelUnit}}, cerca del límite máximo de {{threshold}} {{levelUnit}}"
+      "message": "El nivel del tanque alcanzó {{level}} {{levelUnit}}, en su límite de alarma de {{threshold}} {{levelUnit}} o por encima"
     },
     "low_level": {
       "title": "Nivel Bajo Detectado",
-      "message": "El nivel del tanque alcanzó {{level}} {{levelUnit}}, por debajo del límite mínimo de {{threshold}} {{levelUnit}}"
+      "message": "El nivel del tanque alcanzó {{level}} {{levelUnit}}, en su límite de alarma de {{threshold}} {{levelUnit}} o por debajo"
     },
     "overflow_risk": {
       "title": "Riesgo de Desbordamiento",

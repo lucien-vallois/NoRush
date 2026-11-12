@@ -276,44 +276,46 @@ function evaluateThresholds(
   tank: TankInfo,
   level: number,
 ): ThresholdHit | null {
-  // primeiro que bater por leitura, prioridade critical > high > medium
+  // Most severe first, same order and severities as the live alarms
+  // (src/modules/alerts/level-alarms.ts): overflow > minimum > high > low.
+  // Texts match AlertsService; the console localizes them by alert type.
   if (level >= tank.overflowThreshold) {
     return {
       type: 'overflow_risk',
       severity: 'critical',
-      title: 'Risco de Transbordo',
+      title: 'Overflow Risk',
       message: (l, thr) =>
-        `Risco crítico de transbordo! Nível atual: ${l.toFixed(2)}m, limite: ${thr.toFixed(2)}m`,
+        `Critical overflow risk! Current level: ${l.toFixed(2)}m, limit: ${thr.toFixed(2)}m`,
       threshold: tank.overflowThreshold,
+    };
+  }
+  if (level <= tank.minThreshold) {
+    return {
+      type: 'low_level',
+      severity: 'high',
+      title: 'Low Level Detected',
+      message: (l, thr) =>
+        `Tank level reached ${l.toFixed(2)}m, at or below its alarm limit of ${thr.toFixed(2)}m`,
+      threshold: tank.minThreshold,
     };
   }
   if (level >= tank.maxThreshold) {
     return {
       type: 'high_level',
       severity: 'medium',
-      title: 'Nível Alto Detectado',
+      title: 'High Level Detected',
       message: (l, thr) =>
-        `Nível acima do limite máximo! Nível atual: ${l.toFixed(2)}m, limite: ${thr.toFixed(2)}m`,
+        `Tank level reached ${l.toFixed(2)}m, at or above its alarm limit of ${thr.toFixed(2)}m`,
       threshold: tank.maxThreshold,
-    };
-  }
-  if (level <= tank.minThreshold) {
-    return {
-      type: 'low_level',
-      severity: 'medium',
-      title: 'Nível Baixo Detectado',
-      message: (l, thr) =>
-        `Nível abaixo do limite mínimo! Nível atual: ${l.toFixed(2)}m, limite: ${thr.toFixed(2)}m`,
-      threshold: tank.minThreshold,
     };
   }
   if (level <= tank.lowThreshold) {
     return {
       type: 'low_level',
-      severity: 'high',
-      title: 'Nível Baixo Detectado',
+      severity: 'medium',
+      title: 'Low Level Detected',
       message: (l, thr) =>
-        `Nível abaixo do limite operacional! Nível atual: ${l.toFixed(2)}m, limite: ${thr.toFixed(2)}m`,
+        `Tank level reached ${l.toFixed(2)}m, at or below its alarm limit of ${thr.toFixed(2)}m`,
       threshold: tank.lowThreshold,
     };
   }
