@@ -14,6 +14,15 @@ npm run demo
 
 See the [demo walkthrough](../DEMO.md) for the simulator and the local demo accounts. To work on the API alone: `npm run start:dev --workspace=backend`. For a real install, see [Production install](../docs/production-install.md).
 
+## Modules
+
+Each module that carries business rules has its own reference:
+[alerts](src/modules/alerts/README.md) (level alarms, severities, the one-open-alert rule),
+[iot-gateway](src/modules/iot-gateway/README.md) (ingestion and device commands),
+[readings](src/modules/readings/README.md) (history and the 5-minute/1-hour series),
+[sensors](src/modules/sensors/README.md) (the gauge registry) and
+[reports](src/modules/reports/README.md) (Excel, CSV and PDF exports).
+
 ## Main routes
 
 All paths are relative to the API base (`http://localhost:3000` locally). The full reference is OpenAPI at `/api/docs`.
@@ -23,6 +32,7 @@ All paths are relative to the API base (`http://localhost:3000` locally). The fu
 | `POST /auth/login` | Check credentials and issue access and refresh tokens |
 | `POST /auth/refresh` | Renew access with a refresh token |
 | `GET /auth/profile` | The signed-in user |
+| `POST /auth/logout`, `POST /auth/logout/all` | Sign out this session, or every session of the user |
 | `POST /auth/users` | Create a user (admin) |
 | `GET /tanks`, `POST /tanks`, `PATCH /tanks/:id` | Fleet, tank setup (admin, maintenance) |
 | `GET /sensors`, `GET /sensors/dashboard` | Gauges and their stats; online = reported in the last 5 minutes |
@@ -90,7 +100,7 @@ The unit tests cover input limits, authentication, ingestion without side effect
 ## Limits
 
 - In development the schema follows the entities (`synchronize`); in production only migrations change it.
-- Logout ends the session in the client. Issued JWTs have no individual server-side revocation in this version.
-- The inherited reports module has one PDF template, the alert summary. Other report types and formats are not part of the supported flow.
+- Sign-out revokes one session on the server (its access and refresh tokens and new WebSocket connections); refresh tokens are not rotated with reuse detection yet.
+- The report API exports every type to Excel (and CSV, except the system overview); PDF exists for the alert summary only, and the catalog offers it only there. Reports are on demand: nothing is scheduled or sent.
 - Notification channels (`EMAIL_ENABLED`, `SMS_ENABLED`, `PUSH_ENABLED`, `SLACK_ENABLED`) are placeholders: they build the message but do not send it. Alerts reach people through the console only.
 - No OAuth2 and no Prometheus metrics endpoint in this release.
