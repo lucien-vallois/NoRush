@@ -14,6 +14,20 @@ export default defineConfig({
       }
     }
   },
+  // `npm start` on a host such as Railway: listen on its PORT. Vite only
+  // answers for allowed Host headers (otherwise 403 "Blocked request"), so
+  // allow Railway's domains plus any custom domain in PREVIEW_ALLOWED_HOSTS.
+  preview: {
+    host: true,
+    port: Number(process.env.PORT) || 4173,
+    allowedHosts: [
+      '.up.railway.app',
+      ...(process.env.PREVIEW_ALLOWED_HOSTS ?? '')
+        .split(',')
+        .map((host) => host.trim())
+        .filter(Boolean),
+    ],
+  },
   build: {
     outDir: 'dist',
     sourcemap: true,

@@ -5,6 +5,7 @@ import {
   ValidationPipe,
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
+import { NestExpressApplication } from '@nestjs/platform-express';
 import { AppModule } from './app.module';
 import { I18nService } from './i18n/i18n.service';
 import { I18nHttpExceptionFilter } from './i18n/i18n-http-exception.filter';
@@ -12,7 +13,19 @@ import helmet from 'helmet';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create<NestExpressApplication>(AppModule);
+  // Behind a reverse proxy (Railway, nginx) the client IP arrives in
+  // X-Forwarded-For; without this the rate limit sees every visitor as the
+  // proxy. Off when the API is exposed directly, where that header could be
+  // forged to dodge the limit. TRUST_PROXY = number of proxy hops.
+  const trustProxy =
+    process.env.TRUST_PROXY ?? (process.env.RAILWAY_ENVIRONMENT ? '1' : undefined);
+  if (trustProxy) {
+    app.set(
+      'trust proxy',
+      /^\d+$/.test(trustProxy) ? Number(trustProxy) : trustProxy === 'true',
+    );
+  }
   app.use(helmet());
   app.useGlobalInterceptors(new ClassSerializerInterceptor(app.get(Reflector)));
   app.enableShutdownHooks();

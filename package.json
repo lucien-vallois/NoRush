@@ -21,6 +21,7 @@
     "demo": "npm run build --workspace=backend && concurrently --kill-others --names API,WEB \"npm run start:prod --workspace=backend\" \"npm run dev --workspace=frontend\"",
     "seed": "npm run seed --workspace=backend",
     "simulate": "node --env-file-if-exists=.env backend/test/iot-simulation.js mqtt",
+    "simulate:http": "node --env-file-if-exists=.env backend/test/iot-simulation.js http",
     "smoke": "node --env-file-if-exists=.env scripts/smoke.mjs",
     "smoke:telemetry": "node --env-file-if-exists=.env frontend/test/ws-smoke.mjs",
     "screenshots": "node --env-file-if-exists=.env scripts/screenshots.mjs",

@@ -12,6 +12,7 @@ import { AppController } from './app.controller';
 
 // Services
 import { AppService } from './app.service';
+import { DemoSeedService } from './demo-seed.service';
 
 // Entities
 import { User } from './entities/user.entity';
@@ -103,6 +104,7 @@ import { resolve } from 'node:path';
   controllers: [AppController],
   providers: [
     AppService,
+    DemoSeedService,
     { provide: APP_GUARD, useClass: ThrottlerGuard },
     // Guards globais
     {

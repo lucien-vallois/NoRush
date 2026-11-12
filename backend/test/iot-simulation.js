@@ -35,15 +35,16 @@
  *
  * Variáveis de ambiente:
  *   MQTT_HOST, MQTT_PORT, MQTT_TOPIC_SENSOR_DATA   (conexão MQTT)
- *   HTTP_HOST, HTTP_PORT                           (endpoint HTTP)
+ *   HTTP_URL (ex.: https://sua-api.up.railway.app) ou HTTP_HOST + HTTP_PORT
  *   SIM_INTERVAL  (ms entre ciclos, default 5000)
- *   SIM_DURATION  (ms de simulação, default 60000)
+ *   SIM_DURATION  (ms de simulação, default 60000; 0 = contínua até SIGTERM)
  *   SIM_SPEED     (aceleração do tempo simulado, default 60)
  *   SENSORS       (lista que sobrescreve os sensores ativos, ex.: "SENSOR-001,SENSOR-003")
  */
 
 const mqtt = require('mqtt');
 const http = require('http');
+const https = require('https');
 
 // ============================== FÍSICA DO PROCESSO ==============================
 
@@ -88,6 +89,9 @@ const DYING_SENSOR = { id: 'SENSOR-004', startBattery: 12, drainPerTx: 0.5, sile
 
 // ============================== CONFIGURAÇÃO ==============================
 
+// HTTP_URL (ex.: https://sua-api.up.railway.app) tem precedência sobre HTTP_HOST/HTTP_PORT
+const httpUrl = process.env.HTTP_URL ? new URL(process.env.HTTP_URL) : null;
+
 const config = {
   mqtt: {
     host: process.env.MQTT_HOST || 'localhost',
@@ -95,8 +99,11 @@ const config = {
     topic: process.env.MQTT_TOPIC_SENSOR_DATA || 'sensors/data',
   },
   http: {
-    host: process.env.HTTP_HOST || 'localhost',
-    port: process.env.HTTP_PORT || 3000,
+    secure: httpUrl ? httpUrl.protocol === 'https:' : false,
+    host: httpUrl ? httpUrl.hostname : process.env.HTTP_HOST || 'localhost',
+    port: httpUrl
+      ? Number(httpUrl.port || (httpUrl.protocol === 'https:' ? 443 : 80))
+      : process.env.HTTP_PORT || 3000,
     path: '/iot/sensors/data',
   },
   simulation: {
@@ -369,7 +376,8 @@ function sendHTTP(sensorId) {
     },
   };
 
-  const req = http.request(options, (res) => {
+  const client = config.http.secure ? https : http;
+  const req = client.request(options, (res) => {
     stats.messagesSent++;
     let responseData = '';
 
@@ -601,7 +609,12 @@ async function main() {
     }, 1500);
   };
 
-  setTimeout(() => shutdown('duração atingida'), config.simulation.duration);
+  // SIM_DURATION=0 roda até receber SIGINT/SIGTERM (worker contínuo no Railway)
+  if (config.simulation.duration > 0) {
+    setTimeout(() => shutdown('duração atingida'), config.simulation.duration);
+  } else {
+    console.log('♾️  SIM_DURATION=0 — simulação contínua (encerrar com SIGTERM)');
+  }
 
   // Tratamento de sinais para encerramento graceful
   process.on('SIGINT', () => {
@@ -625,7 +638,7 @@ if (require.main === module) {
     console.error('  node iot-simulation.js mqtt   # Simulação via MQTT');
     console.error('  node iot-simulation.js http   # Simulação via HTTP');
     console.error('  node iot-simulation.js        # Padrão: MQTT');
-    console.error('Env: SIM_INTERVAL, SIM_DURATION, SIM_SPEED, SENSORS, MQTT_HOST, MQTT_PORT, MQTT_TOPIC_SENSOR_DATA, HTTP_HOST, HTTP_PORT');
+    console.error('Env: SIM_INTERVAL, SIM_DURATION (0 = contínua), SIM_SPEED, SENSORS, MQTT_HOST, MQTT_PORT, MQTT_TOPIC_SENSOR_DATA, HTTP_URL, HTTP_HOST, HTTP_PORT');
     process.exit(1);
   }
 

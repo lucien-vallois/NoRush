@@ -14,6 +14,9 @@ import { DataSource } from 'typeorm';
  *    compressão de chunks com mais de 14 dias.
  *
  * Tudo idempotente: pode rodar em todo boot sem efeito colateral.
+ *
+ * Sem a extensão (ex.: Postgres gerenciado do Railway), cria views simples
+ * com as mesmas colunas para o /readings/timeseries continuar funcionando.
  */
 @Injectable()
 export class TimescaleService implements OnModuleInit {
@@ -36,6 +39,14 @@ export class TimescaleService implements OnModuleInit {
     } catch (error) {
       // Não derruba a aplicação: loga e segue (ex.: imagem postgres sem timescale)
       this.logger.error('Falha ao configurar TimescaleDB (não fatal):', error);
+      try {
+        await this.setupPlainFallbackViews();
+      } catch (fallbackError) {
+        this.logger.error(
+          'Fallback de views simples também falhou:',
+          fallbackError,
+        );
+      }
     }
   }
 
@@ -53,6 +64,37 @@ export class TimescaleService implements OnModuleInit {
       this.logger.warn(`Timescale [${name}] falhou: ${message}`);
       throw error;
     }
+  }
+
+  /**
+   * Fallback para Postgres sem TimescaleDB: views comuns com as mesmas
+   * colunas dos agregados contínuos, calculadas a cada consulta. Servem o
+   * /readings/timeseries em escala de demonstração, sem compressão/retenção.
+   */
+  private async setupPlainFallbackViews(): Promise<void> {
+    for (const [view, seconds] of [
+      ['readings_5m', 300],
+      ['readings_1h', 3600],
+    ] as const) {
+      await this.dataSource.query(`CREATE OR REPLACE VIEW ${view} AS
+        SELECT
+          to_timestamp(floor(extract(epoch from "timestamp") / ${seconds}) * ${seconds}) AS bucket,
+          "sensorId",
+          avg(level) AS avg_level,
+          max(level) AS max_level,
+          min(level) AS min_level,
+          avg(volume) AS avg_volume,
+          max(volume) AS max_volume,
+          avg(("oilWaterInterface"->>'oilLevel')::numeric) AS avg_oil_level,
+          avg(("oilWaterInterface"->>'waterLevel')::numeric) AS avg_water_level,
+          avg(quality) AS avg_quality,
+          count(*) AS sample_count
+        FROM readings
+        GROUP BY 1, "sensorId"`);
+    }
+    this.logger.warn(
+      'TimescaleDB indisponível: usando views simples readings_5m/readings_1h (sem compressão, retenção ou agregados contínuos)',
+    );
   }
 
   private async setupHypertable(): Promise<void> {

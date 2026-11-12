@@ -2,6 +2,7 @@ import 'reflect-metadata';
 import { existsSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { DataSource } from 'typeorm';
+import { resolveDbEnv } from './config/db-env';
 
 // Mesmos arquivos .env que o backend lê; variáveis já definidas no ambiente
 // têm precedência (loadEnvFile não sobrescreve).
@@ -20,12 +21,7 @@ for (const file of ['.env.local', '.env', '../.env']) {
  */
 export default new DataSource({
   type: 'postgres',
-  host: process.env.DB_HOST ?? 'localhost',
-  port: Number(process.env.DB_PORT ?? 5432),
-  username: process.env.DB_USER ?? 'flowback_user',
-  password: process.env.DB_PASS ?? 'secure_password',
-  database: process.env.DB_NAME ?? 'flowback_iot',
-  ssl: process.env.DB_SSL === 'true' ? { rejectUnauthorized: true } : false,
+  ...resolveDbEnv((key) => process.env[key]),
   entities: [__dirname + '/entities/*.entity{.ts,.js}'],
   migrations: [__dirname + '/migrations/*{.ts,.js}'],
   synchronize: false,

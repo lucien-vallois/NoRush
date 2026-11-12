@@ -11,6 +11,7 @@
  *   DAYS=1 npm run backfill                   # teste rápido de 1 dia
  *   FORCE_BACKFILL=1 npm run backfill         # ignora trava de segurança
  *   BACKFILL_ROLLBACK=1 DAYS=1 npm run backfill  # ensaio: executa tudo e faz ROLLBACK
+ *   DAYS=14 node dist/scripts/backfill.js     # build de produção (ex.: demo no Railway)
  *
  * Parâmetros (env): DAYS, STEP_MINUTES, BACKFILL_SEED, FORCE_BACKFILL.
  * Determinístico: mesma seed + mesmo cadastro de tanques => mesmo histórico.
@@ -19,6 +20,7 @@
  */
 import { Client } from 'pg';
 import { randomUUID } from 'crypto';
+import { resolveDbEnv } from '../config/db-env';
 
 // ---------------------------------------------------------------------------
 // Parâmetros
@@ -340,12 +342,15 @@ async function main(): Promise<void> {
     console.log('Modo ensaio (BACKFILL_ROLLBACK=1): nada será persistido.');
   }
 
+  // Same resolution as the API: DB_*, then DATABASE_URL, then PG*.
+  const db = resolveDbEnv((key) => process.env[key]);
   const client = new Client({
-    host: process.env.DB_HOST ?? 'localhost',
-    port: parseInt(process.env.DB_PORT ?? '5432', 10),
-    database: process.env.DB_NAME ?? 'flowback_iot',
-    user: process.env.DB_USER ?? 'flowback_user',
-    password: process.env.DB_PASS ?? 'secure_password',
+    host: db.host,
+    port: db.port,
+    database: db.database,
+    user: db.username,
+    password: db.password,
+    ssl: db.ssl,
   });
   await client.connect();
 
@@ -621,9 +626,12 @@ async function main(): Promise<void> {
               (SELECT count(*) FROM readings_1h) AS r1h,
               (SELECT count(*) FROM alerts) AS alerts`,
     );
-    const chunks = await client.query<{ n: string }>(
-      `SELECT count(*) AS n FROM timescaledb_information.chunks WHERE hypertable_name = 'readings'`,
-    );
+    // Plain PostgreSQL (no TimescaleDB, e.g. a hosted demo) has no chunks.
+    const chunks = await client
+      .query<{ n: string }>(
+        `SELECT count(*) AS n FROM timescaledb_information.chunks WHERE hypertable_name = 'readings'`,
+      )
+      .catch(() => ({ rows: [{ n: 'n/a (sem TimescaleDB)' }] }));
     const alertTypes = await client.query<any>(
       `SELECT type, severity, count(*)::int AS n FROM alerts GROUP BY type, severity ORDER BY type, severity`,
     );
