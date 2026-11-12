@@ -40,21 +40,31 @@ export class WebsocketGateway
   server: Server;
 
   afterInit(server: Server): void {
-    server.use(async (client, next) => {
-      try {
-        const token = client.handshake.auth?.token;
-        if (typeof token !== 'string')
-          return next(new Error('Authentication required'));
-        const user = await this.auth.validateToken(token);
-        if (!user) return next(new Error('Invalid access token'));
-        const claims = this.jwt.decode(token) as { exp: number };
-        client.data.userId = user.id;
-        client.data.expiresAt = claims.exp * 1000;
-        next();
-      } catch {
-        next(new Error('Invalid access token'));
-      }
+    // Socket.IO middleware is callback-based: run the async check and hand
+    // its outcome to next(), never a rejected promise.
+    server.use((client, next) => {
+      this.authenticate(client).then(
+        () => next(),
+        (error: unknown) =>
+          // Only our own two messages reach the client, never internals
+          next(
+            error instanceof Error &&
+              error.message === 'Authentication required'
+              ? error
+              : new Error('Invalid access token'),
+          ),
+      );
     });
+  }
+
+  private async authenticate(client: Socket): Promise<void> {
+    const token: unknown = client.handshake.auth?.token;
+    if (typeof token !== 'string') throw new Error('Authentication required');
+    const user = await this.auth.validateToken(token);
+    if (!user) throw new Error('Invalid access token');
+    const { exp } = this.jwt.decode<{ exp: number }>(token);
+    client.data.userId = user.id;
+    client.data.expiresAt = exp * 1000;
   }
 
   handleConnection(client: Socket): void {

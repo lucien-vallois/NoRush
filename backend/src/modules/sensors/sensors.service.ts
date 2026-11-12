@@ -7,12 +7,7 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, SelectQueryBuilder } from 'typeorm';
-import {
-  Sensor,
-  SensorStatus,
-  SensorType,
-  SensorProtocol,
-} from '../../entities/sensor.entity';
+import { Sensor, SensorStatus, SensorType } from '../../entities/sensor.entity';
 import { Tank } from '../../entities/tank.entity';
 import { Reading } from '../../entities/reading.entity';
 import { CreateSensorDto } from './dto/create-sensor.dto';
@@ -223,7 +218,7 @@ export class SensorsService {
     id: string,
     calibrationDate: Date,
   ): Promise<Sensor> {
-    const sensor = await this.findById(id);
+    await this.findById(id); // 404 for an unknown gauge
 
     // Calcular próxima calibração (geralmente a cada 6 meses ou 1 ano)
     const nextCalibrationDate = new Date(calibrationDate);
@@ -247,7 +242,7 @@ export class SensorsService {
     id: string,
     firmwareVersion: string,
   ): Promise<Sensor> {
-    const sensor = await this.findById(id);
+    await this.findById(id); // 404 for an unknown gauge
 
     await this.sensorRepository.update(id, {
       firmwareVersion,
@@ -284,7 +279,7 @@ export class SensorsService {
     const recentReadings = await this.readingRepository.count({
       where: {
         sensorId: id,
-        timestamp: yesterday as any,
+        timestamp: yesterday,
       },
     });
 

@@ -123,7 +123,7 @@ export class ExcelReportService {
 
     // Planilha detalhada de leituras (se houver dados suficientes)
     if (data.data.length > 0 && data.data[0].readings) {
-      data.data.forEach((tank, index) => {
+      data.data.forEach((tank) => {
         if (tank.readings && tank.readings.length > 0) {
           const readingsHeaders = ['Timestamp', 'Nível', 'Volume', 'Qualidade'];
 
@@ -418,7 +418,7 @@ export class ExcelReportService {
     XLSX.utils.book_append_sheet(workbook, worksheet, 'Análise_Produção');
   }
 
-  private applyBasicStyles(worksheet: XLSX.WorkSheet, rowCount: number): void {
+  private applyBasicStyles(worksheet: XLSX.WorkSheet, _rowCount: number): void {
     // Definir larguras das colunas
     worksheet['!cols'] = [
       { wch: 20 }, // Coluna A
@@ -440,7 +440,7 @@ export class ExcelReportService {
 
   private applyDataTableStyles(
     worksheet: XLSX.WorkSheet,
-    rowCount: number,
+    _rowCount: number,
   ): void {
     // Definir larguras das colunas automaticamente
     const columnWidths: { wch: number }[] = [];

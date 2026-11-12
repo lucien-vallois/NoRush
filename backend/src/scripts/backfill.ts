@@ -110,7 +110,8 @@ function copyFromText(
     const finish = (err?: Error | null) => {
       if (!done) {
         done = true;
-        err ? reject(err) : resolve();
+        if (err) reject(err);
+        else resolve();
       }
     };
     const submittable = {
@@ -633,7 +634,9 @@ async function main(): Promise<void> {
     const chunks = await client
       .query<{
         n: string;
-      }>(`SELECT count(*) AS n FROM timescaledb_information.chunks WHERE hypertable_name = 'readings'`)
+      }>(
+        `SELECT count(*) AS n FROM timescaledb_information.chunks WHERE hypertable_name = 'readings'`,
+      )
       .catch(() => ({ rows: [{ n: 'n/a (sem TimescaleDB)' }] }));
     const alertTypes = await client.query<any>(
       `SELECT type, severity, count(*)::int AS n FROM alerts GROUP BY type, severity ORDER BY type, severity`,

@@ -121,11 +121,21 @@ export class AlertsService {
       throw new NotFoundException({ code: 'userNotFound' });
     }
 
+    // There is no acknowledgment-notes column: the note is kept in the
+    // alert metadata (it used to be accepted and silently dropped).
+    const note = notes?.trim().slice(0, 1000);
     await this.alertRepository.update(id, {
       status: AlertStatus.ACKNOWLEDGED,
       acknowledgedAt: new Date(),
       acknowledgedById: userId,
     });
+    if (note) {
+      const metadata: Record<string, unknown> = {
+        ...(alert.metadata ?? {}),
+        acknowledgmentNotes: note,
+      };
+      await this.alertRepository.save({ id, metadata } as Partial<Alert>);
+    }
 
     const updatedAlert = await this.findById(id);
 
@@ -359,7 +369,11 @@ export class AlertsService {
     return this.create(alertDto);
   }
 
-  async bulkAcknowledge(alertIds: string[], userId: string): Promise<Alert[]> {
+  async bulkAcknowledge(
+    alertIds: string[],
+    userId: string,
+    notes?: string,
+  ): Promise<Alert[]> {
     if (alertIds.length === 0) {
       throw new BadRequestException({ code: 'emptyIdList' });
     }
@@ -371,7 +385,7 @@ export class AlertsService {
     const results: Alert[] = [];
     for (const alertId of alertIds) {
       try {
-        const result = await this.acknowledgeAlert(alertId, userId);
+        const result = await this.acknowledgeAlert(alertId, userId, notes);
         results.push(result);
       } catch (error) {
         this.logger.warn(

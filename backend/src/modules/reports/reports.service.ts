@@ -319,7 +319,7 @@ export class ReportsService {
     if (data.summary) {
       csv += 'Campo,Valor\n';
       Object.entries(data.summary).forEach(([key, value]) => {
-        csv += `"${key}","${value}"\n`;
+        csv += `"${key}","${String(value)}"\n`;
       });
       csv += '\n';
     }

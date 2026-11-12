@@ -1,27 +1,18 @@
-import {
-  Injectable,
-  Logger,
-  BadRequestException,
-  NotFoundException,
-} from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Inject } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { ConfigService } from '@nestjs/config';
-import { createHash, randomUUID } from 'crypto';
+import { randomUUID } from 'crypto';
 
 // Entities
-import { Sensor } from '../../entities/sensor.entity';
+import { Sensor, SensorStatus } from '../../entities/sensor.entity';
 import { Reading } from '../../entities/reading.entity';
 import { Tank } from '../../entities/tank.entity';
 
 // DTOs
-import {
-  SensorMessageDto,
-  OilWaterInterfaceDto,
-  SensorMetadataDto,
-} from './dto/sensor-message.dto';
+import { SensorMessageDto } from './dto/sensor-message.dto';
 
 // Services
 import { TanksService } from '../tanks/tanks.service';
@@ -135,7 +126,7 @@ export class MessageProcessorService {
       }
 
       // 5. Verificar se o sensor está ativo
-      if (sensor.status !== 'active') {
+      if (sensor.status !== SensorStatus.ACTIVE) {
         validationErrors.push(
           `Sensor ${message.sensorId} is not active (status: ${sensor.status})`,
         );
@@ -596,9 +587,7 @@ export class MessageProcessorService {
    * Atualiza lastTransmissionAt/bateria/firmware para o console mostrar
    * o dispositivo online entre intervalos de medição.
    */
-  async processHeartbeat(
-    heartbeat: HeartbeatDto,
-  ): Promise<{
+  async processHeartbeat(heartbeat: HeartbeatDto): Promise<{
     received: boolean;
     sensorId: string;
     receivedAt: string;

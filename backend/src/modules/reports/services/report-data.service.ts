@@ -1,13 +1,13 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, Between, MoreThanOrEqual, LessThanOrEqual } from 'typeorm';
-import { Tank } from '../../../entities/tank.entity';
+import { Repository, Between } from 'typeorm';
+import { Tank, TankStatus } from '../../../entities/tank.entity';
 import { Sensor } from '../../../entities/sensor.entity';
 import { Reading } from '../../../entities/reading.entity';
 import {
   Alert,
   AlertSeverity,
-  AlertType,
+  AlertStatus,
 } from '../../../entities/alert.entity';
 import { ReportType } from '../dto/generate-report.dto';
 
@@ -122,7 +122,7 @@ export class ReportDataService {
           };
 
         default:
-          throw new Error(`Tipo de relatório não suportado: ${type}`);
+          throw new Error(`Unsupported report type: ${String(type)}`);
       }
     } catch (error) {
       this.logger.error(`Erro ao gerar dados do relatório ${type}:`, error);
@@ -225,7 +225,7 @@ export class ReportDataService {
       const readings = await this.readingRepository.find({
         where: {
           sensorId: sensor.id,
-          timestamp: Between(startDate, endDate) as any,
+          timestamp: Between(startDate, endDate),
         },
         order: { timestamp: 'ASC' },
       });
@@ -303,7 +303,7 @@ export class ReportDataService {
     filters: any,
   ): Promise<{ summary: any; data: any; charts: any }> {
     // Buscar alertas
-    let queryBuilder = this.alertRepository
+    const queryBuilder = this.alertRepository
       .createQueryBuilder('alert')
       .leftJoinAndSelect('alert.tank', 'tank')
       .leftJoinAndSelect('alert.sensor', 'sensor')
@@ -345,21 +345,13 @@ export class ReportDataService {
       {} as Record<string, number>,
     );
 
-    const alertsByStatus = alerts.reduce(
-      (acc, alert) => {
-        acc[alert.status] = (acc[alert.status] || 0) + 1;
-        return acc;
-      },
-      {} as Record<string, number>,
-    );
-
     // Tempo médio de resolução
     const resolvedAlerts = alerts.filter((a) => a.resolvedAt && a.createdAt);
     const avgResolutionTime =
       resolvedAlerts.length > 0
         ? resolvedAlerts.reduce((sum, alert) => {
             return (
-              sum + (alert.resolvedAt!.getTime() - alert.createdAt.getTime())
+              sum + (alert.resolvedAt.getTime() - alert.createdAt.getTime())
             );
           }, 0) /
           resolvedAlerts.length /
@@ -369,10 +361,13 @@ export class ReportDataService {
     return {
       summary: {
         totalAlerts: alerts.length,
-        resolvedAlerts: alerts.filter((a) => a.status === 'resolved').length,
-        activeAlerts: alerts.filter((a) => a.status === 'active').length,
-        acknowledgedAlerts: alerts.filter((a) => a.status === 'acknowledged')
+        resolvedAlerts: alerts.filter((a) => a.status === AlertStatus.RESOLVED)
           .length,
+        activeAlerts: alerts.filter((a) => a.status === AlertStatus.ACTIVE)
+          .length,
+        acknowledgedAlerts: alerts.filter(
+          (a) => a.status === AlertStatus.ACKNOWLEDGED,
+        ).length,
         avgResolutionTime: Math.round(avgResolutionTime * 100) / 100,
         criticalAlerts: alerts.filter(
           (a) => a.severity === AlertSeverity.CRITICAL,
@@ -416,19 +411,19 @@ export class ReportDataService {
   private async generateSystemOverviewData(
     startDate: Date,
     endDate: Date,
-    filters: any,
+    _filters: any,
   ): Promise<{ summary: any; data: any; charts: any }> {
     // Dados gerais do sistema
     const tanks = await this.tankRepository.find({ relations: ['sensors'] });
     const sensors = await this.sensorRepository.find({ relations: ['tank'] });
     const totalReadings = await this.readingRepository.count({
       where: {
-        timestamp: Between(startDate, endDate) as any,
+        timestamp: Between(startDate, endDate),
       },
     });
     const totalAlerts = await this.alertRepository.count({
       where: {
-        createdAt: Between(startDate, endDate) as any,
+        createdAt: Between(startDate, endDate),
       },
     });
 
@@ -438,9 +433,10 @@ export class ReportDataService {
     const systemHealth = {
       tanks: {
         total: tanks.length,
-        active: tanks.filter((t) => t.status === 'active').length,
-        maintenance: tanks.filter((t) => t.status === 'maintenance').length,
-        error: tanks.filter((t) => t.status === 'error').length,
+        active: tanks.filter((t) => t.status === TankStatus.ACTIVE).length,
+        maintenance: tanks.filter((t) => t.status === TankStatus.MAINTENANCE)
+          .length,
+        error: tanks.filter((t) => t.status === TankStatus.ERROR).length,
       },
       sensors: {
         total: sensors.length,
@@ -482,7 +478,7 @@ export class ReportDataService {
         critical: await this.alertRepository.count({
           where: {
             severity: AlertSeverity.CRITICAL,
-            createdAt: Between(startDate, endDate) as any,
+            createdAt: Between(startDate, endDate),
           },
         }),
       },
@@ -622,7 +618,7 @@ export class ReportDataService {
   private async generateProductionAnalysisData(
     startDate: Date,
     endDate: Date,
-    filters: any,
+    _filters: any,
   ): Promise<{ summary: any; data: any; charts: any }> {
     // Análise de produção baseada nos volumes
     const readings = await this.readingRepository

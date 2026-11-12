@@ -137,7 +137,7 @@ export class MqttService implements OnModuleInit, OnModuleDestroy {
     this.subscribeToTopics();
 
     // Publicar status online
-    this.publishStatus('online');
+    void this.publishStatus('online');
   }
 
   private onDisconnect(): void {

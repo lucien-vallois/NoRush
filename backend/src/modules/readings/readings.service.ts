@@ -8,8 +8,6 @@ import { InjectRepository } from '@nestjs/typeorm';
 import {
   Repository,
   SelectQueryBuilder,
-  Between,
-  MoreThanOrEqual,
   LessThanOrEqual,
   DataSource,
 } from 'typeorm';
@@ -21,7 +19,6 @@ import { CreateReadingDto } from './dto/create-reading.dto';
 import {
   ReadingFiltersDto,
   READING_SORT_COLUMNS,
-  READING_SORT_ORDERS,
 } from './dto/reading-filters.dto';
 
 @Injectable()
@@ -358,7 +355,6 @@ export class ReadingsService {
     } else {
       // Últimas 24 horas divididas ao meio
       const now = new Date();
-      const yesterday = new Date(now.getTime() - 24 * 60 * 60 * 1000);
       midDate = new Date(now.getTime() - 12 * 60 * 60 * 1000);
     }
 
@@ -543,7 +539,7 @@ export class ReadingsService {
     const cutoffDate = new Date(Date.now() - daysToKeep * 24 * 60 * 60 * 1000);
 
     const result = await this.readingRepository.delete({
-      timestamp: LessThanOrEqual(cutoffDate) as any,
+      timestamp: LessThanOrEqual(cutoffDate),
     });
 
     this.logger.log(

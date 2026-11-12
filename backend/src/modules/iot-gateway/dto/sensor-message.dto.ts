@@ -5,7 +5,6 @@ import {
   IsObject,
   Min,
   Max,
-  IsUUID,
   IsDateString,
 } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';

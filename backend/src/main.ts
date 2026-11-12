@@ -65,4 +65,7 @@ async function bootstrap() {
     `NoRush Operations API: http://localhost:${port}/api/docs`,
   );
 }
-bootstrap();
+bootstrap().catch((error: unknown) => {
+  new Logger('Bootstrap').error('API failed to start', error);
+  process.exit(1);
+});

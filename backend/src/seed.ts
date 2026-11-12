@@ -38,7 +38,6 @@ async function seed() {
 }
 
 seed().catch((err) => {
-  // eslint-disable-next-line no-console
   console.error('Falha no seed:', err);
   process.exit(1);
 });

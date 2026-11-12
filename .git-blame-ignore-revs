@@ -1,0 +1,5 @@
+# Formatting-only commits, skipped by `git blame` (GitHub does this automatically;
+# locally: git config blame.ignoreRevsFile .git-blame-ignore-revs)
+
+# style(backend): apply Prettier and pin line endings to LF
+65f7330b86de2af0b5aac99f9ec2b856dead4a29

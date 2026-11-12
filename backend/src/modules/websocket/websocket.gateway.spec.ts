@@ -4,7 +4,15 @@ import { WebsocketGateway } from './websocket.gateway';
 describe('Authenticated realtime channel', () => {
   const auth = { validateToken: jest.fn() };
   const jwt = new JwtService({ secret: 'test-secret' });
-  let middleware: (socket: any, next: (error?: Error) => void) => Promise<void>;
+  let middleware: (socket: any, next: (error?: Error) => void) => void;
+  // Socket.IO middleware reports through next(); wait for that call
+  const run = (socket: any, next: jest.Mock) =>
+    new Promise<void>((resolve) =>
+      middleware(socket, (error?: Error) => {
+        next(...(error ? [error] : []));
+        resolve();
+      }),
+    );
   let gateway: WebsocketGateway;
   beforeEach(() => {
     jest.useFakeTimers();
@@ -19,14 +27,14 @@ describe('Authenticated realtime channel', () => {
   afterEach(() => jest.useRealTimers());
   it('rejects anonymous clients before they can receive broadcasts', async () => {
     const next = jest.fn();
-    await middleware({ handshake: { auth: {} } }, next);
+    await run({ handshake: { auth: {} } }, next);
     expect(next).toHaveBeenCalledWith(expect.any(Error));
     expect(auth.validateToken).not.toHaveBeenCalled();
   });
   it('rejects invalid or deactivated sessions', async () => {
     auth.validateToken.mockResolvedValue(null);
     const next = jest.fn();
-    await middleware({ handshake: { auth: { token: 'invalid' } } }, next);
+    await run({ handshake: { auth: { token: 'invalid' } } }, next);
     expect(next).toHaveBeenCalledWith(expect.any(Error));
   });
   it('accepts a valid session and disconnects it when its token expires', async () => {
@@ -40,7 +48,7 @@ describe('Authenticated realtime channel', () => {
       disconnect: jest.fn(),
     };
     const next = jest.fn();
-    await middleware(socket, next);
+    await run(socket, next);
     expect(next).toHaveBeenCalledWith();
     gateway.handleConnection(socket as never);
     expect(socket.emit).toHaveBeenCalledWith(

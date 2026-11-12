@@ -4,7 +4,6 @@ import {
   Post,
   Body,
   Param,
-  Patch,
   Query,
   HttpCode,
   HttpStatus,
@@ -317,7 +316,11 @@ export class AlertsController {
     @CurrentUnits() units: UnitPreference,
   ): Promise<Alert[]> {
     return this.localizedList(
-      await this.alertsService.bulkAcknowledge(body.alertIds, user.id),
+      await this.alertsService.bulkAcknowledge(
+        body.alertIds,
+        user.id,
+        body.notes,
+      ),
       lang,
       units,
     );

@@ -287,7 +287,7 @@ export class TanksService {
     id: string,
     maintenanceDate: Date,
   ): Promise<Tank> {
-    const tank = await this.findById(id);
+    await this.findById(id); // 404 for an unknown tank
 
     await this.tankRepository.update(id, {
       lastMaintenanceDate: maintenanceDate,

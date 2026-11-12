@@ -178,7 +178,7 @@ export class NotificationService {
       // Enviar por email (canal principal para lotes)
       const emailChannel = this.channels.get('email');
       if (emailChannel && emailChannel.enabled) {
-        await emailChannel.send(summaryMessage as any, users);
+        await emailChannel.send(summaryMessage, users);
       }
 
       this.logger.log(
@@ -255,7 +255,7 @@ export class NotificationService {
     this.channels.set('slack', {
       name: 'Slack',
       enabled: this.configService.get('SLACK_ENABLED', 'false') === 'true',
-      send: async (alert: Alert, users: User[]) => {
+      send: async (alert: Alert) => {
         await this.sendSlackNotification(alert);
       },
     });
@@ -263,6 +263,22 @@ export class NotificationService {
     this.logger.log(
       `Canais de notificação inicializados: ${Array.from(this.channels.keys()).join(', ')}`,
     );
+  }
+
+  /**
+   * The e-mail, SMS, push and Slack channels are placeholders (all off by
+   * default): they build the message a real integration would send, but
+   * nothing leaves the server. Say so instead of logging a fake delivery.
+   */
+  private logPlaceholder(
+    channel: string,
+    recipients: number,
+    payload: unknown,
+  ): void {
+    this.logger.warn(
+      `${channel} channel is a placeholder: message for ${recipients} recipient(s) built, not sent`,
+    );
+    this.logger.debug(JSON.stringify(payload));
   }
 
   private async sendEmailNotification(
@@ -280,12 +296,7 @@ export class NotificationService {
         text: this.generateEmailText(alert),
       };
 
-      // Simular delay de envio
-      await new Promise((resolve) => setTimeout(resolve, 100));
-
-      this.logger.log(
-        `Email enviado para ${users.length} usuários: ${alert.title}`,
-      );
+      this.logPlaceholder('e-mail', users.length, emailData);
     } catch (error) {
       this.logger.error('Erro ao enviar email:', error);
       throw error;
@@ -305,9 +316,7 @@ export class NotificationService {
         message: this.generateSmsMessage(alert),
       };
 
-      await new Promise((resolve) => setTimeout(resolve, 50));
-
-      this.logger.log(`SMS enviado para ${users.length} usuários`);
+      this.logPlaceholder('SMS', users.length, smsData);
     } catch (error) {
       this.logger.error('Erro ao enviar SMS:', error);
       throw error;
@@ -333,11 +342,7 @@ export class NotificationService {
         },
       };
 
-      await new Promise((resolve) => setTimeout(resolve, 30));
-
-      this.logger.log(
-        `Push notification enviado para ${users.length} usuários`,
-      );
+      this.logPlaceholder('push', users.length, pushData);
     } catch (error) {
       this.logger.error('Erro ao enviar push notification:', error);
       throw error;
@@ -377,9 +382,7 @@ export class NotificationService {
         ],
       };
 
-      await new Promise((resolve) => setTimeout(resolve, 20));
-
-      this.logger.log('Notificação Slack enviada');
+      this.logPlaceholder('Slack', 1, slackData);
     } catch (error) {
       this.logger.error('Erro ao enviar notificação Slack:', error);
       throw error;
@@ -523,6 +526,9 @@ Verifique o sistema para mais detalhes.
       status[name] = {
         enabled: channel.enabled,
         name: channel.name,
+        // No provider is integrated yet: enabling a channel builds the
+        // message but does not deliver it (alerts reach the console live).
+        delivers: false,
       };
     });
 

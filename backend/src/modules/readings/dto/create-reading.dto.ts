@@ -2,7 +2,6 @@ import {
   IsUUID,
   IsNumber,
   IsOptional,
-  IsObject,
   Min,
   Max,
   IsDateString,

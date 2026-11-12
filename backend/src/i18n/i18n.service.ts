@@ -77,7 +77,7 @@ export class I18nService implements OnModuleInit {
     lang: string | undefined,
     units: 'metric' | 'imperial' = 'metric',
   ): { title: string; message: string } {
-    const type = alert.type as AlertType;
+    const type = alert.type;
     const base = `alertTypes.${type}`;
     const hasType =
       this.t(`${base}.title`, { lng: DEFAULT_LANGUAGE }) !== `${base}.title`;

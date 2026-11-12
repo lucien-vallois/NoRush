@@ -18,6 +18,8 @@ class Routes {
 const contextFor = (method: string, handler: keyof Routes) =>
   ({
     getType: () => 'http',
+    // The guard only reads decorator metadata off the handler, never calls it
+    // eslint-disable-next-line @typescript-eslint/unbound-method
     getHandler: () => Routes.prototype[handler],
     getClass: () => Routes,
     switchToHttp: () => ({ getRequest: () => ({ method }) }),

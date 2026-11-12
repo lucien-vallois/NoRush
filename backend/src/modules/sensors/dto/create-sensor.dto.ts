@@ -6,16 +6,11 @@ import {
   IsEnum,
   IsObject,
   Min,
-  Max,
   IsDateString,
   IsBoolean,
 } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import {
-  SensorType,
-  SensorProtocol,
-  SensorStatus,
-} from '../../../entities/sensor.entity';
+import { SensorType, SensorProtocol } from '../../../entities/sensor.entity';
 
 export class CreateSensorDto {
   @ApiProperty({
