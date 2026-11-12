@@ -14,8 +14,9 @@
     "noEmit": true,
     "jsx": "react-jsx",
 
-    /* Linting — TODO: apertar para `strict: true` na fase de qualidade */
-    "strict": false,
+    /* Type checking */
+    "strict": true,
+    "noFallthroughCasesInSwitch": true,
 
     /* Interop */
     "esModuleInterop": true,

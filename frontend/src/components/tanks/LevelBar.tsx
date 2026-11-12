@@ -1,6 +1,5 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import { currentLocale } from '../../i18n';
 import { formatLevel } from '../../utils/units.ts';
 
 interface LevelBarProps {

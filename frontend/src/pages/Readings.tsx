@@ -148,7 +148,6 @@ const Readings: React.FC = () => {
       .filter((s) => s.tankId === tankId)
       .sort((a, b) => sensorNumber(a) - sensorNumber(b))[0];
     setSensorId(first ? first.id : "");
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tankId, sensors]);
 
   // ---- Série temporal + leituras crus (por filtro/refresh) ----

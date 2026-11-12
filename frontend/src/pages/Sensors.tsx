@@ -16,7 +16,7 @@ import LoadingSpinner from "../components/common/LoadingSpinner";
 import { useWebSocket } from "../contexts/WebSocketContext";
 import { useWebSocketEvent } from "../hooks/useWebSocketEvent";
 import { currentLocale } from "../i18n";
-import { formatElapsed, formatNumber, formatTimeOfDay } from "../utils/format";
+import { formatElapsed, formatTimeOfDay } from "../utils/format";
 import { formatLevel } from "../utils/units.ts";
 import SensorKpiCards from "../components/sensors/SensorKpiCards";
 import SensorsTable, { SensorRowView } from "../components/sensors/SensorsTable";

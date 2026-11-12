@@ -43,7 +43,6 @@ import {
   formatElapsed,
   formatHours,
   formatNumber,
-  formatSigned,
   formatTimeOfDay,
   formatFeet,
   formatBarrels,

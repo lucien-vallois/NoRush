@@ -2,7 +2,6 @@ import React from "react";
 import { useTranslation } from "react-i18next";
 import { HelpCircle, Minus, TrendingDown, TrendingUp } from "lucide-react";
 import { ForecastTrend, Tank, TankForecast } from "../../types";
-import { currentLocale } from "../../i18n";
 import { formatHours } from "../../utils/format";
 import {
   formatLevel,

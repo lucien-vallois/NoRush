@@ -10,10 +10,9 @@ import {
   TrendingUp,
 } from "lucide-react";
 import { apiService } from "../../services/api";
-import { currentLocale } from "../../i18n";
 import { ForecastEventPayload, ForecastTrend, TankForecast } from "../../types";
 import { useWebSocketEvent } from "../../hooks/useWebSocketEvent";
-import { formatHours, formatTimeOfDay, formatSigned } from "../../utils/format";
+import { formatHours, formatTimeOfDay } from "../../utils/format";
 import { formatLevel, formatRateMH, formatRateM3H } from "../../utils/units.ts";
 import LoadingSpinner from "../common/LoadingSpinner";
 

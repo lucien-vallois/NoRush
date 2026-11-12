@@ -26,7 +26,6 @@ import {
 import LoadingSpinner from "../common/LoadingSpinner";
 import LevelBar from "./LevelBar";
 import {
-  OVERFLOW_CRITICAL_H,
   StatusBadge,
   TankView,
   TrendBadge,

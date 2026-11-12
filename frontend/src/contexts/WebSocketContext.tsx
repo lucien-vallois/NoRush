@@ -41,8 +41,11 @@ export const WebSocketProvider: React.FC<{ children: ReactNode }> = ({
     return () => window.removeEventListener("norush:token", update);
   }, []);
 
+  // Reconnect only when the signed-in user or the token changes, not on
+  // every profile refresh (a new `user` object with the same id).
+  const userId = user?.id;
   useEffect(() => {
-    if (!user || !token) return;
+    if (!userId || !token) return;
     const socket = io(import.meta.env.VITE_WS_URL || "http://localhost:3000", {
       auth: { token },
       reconnectionDelay: 1000,
@@ -67,7 +70,7 @@ export const WebSocketProvider: React.FC<{ children: ReactNode }> = ({
       setIsConnected(false);
       setLastEventAt(null);
     };
-  }, [user?.id, token]);
+  }, [userId, token]);
 
   const subscribe = useCallback(
     <T = any,>(event: string, cb: WsEventHandler<T>) => {

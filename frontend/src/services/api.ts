@@ -6,7 +6,6 @@ import {
   Sensor,
   Reading,
   Alert,
-  ApiResponse,
   PaginatedResponse,
   AlertsPaginatedResponse,
   TankForecast,

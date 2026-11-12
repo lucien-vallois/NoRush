@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Activity, Radio, Wifi, WifiOff, Zap, AlertTriangle } from 'lucide-react';
-import { currentLocale } from '../../i18n';
 import { LiveAlert, ReadingEventPayload } from '../../types';
 import { formatElapsed, formatTimeOfDay } from '../../utils/format';
 import { formatLevel, formatVolumeL } from '../../utils/units.ts';
