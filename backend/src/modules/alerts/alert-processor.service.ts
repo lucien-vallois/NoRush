@@ -7,50 +7,20 @@ import { Tank } from '../../entities/tank.entity';
 import { Sensor, SensorStatus } from '../../entities/sensor.entity';
 import { Reading } from '../../entities/reading.entity';
 import { AlertsService } from './alerts.service';
+import { evaluateLevelAlarms, LevelAlarm, LevelAlarmKey } from './level-alarms';
 
-interface AlertRule {
-  type: AlertType;
-  severity: AlertSeverity;
-  condition: (tank: Tank, sensor?: Sensor, reading?: Reading) => boolean;
-  cooldown: number; // minutos entre alertas do mesmo tipo
-}
+/** Minutes between two alerts for the same level alarm on the same gauge. */
+const LEVEL_ALARM_COOLDOWN_MIN: Record<LevelAlarmKey, number> = {
+  overflow: 15,
+  minimum: 15,
+  high: 30,
+  low: 30,
+};
 
 @Injectable()
 export class AlertProcessorService {
   private readonly logger = new Logger(AlertProcessorService.name);
   private lastAlertTimes = new Map<string, Date>();
-
-  // Regras de alerta configuráveis
-  private alertRules: AlertRule[] = [
-    {
-      type: AlertType.HIGH_LEVEL,
-      severity: AlertSeverity.MEDIUM,
-      condition: (tank, sensor, reading) =>
-        !!(reading && tank.maxLevelThreshold && reading.level >= tank.maxLevelThreshold),
-      cooldown: 30, // 30 minutos
-    },
-    {
-      type: AlertType.LOW_LEVEL,
-      severity: AlertSeverity.MEDIUM,
-      condition: (tank, sensor, reading) =>
-        !!(reading && tank.minLevelThreshold && reading.level <= tank.minLevelThreshold),
-      cooldown: 30,
-    },
-    {
-      type: AlertType.OVERFLOW_RISK,
-      severity: AlertSeverity.CRITICAL,
-      condition: (tank, sensor, reading) =>
-        !!(reading && tank.overflowThreshold && reading.level >= tank.overflowThreshold),
-      cooldown: 15, // 15 minutos (mais frequente para críticos)
-    },
-    {
-      type: AlertType.LOW_LEVEL,
-      severity: AlertSeverity.HIGH,
-      condition: (tank, sensor, reading) =>
-        !!(reading && tank.lowLevelThreshold && reading.level <= tank.lowLevelThreshold),
-      cooldown: 15,
-    },
-  ];
 
   constructor(
     @InjectRepository(Tank)
@@ -76,11 +46,8 @@ export class AlertProcessorService {
 
       const tank = sensor.tank;
 
-      // Verificar todas as regras de alerta
-      for (const rule of this.alertRules) {
-        if (rule.condition(tank, sensor, reading)) {
-          await this.createAlertIfNotCooldown(rule, tank, sensor, reading);
-        }
+      for (const alarm of evaluateLevelAlarms(tank, reading.level)) {
+        await this.createLevelAlertIfNotCooldown(alarm, tank, sensor, reading);
       }
 
     } catch (error) {
@@ -132,11 +99,11 @@ export class AlertProcessorService {
     try {
       const now = new Date();
 
-      // Tanques que precisam de manutenção
+      // Only a scheduled date that has passed is "due": a tank or gauge with
+      // no schedule yet is not overdue, it is just not on a maintenance plan.
       const tanksNeedingMaintenance = await this.tankRepository
         .createQueryBuilder('tank')
         .where('tank.nextMaintenanceDate <= :now', { now })
-        .orWhere('tank.lastMaintenanceDate IS NULL')
         .getMany();
 
       for (const tank of tanksNeedingMaintenance) {
@@ -148,7 +115,6 @@ export class AlertProcessorService {
         .createQueryBuilder('sensor')
         .leftJoinAndSelect('sensor.tank', 'tank')
         .where('sensor.nextCalibrationDate <= :now', { now })
-        .orWhere('sensor.calibrationDate IS NULL')
         .getMany();
 
       for (const sensor of sensorsNeedingCalibration) {
@@ -217,49 +183,45 @@ export class AlertProcessorService {
     }
   }
 
-  private async createAlertIfNotCooldown(
-    rule: AlertRule,
+  private async createLevelAlertIfNotCooldown(
+    alarm: LevelAlarm,
     tank: Tank,
-    sensor?: Sensor,
-    reading?: Reading
+    sensor: Sensor,
+    reading: Reading,
   ): Promise<void> {
-    const alertKey = `${rule.type}_${tank.id}_${sensor?.id || 'tank'}`;
+    // One cooldown per alarm (not per alert type): low and minimum are both
+    // LOW_LEVEL, and the minimum alarm must not be muted by the low one.
+    const alertKey = `level:${alarm.key}_${tank.id}_${sensor.id}`;
     const lastAlertTime = this.lastAlertTimes.get(alertKey);
     const now = new Date();
 
-    // Verificar cooldown
     if (lastAlertTime) {
-      const timeSinceLastAlert = (now.getTime() - lastAlertTime.getTime()) / (1000 * 60); // minutos
-      if (timeSinceLastAlert < rule.cooldown) {
-        return; // Ainda em cooldown
-      }
+      const minutesSinceLast = (now.getTime() - lastAlertTime.getTime()) / 60000;
+      if (minutesSinceLast < LEVEL_ALARM_COOLDOWN_MIN[alarm.key]) return;
     }
 
     try {
       await this.alertsService.createAutomaticAlert(
-        rule.type,
-        rule.severity,
+        alarm.type,
+        alarm.severity,
         tank.id,
-        sensor?.id,
-        reading?.level,
-        reading?.volume,
-        this.getThresholdValue(rule.type, tank),
+        sensor.id,
+        reading.level,
+        reading.volume,
+        alarm.threshold,
         {
-          readingId: reading?.id,
-          sensorId: sensor?.id,
-          rule: rule.type,
-        }
+          readingId: reading.id,
+          sensorId: sensor.id,
+          rule: alarm.key,
+        },
       );
 
-      // Atualizar timestamp do último alerta
       this.lastAlertTimes.set(alertKey, now);
-
       this.logger.log(
-        `Alerta criado: ${rule.type} para tanque ${tank.name} (severidade: ${rule.severity})`
+        `Level alarm ${alarm.key} on tank ${tank.name} (${alarm.reason}, severity ${alarm.severity})`,
       );
-
     } catch (error) {
-      this.logger.error(`Erro ao criar alerta ${rule.type} para tanque ${tank.id}:`, error);
+      this.logger.error(`Could not create level alarm ${alarm.key} for tank ${tank.id}:`, error);
     }
   }
 
@@ -451,36 +413,10 @@ export class AlertProcessorService {
     }
   }
 
-  private getThresholdValue(type: AlertType, tank: Tank): number | undefined {
-    switch (type) {
-      case AlertType.HIGH_LEVEL:
-        return tank.maxLevelThreshold || undefined;
-      case AlertType.LOW_LEVEL:
-        return tank.minLevelThreshold || undefined;
-      case AlertType.OVERFLOW_RISK:
-        return tank.overflowThreshold || undefined;
-      case AlertType.LOW_LEVEL:
-        return tank.lowLevelThreshold || undefined;
-      default:
-        return undefined;
-    }
-  }
-
-  // Método para configurar regras de alerta dinamicamente
-  setAlertRules(rules: AlertRule[]): void {
-    this.alertRules = rules;
-    this.logger.log(`Regras de alerta atualizadas: ${rules.length} regras configuradas`);
-  }
-
-  // Método para obter estatísticas do processador
-  getStats(): any {
+  getStats() {
     return {
-      activeRules: this.alertRules.length,
+      levelAlarms: LEVEL_ALARM_COOLDOWN_MIN,
       cooldownEntries: this.lastAlertTimes.size,
-      rulesByType: this.alertRules.reduce((acc, rule) => {
-        acc[rule.type] = (acc[rule.type] || 0) + 1;
-        return acc;
-      }, {}),
     };
   }
 }

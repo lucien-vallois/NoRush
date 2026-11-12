@@ -1,6 +1,6 @@
 import { Injectable, Logger, NotFoundException, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, SelectQueryBuilder } from 'typeorm';
+import { In, IsNull, Repository, SelectQueryBuilder } from 'typeorm';
 import { Alert, AlertStatus, AlertType, AlertSeverity } from '../../entities/alert.entity';
 import { Tank } from '../../entities/tank.entity';
 import { Sensor } from '../../entities/sensor.entity';
@@ -288,6 +288,22 @@ export class AlertsService {
     thresholdValue?: number,
     metadata?: Record<string, any>
   ): Promise<Alert> {
+    // One open alert per condition: while the same alarm is still active or
+    // acknowledged on this tank/gauge, a repeat trip is not a new incident.
+    // Without this, a level that stays past its limit (or a gauge that stays
+    // offline) opens a fresh alert every cooldown and floods the alert center.
+    const open = await this.alertRepository.findOne({
+      where: {
+        type,
+        severity,
+        tankId,
+        sensorId: sensorId ?? IsNull(),
+        status: In([AlertStatus.ACTIVE, AlertStatus.ACKNOWLEDGED]),
+      },
+      order: { createdAt: 'DESC' },
+    });
+    if (open) return open;
+
     // Gerar título e mensagem baseada no tipo
     const alertInfo = this.generateAlertInfo(type, tankId, currentLevel, thresholdValue);
 

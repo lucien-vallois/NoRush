@@ -28,6 +28,7 @@ import { TanksService } from '../tanks/tanks.service';
 import { AlertProcessorService } from '../alerts/alert-processor.service';
 import { WsEmitterService } from '../websocket/ws-emitter.service';
 import { DeviceCredentialsService } from '../devices/device-credentials.service';
+import { evaluateLevelAlarms } from '../alerts/level-alarms';
 import { HeartbeatDto } from '../devices/dto/provision-device.dto';
 
 interface ProcessedMessage {
@@ -116,7 +117,7 @@ export class MessageProcessorService {
       const processedData = await this.processSensorData(sensor, message);
 
       // 7. Verificar se precisa gerar alerta
-      const alertCheck = await this.checkAlertConditions(sensor, processedData);
+      const alertCheck = this.checkAlertConditions(sensor, processedData);
 
       // 8. Salvar leitura no banco
       const reading = await this.saveReading(sensor, processedData);
@@ -401,63 +402,30 @@ export class MessageProcessorService {
     }
   }
 
-  private async checkAlertConditions(
+  private checkAlertConditions(
     sensor: Sensor,
     reading: Partial<Reading>,
-  ): Promise<{
+  ): {
     requiresAlert: boolean;
     reason?: string;
     type?: string;
     threshold?: number;
-  }> {
+  } {
     if (!sensor.tank) {
       return { requiresAlert: false };
     }
 
-    const tank = sensor.tank;
-    const level = reading.level;
+    // Most severe alarm first: past the overflow limit the realtime event
+    // must say "overflow", not the high-level alarm it also trips.
+    const [headline] = evaluateLevelAlarms(sensor.tank, reading.level);
+    if (!headline) return { requiresAlert: false };
 
-    // Verificar limites de nível
-    if (
-      level !== undefined &&
-      tank.maxLevelThreshold &&
-      level >= tank.maxLevelThreshold
-    ) {
-      return {
-        requiresAlert: true,
-        type: 'high_level',
-        threshold: Number(tank.maxLevelThreshold),
-        reason: `High level: ${level}m >= ${tank.maxLevelThreshold}m`,
-      };
-    }
-
-    if (
-      level !== undefined &&
-      tank.minLevelThreshold &&
-      level <= tank.minLevelThreshold
-    ) {
-      return {
-        requiresAlert: true,
-        type: 'low_level',
-        threshold: Number(tank.minLevelThreshold),
-        reason: `Low level: ${level}m <= ${tank.minLevelThreshold}m`,
-      };
-    }
-
-    if (
-      level !== undefined &&
-      tank.overflowThreshold &&
-      level >= tank.overflowThreshold
-    ) {
-      return {
-        requiresAlert: true,
-        type: 'overflow_risk',
-        threshold: Number(tank.overflowThreshold),
-        reason: `Overflow risk: ${level}m >= ${tank.overflowThreshold}m`,
-      };
-    }
-
-    return { requiresAlert: false };
+    return {
+      requiresAlert: true,
+      type: headline.type,
+      threshold: headline.threshold,
+      reason: headline.reason,
+    };
   }
 
   private async saveReading(
