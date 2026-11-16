@@ -4,6 +4,7 @@
 
 ### Fixed
 
+- **Tank current level.** The tanks screen now reads the latest tank reading independently of the forecast service. A missing or stale forecast no longer hides a valid current level, and the card explicitly reports when the forecast is unavailable.
 - **Level alarms.** The low limit never raised an alarm on its own, the minimum (low-low) alarm was rated less severe than the low one and was muted by its cooldown, a level past the overflow limit was announced in real time as "high level", and low-level alerts always stored the minimum limit as their threshold. Both evaluation paths now share one rule set, ordered overflow > minimum > high > low.
 - **Alert flood.** A condition that stays active (a level past a limit, a gauge offline) no longer opens a new alert every cooldown while the previous one is pending or acknowledged. Maintenance and calibration alerts need a due date that has passed, instead of firing for every tank or gauge without a schedule.
 - **Invented gateway data.** `GET /iot/sensors/:id/status` returned random connectivity, battery and signal; it now reads the gauge's last report. Device commands were never published and turned "SUCCESS" at random; they now go out on `devices/{id}/commands` and report what the device answers, or a timeout. Gateway counters count real traffic, and the 5-minute health check no longer warns about a 0% success rate on an idle gateway.

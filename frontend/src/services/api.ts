@@ -291,6 +291,17 @@ class ApiService {
     return response.data;
   }
 
+  async getLatestReadingsByTank(
+    tankId: string,
+    limit = 10,
+  ): Promise<Reading[]> {
+    const response = await this.api.get<Reading[]>(
+      `/readings/tank/${tankId}/latest`,
+      { params: { limit } },
+    );
+    return response.data;
+  }
+
   async getReadingStats(
     sensorId?: string,
     tankId?: string,

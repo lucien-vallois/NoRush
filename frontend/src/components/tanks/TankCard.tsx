@@ -1,7 +1,7 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
 import { HelpCircle, Minus, TrendingDown, TrendingUp } from "lucide-react";
-import { ForecastTrend, Tank, TankForecast } from "../../types";
+import { ForecastTrend } from "../../types";
 import { formatHours } from "../../utils/format";
 import {
   formatLevel,
@@ -9,47 +9,12 @@ import {
   formatDimension,
   formatRateMH,
 } from "../../utils/units.ts";
+import { toFinite } from "../../utils/tankView.ts";
+import type { TankView } from "../../utils/tankView.ts";
 import LevelBar from "./LevelBar";
 
-/** Limiar de ETA de transbordo considerado crítico (horas) */
-export const OVERFLOW_CRITICAL_H = 6;
-
-export type MarkerColor = "green" | "amber" | "red" | "slate";
-
-/** Modelo de exibição: tanque unido à sua previsão (quando existir) */
-export interface TankView {
-  tank: Tank;
-  forecast?: TankForecast;
-  level: number | null;
-  etaOverflowHours: number | null;
-  critical: boolean;
-  markerColor: MarkerColor;
-}
-
-function toFinite(v: unknown): number | null {
-  const n = Number(v);
-  return v != null && isFinite(n) ? n : null;
-}
-
-export function buildTankView(tank: Tank, forecast?: TankForecast): TankView {
-  const eta = forecast?.dataFresh ? toFinite(forecast.etaOverflowHours) : null;
-  const level = forecast?.dataFresh ? toFinite(forecast.currentLevel) : null;
-  const critical = eta != null && eta <= OVERFLOW_CRITICAL_H;
-
-  let markerColor: MarkerColor = "slate";
-  if (critical) markerColor = "red";
-  else if (tank.status === "maintenance") markerColor = "amber";
-  else if (tank.status === "active") markerColor = "green";
-
-  return {
-    tank,
-    forecast,
-    level,
-    etaOverflowHours: eta,
-    critical,
-    markerColor,
-  };
-}
+export { buildTankView, OVERFLOW_CRITICAL_H } from "../../utils/tankView.ts";
+export type { MarkerColor, TankView } from "../../utils/tankView.ts";
 
 /** Ordena por criticidade: risco de transbordo primeiro (menor ETA), depois por código */
 export function sortTankViews(a: TankView, b: TankView): number {
@@ -150,7 +115,14 @@ const TankCard: React.FC<TankCardProps> = ({ view, selected, onSelect }) => {
           </div>
           <p className="truncate text-xs text-muted-foreground">{tank.name}</p>
         </div>
-        <TrendBadge trend={forecast?.trend} />
+        {view.forecastAvailable ? (
+          <TrendBadge trend={forecast?.trend} />
+        ) : (
+          <span className="inline-flex items-center gap-1 text-xs font-semibold text-muted-foreground">
+            <HelpCircle className="h-3.5 w-3.5" />
+            {t("tankCard.forecastUnavailable")}
+          </span>
+        )}
       </div>
 
       {/* Nível atual */}

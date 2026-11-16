@@ -43,14 +43,25 @@ const Tanks: React.FC = () => {
   const load = useCallback(async () => {
     setRefreshing(true);
     try {
-      const [tanks, forecasts] = await Promise.all([
-        apiService.getTanks(),
+      const tanks = await apiService.getTanks();
+      const [latestReadings, forecasts] = await Promise.all([
+        Promise.all(
+          (tanks ?? []).map((tank: Tank) =>
+            apiService.getLatestReadingsByTank(tank.id, 1).catch(() => []),
+          ),
+        ),
         // Previsões são complementares: falha aqui não derruba a página
         apiService.getPredictions().catch(() => [] as TankForecast[]),
       ]);
       const byTank = new Map((forecasts ?? []).map((f) => [f.tankId, f]));
       setViews(
-        (tanks ?? []).map((tank: Tank) => buildTankView(tank, byTank.get(tank.id))),
+        (tanks ?? []).map((tank: Tank, index) =>
+          buildTankView(
+            tank,
+            latestReadings[index]?.[0]?.level,
+            byTank.get(tank.id),
+          ),
+        ),
       );
       setUpdatedAt(new Date().toISOString());
       setError(false);

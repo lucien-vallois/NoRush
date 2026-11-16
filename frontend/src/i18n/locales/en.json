@@ -217,6 +217,7 @@
     "pace": "Rate",
     "etaOverflow": "ETA overflow",
     "etaMinLevel": "ETA min level",
+    "forecastUnavailable": "Forecast unavailable",
     "thresholdMax": "Max",
     "thresholdOverflow": "Overflow",
     "thresholdMin": "Min",
