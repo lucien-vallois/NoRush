@@ -34,7 +34,9 @@ Tank limits are measured from the tank bottom, in the order
   another. Once it is resolved, the next crossing opens a new one.
 
 Forecast-based overflow alerts come from the predictions module: a linear fit
-reaching the overflow limit within 6 hours (critical within 2 hours).
+reaching the overflow limit within 6 hours (critical within 2 hours). They use
+the same one-open-alert rule and a one-hour cooldown stored in the alerts table,
+so restarting the API does not reset their deduplication.
 
 ## Periodic checks (every 5 minutes)
 

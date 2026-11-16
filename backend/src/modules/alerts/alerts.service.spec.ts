@@ -83,4 +83,58 @@ describe('AlertsService.createAutomaticAlert', () => {
 
     expect(alerts.findOne.mock.calls[0][0].where.sensorId).toEqual(IsNull());
   });
+
+  const predictiveTrip = (target = service) =>
+    target.createAutomaticAlert(
+      AlertType.OVERFLOW_RISK,
+      AlertSeverity.CRITICAL,
+      'tank-1',
+      'sensor-1',
+      4.3,
+      undefined,
+      4.6,
+      { predictive: true, etaHours: 1.5 },
+      60 * 60 * 1000,
+    );
+
+  it('opens only one incident for a persistent predictive condition', async () => {
+    alerts.findOne
+      .mockResolvedValueOnce(null)
+      .mockResolvedValueOnce(null)
+      .mockResolvedValueOnce({ id: 'new-alert', status: AlertStatus.ACTIVE });
+
+    await predictiveTrip();
+    await predictiveTrip();
+
+    expect(alerts.save).toHaveBeenCalledTimes(1);
+  });
+
+  it('keeps the predictive cooldown in the database across service restarts', async () => {
+    const recent = {
+      id: 'recent-alert',
+      status: AlertStatus.RESOLVED,
+      createdAt: new Date(Date.now() - 30 * 60 * 1000),
+    };
+    alerts.findOne.mockResolvedValueOnce(null).mockResolvedValueOnce(recent);
+    const restarted = new AlertsService(
+      alerts as never,
+      tanks as never,
+      sensors as never,
+      {} as never,
+    );
+
+    await expect(predictiveTrip(restarted)).resolves.toBe(recent);
+
+    expect(alerts.save).not.toHaveBeenCalled();
+    expect(alerts.findOne).toHaveBeenCalledTimes(2);
+    expect(alerts.findOne.mock.calls[1][0]).toMatchObject({
+      where: {
+        type: AlertType.OVERFLOW_RISK,
+        severity: AlertSeverity.CRITICAL,
+        tankId: 'tank-1',
+        sensorId: 'sensor-1',
+      },
+      order: { createdAt: 'DESC' },
+    });
+  });
 });

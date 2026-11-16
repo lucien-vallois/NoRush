@@ -77,7 +77,6 @@ const tankLevelSensorSql = (where: string): string =>
 @Injectable()
 export class PredictionsService {
   private readonly logger = new Logger(PredictionsService.name);
-  private lastPredictiveAlert = new Map<string, number>(); // tankId → epoch ms
 
   constructor(
     private readonly dataSource: DataSource,
@@ -293,32 +292,33 @@ export class PredictionsService {
   }
 
   private async maybeCreatePredictiveAlert(f: TankForecast): Promise<void> {
-    const last = this.lastPredictiveAlert.get(f.tankId) ?? 0;
-    if (Date.now() - last < PREDICTIVE_ALERT_COOLDOWN_MS) return;
-
     const severity =
       f.etaOverflowHours! <= 2 ? AlertSeverity.CRITICAL : AlertSeverity.HIGH;
     const eta = this.formatHours(f.etaOverflowHours!);
-    const rate = (f.fillRateMH ?? 0).toFixed(3);
 
     try {
-      const alert = await this.alertsService.create({
-        type: AlertType.OVERFLOW_RISK,
+      const startedAt = Date.now();
+      const alert = await this.alertsService.createAutomaticAlert(
+        AlertType.OVERFLOW_RISK,
         severity,
-        title: 'Overflow Forecast',
-        message: `Tank ${f.tankCode}: overflow estimated in ${eta} at the current rate (+${rate} m/h, confidence ${Math.round(f.confidence * 100)}%).`,
-        tankId: f.tankId,
-        sensorId: f.sensorId,
-        currentLevel: f.currentLevel ?? undefined,
-        thresholdValue: f.thresholds.overflow ?? undefined,
-        metadata: {
+        f.tankId,
+        f.sensorId,
+        f.currentLevel ?? undefined,
+        undefined,
+        f.thresholds.overflow ?? undefined,
+        {
           predictive: true,
           etaHours: f.etaOverflowHours,
           fillRateMH: f.fillRateMH,
           confidence: f.confidence,
         },
-      });
-      this.lastPredictiveAlert.set(f.tankId, Date.now());
+        PREDICTIVE_ALERT_COOLDOWN_MS,
+      );
+      const createdAt = alert.createdAt
+        ? new Date(alert.createdAt).getTime()
+        : startedAt;
+      if (createdAt < startedAt) return;
+
       // Payload estruturado para clientes comporem no idioma do usuário
       this.wsEmitter.emitAlert({
         sensorId: f.sensorId,

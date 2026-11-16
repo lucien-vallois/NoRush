@@ -18,7 +18,7 @@ describe('Operational forecasts', () => {
   let latest: { level: number; timestamp: string }[];
   let service: PredictionsService;
   let source: { query: jest.Mock };
-  const alerts = { create: jest.fn() };
+  const alerts = { createAutomaticAlert: jest.fn() };
   const emitter = { emit: jest.fn(), emitAlert: jest.fn() };
   const points = (levels: number[]) =>
     levels.map((y, i) => ({
@@ -31,6 +31,10 @@ describe('Operational forecasts', () => {
     aggregate = [];
     latest = [{ level: 1.4, timestamp: now.toISOString() }];
     jest.clearAllMocks();
+    alerts.createAutomaticAlert.mockResolvedValue({
+      id: 'alert-1',
+      createdAt: now,
+    });
     source = {
       query: jest.fn(async (sql: string) =>
         sql.includes('FROM tanks t')
@@ -79,7 +83,41 @@ describe('Operational forecasts', () => {
       etaOverflowHours: null,
     });
     await service.runPredictionCycle();
-    expect(alerts.create).not.toHaveBeenCalled();
+    expect(alerts.createAutomaticAlert).not.toHaveBeenCalled();
+  });
+  it('uses persistent automatic-alert deduplication for predictive alerts', async () => {
+    await service.runPredictionCycle();
+
+    expect(alerts.createAutomaticAlert).toHaveBeenCalledTimes(1);
+    const args = alerts.createAutomaticAlert.mock.calls[0];
+    expect(args.slice(0, 7)).toEqual([
+      'overflow_risk',
+      'critical',
+      'tank-1',
+      'sensor-1',
+      1.4,
+      undefined,
+      4.6,
+    ]);
+    expect(args[7]).toMatchObject({
+      predictive: true,
+      etaHours: 0.53,
+      fillRateMH: 6,
+      confidence: 1,
+    });
+    expect(args[8]).toBe(60 * 60 * 1000);
+    expect(emitter.emitAlert).toHaveBeenCalledTimes(1);
+  });
+  it('does not rebroadcast an incident returned by persistent deduplication', async () => {
+    alerts.createAutomaticAlert.mockResolvedValue({
+      id: 'open-alert',
+      createdAt: new Date(now.getTime() - 30 * 60 * 1000),
+    });
+
+    await service.runPredictionCycle();
+
+    expect(alerts.createAutomaticAlert).toHaveBeenCalledTimes(1);
+    expect(emitter.emitAlert).not.toHaveBeenCalled();
   });
   it('returns an unknown state rather than fabricating an empty tank', async () => {
     raw = [];

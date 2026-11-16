@@ -333,6 +333,7 @@ export class AlertsService {
     currentVolume?: number,
     thresholdValue?: number,
     metadata?: Record<string, any>,
+    cooldownMs?: number,
   ): Promise<Alert> {
     // One open alert per condition: while the same alarm is still active or
     // acknowledged on this tank/gauge, a repeat trip is not a new incident.
@@ -349,6 +350,22 @@ export class AlertsService {
       order: { createdAt: 'DESC' },
     });
     if (open) return open;
+
+    if (cooldownMs != null && cooldownMs > 0) {
+      const latest = await this.alertRepository.findOne({
+        where: {
+          type,
+          severity,
+          tankId,
+          sensorId: sensorId ?? IsNull(),
+        },
+        order: { createdAt: 'DESC' },
+      });
+      const age = latest?.createdAt
+        ? Date.now() - new Date(latest.createdAt).getTime()
+        : Infinity;
+      if (latest && age < cooldownMs) return latest;
+    }
 
     // Gerar título e mensagem baseada no tipo
     const alertInfo = this.generateAlertInfo(
