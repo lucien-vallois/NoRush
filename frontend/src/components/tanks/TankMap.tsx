@@ -35,6 +35,7 @@ function tankPosition(view: TankView): LatLng | null {
 const MARKER_FILL: Record<MarkerColor, string> = {
   green: '#22c55e',
   amber: '#f59e0b',
+  orange: '#f97316',
   red: '#ef4444',
   slate: '#64748b',
 };

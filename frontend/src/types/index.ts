@@ -44,6 +44,7 @@ export interface Tank {
   latitude: number;
   longitude: number;
   status: "active" | "maintenance" | "inactive" | "error";
+  sensors?: Sensor[];
   maxLevelThreshold?: number;
   minLevelThreshold?: number;
   overflowThreshold?: number;

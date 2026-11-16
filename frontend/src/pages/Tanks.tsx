@@ -44,7 +44,12 @@ const Tanks: React.FC = () => {
     setRefreshing(true);
     try {
       const tanks = await apiService.getTanks();
-      const [latestReadings, forecasts] = await Promise.all([
+      const [
+        latestReadings,
+        forecasts,
+        activeCritical,
+        acknowledgedCritical,
+      ] = await Promise.all([
         Promise.all(
           (tanks ?? []).map((tank: Tank) =>
             apiService.getLatestReadingsByTank(tank.id, 1).catch(() => []),
@@ -52,14 +57,30 @@ const Tanks: React.FC = () => {
         ),
         // Previsões são complementares: falha aqui não derruba a página
         apiService.getPredictions().catch(() => [] as TankForecast[]),
+        apiService
+          .getAlerts({ severity: "critical", status: "active", limit: 100 })
+          .catch(() => ({ alerts: [] })),
+        apiService
+          .getAlerts({
+            severity: "critical",
+            status: "acknowledged",
+            limit: 100,
+          })
+          .catch(() => ({ alerts: [] })),
       ]);
       const byTank = new Map((forecasts ?? []).map((f) => [f.tankId, f]));
+      const criticalAlarmTanks = new Set(
+        [...activeCritical.alerts, ...acknowledgedCritical.alerts].map(
+          (alert) => alert.tankId,
+        ),
+      );
       setViews(
         (tanks ?? []).map((tank: Tank, index) =>
           buildTankView(
             tank,
             latestReadings[index]?.[0]?.level,
             byTank.get(tank.id),
+            { criticalAlarmOpen: criticalAlarmTanks.has(tank.id) },
           ),
         ),
       );
@@ -219,6 +240,18 @@ const Tanks: React.FC = () => {
                   </span>
                   <span className="inline-flex items-center gap-1.5">
                     <span className="h-2.5 w-2.5 rounded-full bg-red-500" />{" "}
+                    {t("tanks.legendCritical")}
+                  </span>
+                  <span className="inline-flex items-center gap-1.5">
+                    <span className="h-2.5 w-2.5 rounded-full bg-orange-500" />{" "}
+                    {t("tanks.legendAboveLimit")}
+                  </span>
+                  <span className="inline-flex items-center gap-1.5">
+                    <span className="h-2.5 w-2.5 rounded-full bg-slate-500" />{" "}
+                    {t("tanks.legendOffline")}
+                  </span>
+                  <span className="inline-flex items-center gap-1.5">
+                    <span className="h-2.5 w-2.5 rounded-full bg-amber-500" />{" "}
                     {t("tanks.legendRisk")}
                   </span>
                 </div>
