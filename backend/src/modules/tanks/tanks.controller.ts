@@ -19,6 +19,11 @@ import {
   ApiBearerAuth,
 } from '@nestjs/swagger';
 import { TanksService } from './tanks.service';
+import {
+  TankFleetOperationalState,
+  TankOperationalState,
+  TankOperationalStateService,
+} from './tank-operational-state.service';
 import { CreateTankDto } from './dto/create-tank.dto';
 import { UpdateTankDto } from './dto/update-tank.dto';
 import { Tank, TankStatus } from '../../entities/tank.entity';
@@ -28,7 +33,10 @@ import { UserRole } from '../../entities/user.entity';
 @ApiTags('Tanques')
 @Controller('tanks')
 export class TanksController {
-  constructor(private readonly tanksService: TanksService) {}
+  constructor(
+    private readonly tanksService: TanksService,
+    private readonly operationalStateService: TankOperationalStateService,
+  ) {}
 
   @Post()
   @Roles(UserRole.ADMIN, UserRole.MAINTENANCE)
@@ -58,6 +66,26 @@ export class TanksController {
       return this.tanksService.getTanksByStatus(status);
     }
     return this.tanksService.findAll();
+  }
+
+  @Get('state')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Obter o estado operacional consolidado da frota' })
+  @ApiResponse({ status: 200, description: 'Estado operacional da frota' })
+  async findAllStates(): Promise<TankFleetOperationalState> {
+    return this.operationalStateService.findAllStates();
+  }
+
+  @Get(':id/state')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Obter o estado operacional consolidado do tanque' })
+  @ApiResponse({ status: 200, description: 'Estado operacional do tanque' })
+  @ApiResponse({ status: 404, description: 'Tanque não encontrado' })
+  @ApiParam({ name: 'id', description: 'ID do tanque' })
+  async findStateByTank(
+    @Param('id') id: string,
+  ): Promise<TankOperationalState> {
+    return this.operationalStateService.findStateByTank(id);
   }
 
   @Get('nearby')

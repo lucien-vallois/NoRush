@@ -223,6 +223,38 @@ try {
       );
       assert.equal(Number(rows[0].level), 1.25);
       assert(Number(rows[0].volume) > 0);
+
+      const fleetState = await request("/tanks/state", { token });
+      assert.equal(typeof fleetState.generatedAt, "string");
+      const tankState = fleetState.tanks.find(
+        (tank) => tank.tankId === sensor.tankId,
+      );
+      assert(tankState, "The telemetry tank is missing from operational state");
+      assert.equal(tankState.sensorId, sensor.id);
+      assert.equal(Number(tankState.level), 1.25);
+      assert.equal(
+        new Date(tankState.readingTimestamp).getTime(),
+        new Date(rows[0].timestamp).getTime(),
+      );
+      assert.equal(tankState.readingFreshness.fresh, true);
+      assert.equal(tankState.readingFreshness.maxAgeSeconds, 900);
+      assert(tankState.readingFreshness.ageSeconds >= 0);
+      assert(tankState.readingFreshness.ageSeconds <= 900);
+      assert.equal(tankState.forecastError, false);
+      if (tankState.forecast) {
+        assert.equal(tankState.forecast.sensorId, tankState.sensorId);
+        assert.equal(
+          tankState.forecast.lastReadingAt,
+          tankState.readingTimestamp,
+        );
+      }
+      const singleState = await request(`/tanks/${sensor.tankId}/state`, {
+        token,
+      });
+      assert.equal(singleState.tankId, tankState.tankId);
+      assert.equal(singleState.sensorId, tankState.sensorId);
+      assert.equal(Number(singleState.level), 1.25);
+      assert.equal(singleState.forecastError, false);
     },
   );
   await check(

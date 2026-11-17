@@ -50,7 +50,7 @@ All routes need a signed-in user; writes need the roles shown.
 | `GET /readings` | Paginated list with filters (below) |
 | `GET /readings/:id` | One reading |
 | `GET /readings/sensor/:sensorId`, `/tank/:tankId` | Same list, scoped (internal UUIDs) |
-| `GET /readings/sensor/:sensorId/latest`, `/tank/:tankId/latest` | Most recent readings, 10 by default (`limit`) |
+| `GET /readings/sensor/:sensorId/latest`, `/tank/:tankId/latest` | Most recent readings, 10 by default (`limit`); tank latest uses only its selected operational level sensor |
 | `GET /readings/sensor/:sensorId/stats`, `/tank/:tankId/stats`, `/global/stats` | Count, level and volume statistics, trend and quality distribution (`startDate`, `endDate`) |
 | `GET /readings/sensor/:sensorId/hourly`, `/tank/:tankId/hourly`, `/global/hourly` | Hourly averages from the raw table, last 24 hours by default (`hours`) |
 | `GET /readings/timeseries` | Chart series, see above |

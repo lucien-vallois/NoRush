@@ -20,6 +20,7 @@ import {
   ReadingFiltersDto,
   READING_SORT_COLUMNS,
 } from './dto/reading-filters.dto';
+import { tankLevelSensorSql } from '../tanks/tank-level-sensor.query';
 
 @Injectable()
 export class ReadingsService {
@@ -163,14 +164,12 @@ export class ReadingsService {
     tankId: string,
     limit: number = 10,
   ): Promise<Reading[]> {
-    return this.readingRepository
-      .createQueryBuilder('reading')
-      .leftJoinAndSelect('reading.sensor', 'sensor')
-      .leftJoinAndSelect('sensor.tank', 'tank')
-      .where('tank.id = :tankId', { tankId })
-      .orderBy('reading.timestamp', 'DESC')
-      .take(limit)
-      .getMany();
+    const tanks = await this.dataSource.query(
+      tankLevelSensorSql('t.id = $1', 'state'),
+      [tankId],
+    );
+    if (!tanks[0]?.sensor_uuid) return [];
+    return this.getLatestBySensor(tanks[0].sensor_uuid, limit);
   }
 
   /**

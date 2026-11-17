@@ -8,14 +8,16 @@ import { Alert } from '../../entities/alert.entity';
 
 // Services
 import { TanksService } from './tanks.service';
+import { TankOperationalStateService } from './tank-operational-state.service';
+import { PredictionsModule } from '../predictions/predictions.module';
 
 // Controllers
 import { TanksController } from './tanks.controller';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Tank, Sensor, Alert])],
+  imports: [TypeOrmModule.forFeature([Tank, Sensor, Alert]), PredictionsModule],
   controllers: [TanksController],
-  providers: [TanksService],
-  exports: [TanksService],
+  providers: [TanksService, TankOperationalStateService],
+  exports: [TanksService, TankOperationalStateService],
 })
 export class TanksModule {}

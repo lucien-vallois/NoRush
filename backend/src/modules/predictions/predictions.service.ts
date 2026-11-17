@@ -4,6 +4,8 @@ import { DataSource } from 'typeorm';
 import { AlertsService } from '../alerts/alerts.service';
 import { AlertSeverity, AlertType } from '../../entities/alert.entity';
 import { WsEmitterService } from '../websocket/ws-emitter.service';
+import { readingFreshness } from '../../common/telemetry-freshness';
+import { tankLevelSensorSql } from '../tanks/tank-level-sensor.query';
 
 export interface TankForecast {
   tankId: string;
@@ -36,37 +38,6 @@ const STABLE_BAND_MH = 0.005; // abaixo disso o ritmo é ruído
 const MAX_ETA_HOURS = 72;
 const PREDICTIVE_ALERT_WINDOW_H = 6; // alerta se ETA de transbordo <= 6h
 const PREDICTIVE_ALERT_COOLDOWN_MS = 60 * 60 * 1000;
-
-/**
- * Um sensor de nível contínuo por tanque. float_switch só indica um ponto e
- * fica de fora; com mais de um sensor no tanque, a haste de duas boias tem
- * prioridade. Comparação em texto para não depender de o enum do banco já
- * conhecer todos os valores.
- */
-const LEVEL_SENSOR_PRIORITY = `CASE s.type::text
-         WHEN 'magnetostrictive' THEN 0
-         WHEN 'radar_level' THEN 1
-         WHEN 'ultrasonic' THEN 2
-         WHEN 'pressure' THEN 3
-         WHEN 'capacitive' THEN 4
-         ELSE 9 END`;
-
-const tankLevelSensorSql = (where: string): string =>
-  `SELECT * FROM (
-     SELECT DISTINCT ON (t.id)
-            t.id, t.code, t.name,
-            t."maxLevelThreshold", t."overflowThreshold",
-            t."minLevelThreshold", t."lowLevelThreshold",
-            (t.dimensions->>'diameter')::numeric AS diameter,
-            s.id AS sensor_uuid
-     FROM tanks t
-     JOIN sensors s ON s."tankId" = t.id
-                   AND s.type::text <> 'float_switch'
-                   AND s.status = 'active'
-     WHERE ${where}
-     ORDER BY t.id, ${LEVEL_SENSOR_PRIORITY}, s."sensorId"
-   ) picked
-   ORDER BY code`;
 
 /**
  * Motor de previsão: regressão linear (mínimos quadrados) do nível sobre os
@@ -155,12 +126,8 @@ export class PredictionsService {
     const lastReadingAt = latest?.[0]?.timestamp
       ? new Date(latest[0].timestamp).toISOString()
       : null;
-    const ageMs = lastReadingAt
-      ? Date.now() - new Date(lastReadingAt).getTime()
-      : Infinity;
     const dataFresh =
-      ageMs >= 0 &&
-      ageMs <= 15 * 60 * 1000 &&
+      readingFreshness(lastReadingAt, new Date()).fresh &&
       latest?.[0]?.level != null &&
       Number.isFinite(Number(latest[0].level));
     const currentLevel =
