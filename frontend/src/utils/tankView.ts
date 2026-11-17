@@ -1,4 +1,9 @@
-import type { Tank, TankForecast } from "../types";
+import type {
+  OilWaterInterface,
+  Tank,
+  TankForecast,
+  TankOperationalState,
+} from "../types";
 
 export const OVERFLOW_CRITICAL_H = 6;
 
@@ -6,6 +11,11 @@ export type MarkerColor = "green" | "amber" | "orange" | "red" | "slate";
 
 export interface TankView {
   tank: Tank;
+  tankStatus: Tank["status"];
+  sensorId: string | null;
+  oilWaterInterface: OilWaterInterface | null;
+  readingTimestamp: string | null;
+  readingFresh: boolean;
   forecast?: TankForecast;
   forecastAvailable: boolean;
   level: number | null;
@@ -14,15 +24,9 @@ export interface TankView {
   criticalAlarmOpen: boolean;
   aboveOperationalLimit: boolean;
   communicationFailed: boolean;
+  atRisk: boolean;
   markerColor: MarkerColor;
 }
-
-interface TankViewOptions {
-  criticalAlarmOpen?: boolean;
-  now?: number;
-}
-
-const HEARTBEAT_TIMEOUT_MS = 5 * 60 * 1000;
 
 export function toFinite(value: unknown): number | null {
   const numeric = Number(value);
@@ -31,42 +35,50 @@ export function toFinite(value: unknown): number | null {
 
 export function buildTankView(
   tank: Tank,
-  currentLevel: unknown,
-  forecast?: TankForecast,
-  options: TankViewOptions = {},
+  state?: TankOperationalState,
 ): TankView {
-  const usableForecast = forecast?.dataFresh ? forecast : undefined;
+  const level = toFinite(state?.level);
+  const readingFresh = state?.readingFreshness.fresh === true;
+  const usableForecast =
+    readingFresh &&
+    state.forecastError !== true &&
+    state.forecast?.dataFresh === true &&
+    state.forecast.sensorId === state.sensorId &&
+    state.forecast.lastReadingAt === state.readingTimestamp
+      ? state.forecast
+      : undefined;
   const eta = usableForecast
     ? toFinite(usableForecast.etaOverflowHours)
     : null;
   const critical = eta != null && eta <= OVERFLOW_CRITICAL_H;
-  const level = toFinite(currentLevel);
   const operationalLimit = toFinite(tank.maxLevelThreshold);
   const aboveOperationalLimit =
-    level != null && operationalLimit != null && level >= operationalLimit;
-  const criticalAlarmOpen = options.criticalAlarmOpen ?? false;
-  const now = options.now ?? Date.now();
-  const activeSensors = (tank.sensors ?? []).filter(
-    (sensor) => sensor.status === "active",
-  );
+    readingFresh &&
+    level != null &&
+    operationalLimit != null &&
+    level >= operationalLimit;
+  const criticalAlarmOpen = state?.criticalAlarmOpen === true;
+  const tankStatus = state?.tankStatus ?? tank.status;
   const communicationFailed =
-    tank.status === "active" &&
-    (activeSensors.length === 0 ||
-      activeSensors.every((sensor) => {
-        if (!sensor.lastTransmissionAt) return true;
-        const age = now - new Date(sensor.lastTransmissionAt).getTime();
-        return !Number.isFinite(age) || age < 0 || age >= HEARTBEAT_TIMEOUT_MS;
-      }));
+    tankStatus === "active" && state?.heartbeat.fresh !== true;
+  const atRisk = criticalAlarmOpen || aboveOperationalLimit || critical;
 
   let markerColor: MarkerColor = "slate";
   if (criticalAlarmOpen) markerColor = "red";
   else if (aboveOperationalLimit) markerColor = "orange";
-  else if (communicationFailed) markerColor = "slate";
-  else if (critical || tank.status === "maintenance") markerColor = "amber";
-  else if (tank.status === "active") markerColor = "green";
+  else if (tankStatus === "maintenance") markerColor = "amber";
+  else if (!readingFresh || level == null || communicationFailed) {
+    markerColor = "slate";
+  } else if (critical) markerColor = "amber";
+  else if (tankStatus === "active") markerColor = "green";
 
   return {
     tank,
+    tankStatus,
+    sensorId: state?.sensorId ?? null,
+    oilWaterInterface: state?.oilWaterInterface ?? null,
+    readingTimestamp: state?.readingTimestamp ?? null,
+    readingFresh,
     forecast: usableForecast,
     forecastAvailable: usableForecast != null,
     level,
@@ -75,6 +87,25 @@ export function buildTankView(
     criticalAlarmOpen,
     aboveOperationalLimit,
     communicationFailed,
+    atRisk,
     markerColor,
   };
+}
+
+const MARKER_PRIORITY: Record<MarkerColor, number> = {
+  red: 0,
+  orange: 1,
+  amber: 2,
+  slate: 3,
+  green: 4,
+};
+
+export function sortTankViews(a: TankView, b: TankView): number {
+  const markerOrder = MARKER_PRIORITY[a.markerColor] - MARKER_PRIORITY[b.markerColor];
+  if (markerOrder !== 0) return markerOrder;
+  if (a.atRisk !== b.atRisk) return a.atRisk ? -1 : 1;
+  const ea = a.etaOverflowHours ?? Number.POSITIVE_INFINITY;
+  const eb = b.etaOverflowHours ?? Number.POSITIVE_INFINITY;
+  if (ea !== eb) return ea - eb;
+  return a.tank.code.localeCompare(b.tank.code);
 }

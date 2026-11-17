@@ -8,7 +8,7 @@ import React, {
 import { useTranslation } from "react-i18next";
 import { AlertTriangle, Plus, RefreshCw } from "lucide-react";
 import { apiService } from "../services/api";
-import { Tank, TankForecast } from "../types";
+import { Tank } from "../types";
 import { formatTimeOfDay } from "../utils/format";
 import LoadingSpinner from "../components/common/LoadingSpinner";
 import TankCard, {
@@ -27,6 +27,7 @@ const Tanks: React.FC = () => {
   const { t } = useTranslation();
   const [views, setViews] = useState<TankView[] | null>(null); // null = carregando
   const [error, setError] = useState(false);
+  const [forecastsUnavailable, setForecastsUnavailable] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [updatedAt, setUpdatedAt] = useState<string | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -43,48 +44,20 @@ const Tanks: React.FC = () => {
   const load = useCallback(async () => {
     setRefreshing(true);
     try {
-      const tanks = await apiService.getTanks();
-      const [
-        latestReadings,
-        forecasts,
-        activeCritical,
-        acknowledgedCritical,
-      ] = await Promise.all([
-        Promise.all(
-          (tanks ?? []).map((tank: Tank) =>
-            apiService.getLatestReadingsByTank(tank.id, 1).catch(() => []),
-          ),
-        ),
-        // Previsões são complementares: falha aqui não derruba a página
-        apiService.getPredictions().catch(() => [] as TankForecast[]),
-        apiService
-          .getAlerts({ severity: "critical", status: "active", limit: 100 })
-          .catch(() => ({ alerts: [] })),
-        apiService
-          .getAlerts({
-            severity: "critical",
-            status: "acknowledged",
-            limit: 100,
-          })
-          .catch(() => ({ alerts: [] })),
+      const [tanks, operational] = await Promise.all([
+        apiService.getTanks(),
+        apiService.getTankOperationalStates(),
       ]);
-      const byTank = new Map((forecasts ?? []).map((f) => [f.tankId, f]));
-      const criticalAlarmTanks = new Set(
-        [...activeCritical.alerts, ...acknowledgedCritical.alerts].map(
-          (alert) => alert.tankId,
-        ),
+      const byTank = new Map(
+        operational.tanks.map((state) => [state.tankId, state]),
       );
       setViews(
-        (tanks ?? []).map((tank: Tank, index) =>
-          buildTankView(
-            tank,
-            latestReadings[index]?.[0]?.level,
-            byTank.get(tank.id),
-            { criticalAlarmOpen: criticalAlarmTanks.has(tank.id) },
-          ),
-        ),
+        tanks.map((tank) => buildTankView(tank, byTank.get(tank.id))),
       );
-      setUpdatedAt(new Date().toISOString());
+      setForecastsUnavailable(
+        operational.tanks.some((state) => state.forecastError),
+      );
+      setUpdatedAt(operational.generatedAt);
       setError(false);
     } catch (err) {
       console.error("Tanks error:", err);
@@ -131,9 +104,9 @@ const Tanks: React.FC = () => {
     const list = views ?? [];
     return {
       total: list.length,
-      active: list.filter((v) => v.tank.status === "active").length,
-      maintenance: list.filter((v) => v.tank.status === "maintenance").length,
-      atRisk: list.filter((v) => v.critical).length,
+      active: list.filter((v) => v.tankStatus === "active").length,
+      maintenance: list.filter((v) => v.tankStatus === "maintenance").length,
+      atRisk: list.filter((v) => v.atRisk).length,
     };
   }, [views]);
 
@@ -173,6 +146,14 @@ const Tanks: React.FC = () => {
         </div>
       </div>
 
+      {forecastsUnavailable && (
+        <p
+          role="status"
+          className="rounded-lg border border-amber-500/30 bg-amber-500/5 p-3 text-xs text-amber-700 dark:text-amber-300"
+        >
+          {t("tanks.partialForecastsUnavailable")}
+        </p>
+      )}
       {error && views != null && views.length > 0 && (
         <p
           role="alert"

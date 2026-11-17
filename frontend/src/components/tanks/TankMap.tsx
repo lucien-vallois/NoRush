@@ -2,7 +2,7 @@ import React, { useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import 'leaflet/dist/leaflet.css';
 import { CircleMarker, MapContainer, Popup, TileLayer, useMap } from 'react-leaflet';
-import { formatHours } from '../../utils/format';
+import { formatHours, formatTimeOfDay } from '../../utils/format';
 import { formatRateMH } from '../../utils/units.ts';
 import { MarkerColor, TankView, formatMeters, OVERFLOW_CRITICAL_H } from './TankCard';
 
@@ -109,7 +109,7 @@ const TankMap: React.FC<TankMapProps> = ({ views, focus, onSelectTank }) => {
             <CircleMarker
               key={v.tank.id}
               center={position}
-              radius={v.critical ? 13 : 10}
+              radius={v.atRisk ? 13 : 10}
               pathOptions={{
                 color: '#ffffff',
                 weight: 2,
@@ -131,6 +131,14 @@ const TankMap: React.FC<TankMapProps> = ({ views, focus, onSelectTank }) => {
                       </span>
                     </p>
                     <p>
+                      {t('tankMap.lastReading')}:{' '}
+                      <span className="font-semibold">
+                        {v.readingTimestamp
+                          ? `${formatTimeOfDay(v.readingTimestamp)} · ${t(v.readingFresh ? 'tankReading.fresh' : 'tankReading.stale')}`
+                          : t('tankReading.noReading')}
+                      </span>
+                    </p>
+                    <p>
                       {t('tankMap.pace')}:{' '}
                       <span className="font-semibold tabular-nums">
                         {v.forecast?.fillRateMH != null
@@ -143,7 +151,7 @@ const TankMap: React.FC<TankMapProps> = ({ views, focus, onSelectTank }) => {
                       {eta != null ? (
                         <span
                           className={`font-semibold tabular-nums ${
-                            eta <= OVERFLOW_CRITICAL_H ? 'text-red-600' : 'text-slate-900'
+                            eta <= OVERFLOW_CRITICAL_H ? 'text-amber-600' : 'text-slate-900'
                           }`}
                         >
                           ~{formatHours(eta)}

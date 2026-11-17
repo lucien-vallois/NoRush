@@ -9,6 +9,8 @@ import {
   PaginatedResponse,
   AlertsPaginatedResponse,
   TankForecast,
+  TankOperationalState,
+  TankOperationalStatesResponse,
   GaugeReport,
   GaugeReportParams,
 } from "../types";
@@ -158,6 +160,20 @@ class ApiService {
 
   async getTank(id: string): Promise<Tank> {
     const response = await this.api.get<Tank>(`/tanks/${id}`);
+    return response.data;
+  }
+
+  async getTankOperationalStates(): Promise<TankOperationalStatesResponse> {
+    const response = await this.api.get<TankOperationalStatesResponse>(
+      "/tanks/state",
+    );
+    return response.data;
+  }
+
+  async getTankOperationalState(id: string): Promise<TankOperationalState> {
+    const response = await this.api.get<TankOperationalState>(
+      `/tanks/${encodeURIComponent(id)}/state`,
+    );
     return response.data;
   }
 

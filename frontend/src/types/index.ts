@@ -330,6 +330,40 @@ export interface TankForecast {
   predictedAt: string;
 }
 
+export interface ReadingFreshness {
+  fresh: boolean;
+  ageSeconds: number | null;
+  maxAgeSeconds: number;
+}
+
+export interface SensorHeartbeat {
+  timestamp: string | null;
+  fresh: boolean;
+  ageSeconds: number | null;
+  maxAgeSeconds: number;
+}
+
+export interface TankOperationalState {
+  tankId: string;
+  tankStatus: Tank["status"];
+  /** UUID interno do sensor, não o identificador de negócio. */
+  sensorId: string | null;
+  sensorType: string | null;
+  level: number | null;
+  oilWaterInterface: OilWaterInterface | null;
+  readingTimestamp: string | null;
+  readingFreshness: ReadingFreshness;
+  heartbeat: SensorHeartbeat;
+  criticalAlarmOpen: boolean;
+  forecastError: boolean;
+  forecast: TankForecast | null;
+}
+
+export interface TankOperationalStatesResponse {
+  generatedAt: string;
+  tanks: TankOperationalState[];
+}
+
 /** GET /meta: public facts the console reads before and after sign-in. */
 export interface ApiMeta {
   service: string;

@@ -34,7 +34,7 @@ import {
   ReadingEventPayload,
   SystemHealth,
   Tank,
-  TankForecast,
+  TankOperationalState,
 } from "../types";
 import { useWebSocketEvent } from "../hooks/useWebSocketEvent";
 import { useWebSocket } from "../contexts/WebSocketContext";
@@ -57,11 +57,36 @@ import {
 } from "../utils/units.ts";
 import LoadingSpinner from "../components/common/LoadingSpinner";
 import { withTelemetryGaps } from "../utils/telemetry";
+import { buildTankView, type MarkerColor } from "../utils/tankView.ts";
 
 interface ChartPoint {
   t: number;
   level: number;
 }
+
+const MARKER_DOT: Record<MarkerColor, string> = {
+  green: "bg-green-500",
+  amber: "bg-amber-400",
+  orange: "bg-orange-500",
+  red: "bg-red-500",
+  slate: "bg-slate-400",
+};
+
+const MARKER_FILL: Record<MarkerColor, string> = {
+  green: "border-green-500 bg-green-500/15",
+  amber: "border-amber-500 bg-amber-500/15",
+  orange: "border-orange-500 bg-orange-500/15",
+  red: "border-red-500 bg-red-500/15",
+  slate: "border-slate-400 bg-slate-400/15",
+};
+
+const MARKER_TEXT: Record<MarkerColor, string> = {
+  green: "text-green-600 dark:text-green-400",
+  amber: "text-amber-600 dark:text-amber-400",
+  orange: "text-orange-600 dark:text-orange-400",
+  red: "text-red-600 dark:text-red-400",
+  slate: "text-muted-foreground",
+};
 
 function Metric({
   label,
@@ -98,7 +123,9 @@ function Metric({
 export default function Dashboard() {
   const { t } = useTranslation();
   const [tanks, setTanks] = useState<Tank[]>([]);
-  const [forecasts, setForecasts] = useState<TankForecast[]>([]);
+  const [operationalStates, setOperationalStates] = useState<
+    TankOperationalState[]
+  >([]);
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [alerts, setAlerts] = useState<Alert[]>([]);
   const [alertTotal, setAlertTotal] = useState<number | null>(null);
@@ -124,11 +151,11 @@ export default function Dashboard() {
     inFlight.current = true;
     setRefreshing(true);
     try {
-      const [tankData, sensorData, predictionData, alertData, healthData] =
+      const [tankData, sensorData, stateData, alertData, healthData] =
         await Promise.allSettled([
           apiService.getTanks(),
           apiService.getDashboardStats(),
-          apiService.getPredictions(),
+          apiService.getTankOperationalStates(),
           apiService.getAlerts({ status: "active", limit: 4 }),
           apiService.getHealth(),
         ]);
@@ -146,8 +173,8 @@ export default function Dashboard() {
           "",
       );
       setStats(sensorData.value);
-      setForecasts(
-        predictionData.status === "fulfilled" ? predictionData.value : [],
+      setOperationalStates(
+        stateData.status === "fulfilled" ? stateData.value.tanks : [],
       );
       setAlerts(alertData.status === "fulfilled" ? alertData.value.alerts : []);
       setAlertTotal(
@@ -156,14 +183,22 @@ export default function Dashboard() {
       setHealth(healthData.status === "fulfilled" ? healthData.value : null);
       setPartialKeys(
         [
-          predictionData.status === "rejected"
-            ? "dashboard.partialPredictions"
+          stateData.status === "rejected"
+            ? "dashboard.partialOperationalStates"
+            : "",
+          stateData.status === "fulfilled" &&
+          stateData.value.tanks.some((state) => state.forecastError)
+            ? "dashboard.partialForecastsUnavailable"
             : "",
           alertData.status === "rejected" ? "dashboard.partialAlerts" : "",
           healthData.status === "rejected" ? "dashboard.partialHealth" : "",
         ].filter(Boolean),
       );
-      setUpdatedAt(new Date().toISOString());
+      setUpdatedAt(
+        stateData.status === "fulfilled"
+          ? stateData.value.generatedAt
+          : new Date().toISOString(),
+      );
       setError(false);
     } catch {
       setError(true);
@@ -199,14 +234,18 @@ export default function Dashboard() {
     void load();
   });
 
-  const selected = tanks.find((tank) => tank.id === selectedId);
-  const byTank = useMemo(
-    () => new Map(forecasts.map((f) => [f.tankId, f])),
-    [forecasts],
-  );
-  const selectedForecast = byTank.get(selectedId);
+  const views = useMemo(() => {
+    const byTank = new Map(
+      operationalStates.map((state) => [state.tankId, state]),
+    );
+    return tanks.map((tank) => buildTankView(tank, byTank.get(tank.id)));
+  }, [tanks, operationalStates]);
+  const selectedView = views.find((view) => view.tank.id === selectedId);
+  const selected = selectedView?.tank;
+  const selectedForecast = selectedView?.forecast;
+  const selectedSensorId = selectedView?.sensorId;
   useEffect(() => {
-    if (!selectedId) {
+    if (!selectedId || !selectedSensorId) {
       setChart([]);
       setChartState("ready");
       return;
@@ -216,7 +255,7 @@ export default function Dashboard() {
     apiService
       .getTimeseries({
         tankId: selectedId,
-        sensorId: selectedForecast?.sensorId,
+        sensorId: selectedSensorId,
         bucket: "5m",
         from: new Date(Date.now() - 24 * 3600000).toISOString(),
         limit: 600,
@@ -246,16 +285,19 @@ export default function Dashboard() {
     return () => {
       cancelled = true;
     };
-  }, [selectedId, selectedForecast?.sensorId, updatedAt]);
+  }, [selectedId, selectedSensorId, updatedAt]);
 
-  const active = tanks.filter((tank) => tank.status === "active").length;
+  const active = views.filter((view) => view.tankStatus === "active").length;
   const capacityM3 =
     tanks.reduce(
       (sum, tank) => sum + (Number(tank.dimensions.volume) || 0),
       0,
     ) / 1000;
-  const atRisk = forecasts.filter(
-    (f) => f.dataFresh && f.etaOverflowHours != null && f.etaOverflowHours <= 6,
+  const etaRisk = views.filter(
+    (view) => view.critical && view.etaOverflowHours != null,
+  );
+  const forecastsUnavailable = operationalStates.some(
+    (state) => state.forecastError,
   );
 
   if (loading)
@@ -346,7 +388,7 @@ export default function Dashboard() {
           label={t("dashboard.metricTanks")}
           value={`${active.toString().padStart(2, "0")} / ${tanks.length.toString().padStart(2, "0")}`}
           detail={t("dashboard.metricTanksDetail", {
-            count: tanks.filter((tank) => tank.status === "maintenance").length,
+            count: views.filter((view) => view.tankStatus === "maintenance").length,
           })}
           icon={Droplets}
         />
@@ -410,19 +452,29 @@ export default function Dashboard() {
           </p>
         ) : (
           <div className="grid grid-cols-2 gap-2 p-4 sm:grid-cols-3 xl:grid-cols-6">
-            {tanks.map((tank) => {
-              const forecast = byTank.get(tank.id);
-              const level = forecast?.dataFresh ? forecast.currentLevel : null;
+            {views.map((view) => {
+              const { tank, level } = view;
               const height = Number(tank.dimensions.height);
               const pct =
                 level != null && height > 0
                   ? Math.max(0, Math.min(100, (level / height) * 100))
                   : null;
-              const high =
-                level != null &&
-                tank.maxLevelThreshold != null &&
-                level >= Number(tank.maxLevelThreshold);
-              const maintenance = tank.status === "maintenance";
+              const noReading = !view.readingFresh || level == null;
+              const status = view.criticalAlarmOpen
+                ? t("dashboard.tankCriticalAlarm")
+                : view.aboveOperationalLimit
+                  ? t("dashboard.tankAboveMax")
+                  : view.tankStatus === "maintenance"
+                    ? t("dashboard.tankMaintenance")
+                    : view.communicationFailed
+                      ? t("dashboard.tankCommunicationFailed")
+                      : level == null
+                        ? t("dashboard.tankNoReading")
+                        : !view.readingFresh
+                          ? t("dashboard.tankStaleReading")
+                          : view.critical
+                            ? t("dashboard.tankEtaRisk")
+                            : t("dashboard.tankRecent");
               return (
                 <button
                   type="button"
@@ -436,19 +488,15 @@ export default function Dashboard() {
                       {tank.code}
                     </span>
                     <span
-                      className={`h-1.5 w-1.5 rounded-full ${maintenance ? "bg-amber-400" : level == null ? "bg-slate-400" : high ? "bg-red-500" : "bg-teal-500"}`}
+                      className={`h-1.5 w-1.5 rounded-full ${MARKER_DOT[view.markerColor]}`}
                     />
                   </div>
                   <div className="relative mx-auto my-4 h-28 w-20 rounded-[10px] border-2 border-slate-300 bg-muted/30 dark:border-slate-600">
                     <div className="absolute -top-2 left-7 h-2 w-5 rounded-t border border-slate-400 bg-card" />
                     {pct != null && (
                       <div
-                        className={`absolute inset-x-1 bottom-1 rounded-b-md border-t-2 ${high ? "border-red-500 bg-red-500/15" : "border-teal-500 bg-teal-500/15"}`}
-                        style={{
-                          height: `${Math.min(94, pct)}%`,
-                          backgroundImage:
-                            "repeating-linear-gradient(135deg,transparent,transparent 4px,rgba(20,184,166,0.08) 4px,rgba(20,184,166,0.08) 5px)",
-                        }}
+                        className={`absolute inset-x-1 bottom-1 rounded-b-md border-t-2 ${view.readingFresh ? MARKER_FILL[view.markerColor] : MARKER_FILL.slate}`}
+                        style={{ height: `${Math.min(94, pct)}%` }}
                       />
                     )}
                     {tank.maxLevelThreshold != null && height > 0 && (
@@ -465,7 +513,9 @@ export default function Dashboard() {
                     <span className="absolute -bottom-2 left-2 h-1.5 w-1 bg-slate-400" />
                     <span className="absolute -bottom-2 right-2 h-1.5 w-1 bg-slate-400" />
                   </div>
-                  <p className="metric-value text-center text-lg font-semibold">
+                  <p
+                    className={`metric-value text-center text-lg font-semibold ${noReading ? "text-muted-foreground" : MARKER_TEXT[view.markerColor]}`}
+                  >
                     {level == null ? "—" : formatLevel(level)}
                   </p>
                   {level != null && (
@@ -474,15 +524,14 @@ export default function Dashboard() {
                     </p>
                   )}
                   <p
-                    className={`mt-1 text-center text-[10px] ${maintenance ? "text-amber-600 dark:text-amber-400" : "text-muted-foreground"}`}
+                    className={`mt-1 text-center text-[10px] ${MARKER_TEXT[view.markerColor]}`}
                   >
-                    {maintenance
-                      ? t("dashboard.tankMaintenance")
-                      : level == null
-                        ? t("dashboard.tankNoReading")
-                        : high
-                          ? t("dashboard.tankAboveMax")
-                          : t("dashboard.tankRecent")}
+                    {status}
+                  </p>
+                  <p className="mt-1 text-center font-mono text-[9px] text-muted-foreground tabular-nums">
+                    {view.readingTimestamp
+                      ? formatTimeOfDay(view.readingTimestamp)
+                      : "—"}
                   </p>
                 </button>
               );
@@ -491,7 +540,7 @@ export default function Dashboard() {
         )}
         <div className="flex flex-wrap items-center gap-4 border-t border-border px-5 py-3 text-[10px] text-muted-foreground">
           <span className="flex items-center gap-1.5">
-            <span className="h-1.5 w-1.5 rounded-full bg-teal-500" />
+            <span className="h-1.5 w-1.5 rounded-full bg-green-500" />
             {t("dashboard.legendRecent")}
           </span>
           <span className="flex items-center gap-1.5">
@@ -656,9 +705,9 @@ export default function Dashboard() {
             <div>
               <p className="eyebrow">{t("dashboard.lastReading")}</p>
               <p className="mt-1 text-xs">
-                {selectedForecast?.lastReadingAt
+                {selectedView?.readingTimestamp
                   ? formatElapsed(
-                      new Date(selectedForecast.lastReadingAt).getTime(),
+                      new Date(selectedView.readingTimestamp).getTime(),
                     )
                   : t("common.notAvailable")}
               </p>
@@ -734,18 +783,20 @@ export default function Dashboard() {
             </h2>
           </div>
           <p className="mt-2 text-xs leading-6 text-muted-foreground">
-            {atRisk.length
-              ? atRisk
-                  .map((f) =>
+            {etaRisk.length
+              ? etaRisk
+                  .map((view) =>
                     t("dashboard.windowAtRisk", {
-                      tank: f.tankCode,
-                      eta: formatHours(f.etaOverflowHours!),
+                      tank: view.tank.code,
+                      eta: formatHours(view.etaOverflowHours!),
                     }),
                   )
                   .join(" · ")
-              : forecasts.some((f) => f.dataFresh)
-                ? t("dashboard.windowNone")
-                : t("dashboard.windowWaiting")}
+              : forecastsUnavailable
+                ? t("dashboard.windowForecastsUnavailable")
+                : views.some((view) => view.forecastAvailable)
+                  ? t("dashboard.windowNone")
+                  : t("dashboard.windowWaiting")}
           </p>
           <p className="mt-2 text-[10px] leading-5 text-muted-foreground">
             {t("dashboard.windowDisclaimer")}

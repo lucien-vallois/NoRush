@@ -12,18 +12,14 @@ import {
 import { toFinite } from "../../utils/tankView.ts";
 import type { TankView } from "../../utils/tankView.ts";
 import LevelBar from "./LevelBar";
+import TankReadingSummary from "./TankReadingSummary";
 
-export { buildTankView, OVERFLOW_CRITICAL_H } from "../../utils/tankView.ts";
+export {
+  buildTankView,
+  sortTankViews,
+  OVERFLOW_CRITICAL_H,
+} from "../../utils/tankView.ts";
 export type { MarkerColor, TankView } from "../../utils/tankView.ts";
-
-/** Ordena por criticidade: risco de transbordo primeiro (menor ETA), depois por código */
-export function sortTankViews(a: TankView, b: TankView): number {
-  if (a.critical !== b.critical) return a.critical ? -1 : 1;
-  const ea = a.etaOverflowHours ?? Number.POSITIVE_INFINITY;
-  const eb = b.etaOverflowHours ?? Number.POSITIVE_INFINITY;
-  if (ea !== eb) return ea - eb;
-  return a.tank.code.localeCompare(b.tank.code);
-}
 
 const STATUS_STYLES: Record<string, string> = {
   active: "bg-green-100 text-green-700 dark:bg-green-950 dark:text-green-400",
@@ -90,6 +86,13 @@ interface TankCardProps {
 const TankCard: React.FC<TankCardProps> = ({ view, selected, onSelect }) => {
   const { t } = useTranslation();
   const { tank, forecast, level, etaOverflowHours, critical } = view;
+  const levelColor = view.criticalAlarmOpen
+    ? "text-red-600 dark:text-red-400"
+    : critical
+      ? "text-amber-600 dark:text-amber-400"
+      : view.readingFresh
+        ? "text-foreground"
+        : "text-slate-500 dark:text-slate-400";
   const height = toFinite(tank?.dimensions?.height);
   const pctOfHeight =
     level != null && height ? Math.round((level / height) * 100) : null;
@@ -111,7 +114,7 @@ const TankCard: React.FC<TankCardProps> = ({ view, selected, onSelect }) => {
         <div className="min-w-0">
           <div className="flex items-center gap-2">
             <h3 className="font-bold text-foreground">{tank.code}</h3>
-            <StatusBadge status={tank.status} />
+            <StatusBadge status={view.tankStatus} />
           </div>
           <p className="truncate text-xs text-muted-foreground">{tank.name}</p>
         </div>
@@ -125,30 +128,19 @@ const TankCard: React.FC<TankCardProps> = ({ view, selected, onSelect }) => {
         )}
       </div>
 
-      {/* Nível atual */}
+      {/* Nível atual ou última leitura conhecida */}
       <div className="mt-3 space-y-1.5">
         <div className="flex items-baseline justify-between">
           <span className="text-[11px] uppercase tracking-wide text-muted-foreground">
-            {t("tankCard.currentLevel")}
+            {view.readingFresh
+              ? t("tankCard.currentLevel")
+              : t("tankCard.lastLevel")}
           </span>
-          <span
-            className={`text-sm font-bold tabular-nums ${
-              critical ? "text-red-600 dark:text-red-400" : "text-foreground"
-            }`}
-          >
+          <span className={`text-sm font-bold tabular-nums ${levelColor}`}>
             {formatMeters(level)}
           </span>
         </div>
-        <LevelBar
-          level={level}
-          height={height ?? undefined}
-          thresholds={{
-            min: tank.minLevelThreshold,
-            low: tank.lowLevelThreshold,
-            max: tank.maxLevelThreshold,
-            overflow: tank.overflowThreshold,
-          }}
-        />
+        <LevelBar view={view} />
         <p className="text-[11px] text-muted-foreground tabular-nums">
           {pctOfHeight != null
             ? t("tankCard.pctOfHeight", {
@@ -157,6 +149,7 @@ const TankCard: React.FC<TankCardProps> = ({ view, selected, onSelect }) => {
               })
             : t("tankCard.noRecentReading")}
         </p>
+        <TankReadingSummary view={view} />
       </div>
 
       {/* Ritmo e ETA */}
@@ -180,7 +173,7 @@ const TankCard: React.FC<TankCardProps> = ({ view, selected, onSelect }) => {
           <p
             className={`text-sm font-semibold tabular-nums ${
               critical
-                ? "text-red-600 dark:text-red-400"
+                ? "text-amber-600 dark:text-amber-400"
                 : etaFallback != null
                   ? "text-amber-600 dark:text-amber-400"
                   : "text-foreground"

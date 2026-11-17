@@ -25,6 +25,7 @@ import {
 } from "../../utils/units.ts";
 import LoadingSpinner from "../common/LoadingSpinner";
 import LevelBar from "./LevelBar";
+import TankReadingSummary from "./TankReadingSummary";
 import {
   StatusBadge,
   TankView,
@@ -108,6 +109,7 @@ const TankDetailDrawer: React.FC<TankDetailDrawerProps> = ({
   const [reloadNonce, setReloadNonce] = useState(0);
 
   const tankId = view?.tank.id;
+  const sensorId = view?.sensorId;
   const dialogRef = useRef<HTMLDialogElement>(null);
 
   useEffect(() => {
@@ -116,9 +118,14 @@ const TankDetailDrawer: React.FC<TankDetailDrawerProps> = ({
     return () => dialog?.close();
   }, [tankId]);
 
-  // Carrega série de nível das últimas 24h (bucket 1h) quando o tanque muda
+  // O histórico pertence ao sensor operacional, mesmo quando não há previsão.
   useEffect(() => {
-    if (!tankId) return;
+    if (!tankId || !sensorId) {
+      setPoints([]);
+      setChartLoading(false);
+      setChartError(false);
+      return;
+    }
     let cancelled = false;
 
     const load = async () => {
@@ -129,6 +136,7 @@ const TankDetailDrawer: React.FC<TankDetailDrawerProps> = ({
         const to = new Date().toISOString();
         const res = await apiService.getTimeseries({
           tankId,
+          sensorId,
           bucket: "1h",
           from,
           to,
@@ -147,7 +155,7 @@ const TankDetailDrawer: React.FC<TankDetailDrawerProps> = ({
     return () => {
       cancelled = true;
     };
-  }, [tankId, reloadNonce]);
+  }, [tankId, sensorId, reloadNonce]);
 
   if (!view) return null;
 
@@ -202,7 +210,7 @@ const TankDetailDrawer: React.FC<TankDetailDrawerProps> = ({
                 >
                   {tank.code}
                 </h3>
-                <StatusBadge status={tank.status} />
+                <StatusBadge status={view.tankStatus} />
               </div>
               <p className="mt-0.5 text-sm text-muted-foreground">
                 {tank.name}
@@ -231,15 +239,19 @@ const TankDetailDrawer: React.FC<TankDetailDrawerProps> = ({
           </div>
 
           <div className="space-y-6 px-5 py-5">
-            {/* Nível atual */}
+            {/* Nível atual ou última leitura conhecida */}
             <Section title={t("tankDetail.sectionCurrent")}>
               <div className="rounded-lg border border-border p-3">
                 <div className="flex items-baseline justify-between">
                   <span
                     className={`text-2xl font-bold tabular-nums ${
-                      critical
+                      view.criticalAlarmOpen
                         ? "text-red-600 dark:text-red-400"
-                        : "text-foreground"
+                        : critical
+                          ? "text-amber-600 dark:text-amber-400"
+                          : view.readingFresh
+                            ? "text-foreground"
+                            : "text-slate-500 dark:text-slate-400"
                     }`}
                   >
                     {formatMeters(level)}
@@ -247,22 +259,16 @@ const TankDetailDrawer: React.FC<TankDetailDrawerProps> = ({
                   <TrendBadge trend={forecast?.trend} />
                 </div>
                 <div className="mt-2">
-                  <LevelBar
-                    level={level}
-                    height={hasHeight ? height : undefined}
-                    thresholds={{
-                      min: tank.minLevelThreshold,
-                      low: tank.lowLevelThreshold,
-                      max: tank.maxLevelThreshold,
-                      overflow: tank.overflowThreshold,
-                    }}
-                  />
+                  <LevelBar view={view} />
+                </div>
+                <div className="mt-3">
+                  <TankReadingSummary view={view} />
                 </div>
                 {etaOverflowHours != null && (
                   <p
                     className={`mt-2 text-sm font-bold ${
                       critical
-                        ? "text-red-600 dark:text-red-400"
+                        ? "text-amber-600 dark:text-amber-400"
                         : "text-foreground"
                     }`}
                   >
