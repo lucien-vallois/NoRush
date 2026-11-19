@@ -20,6 +20,7 @@ import TankMap, { MapFocus } from "../components/tanks/TankMap";
 import TankDetailDrawer from "../components/tanks/TankDetailDrawer";
 import TankFormDialog from "../components/tanks/TankFormDialog";
 import { useAuth } from "../contexts/AuthContext";
+import { useDemoReadOnly } from "../hooks/useDemoReadOnly";
 
 const REFRESH_INTERVAL_MS = 60_000;
 
@@ -34,7 +35,8 @@ const Tanks: React.FC = () => {
   const [focus, setFocus] = useState<MapFocus | null>(null);
   const focusNonce = useRef(0);
   const { hasRole } = useAuth();
-  const canEdit = hasRole("maintenance"); // admin ou manutenção
+  const demoReadOnly = useDemoReadOnly();
+  const canEdit = !demoReadOnly && hasRole("maintenance"); // admin ou manutenção
   const [form, setForm] = useState<{ open: boolean; tank: Tank | null }>({
     open: false,
     tank: null,
@@ -331,7 +333,7 @@ const Tanks: React.FC = () => {
 
       {/* Cadastro / edição */}
       <TankFormDialog
-        open={form.open}
+        open={form.open && !demoReadOnly}
         tank={form.tank}
         onClose={() => setForm({ open: false, tank: null })}
         onSaved={(saved) => {

@@ -22,6 +22,7 @@ import SensorKpiCards from "../components/sensors/SensorKpiCards";
 import SensorsTable, { SensorRowView } from "../components/sensors/SensorsTable";
 import GaugeFormDialog from "../components/sensors/GaugeFormDialog";
 import { useAuth } from "../contexts/AuthContext";
+import { useDemoReadOnly } from "../hooks/useDemoReadOnly";
 
 /** Janela para considerar o sensor online (última transmissão) */
 const ONLINE_WINDOW_MS = 5 * 60 * 1000;
@@ -63,8 +64,9 @@ const Sensors: React.FC = () => {
   // Cadastro/edição de hastes: admin cadastra e gerencia credenciais;
   // manutenção edita o cadastro
   const { user, hasRole } = useAuth();
-  const isAdmin = user?.role === "admin";
-  const canEdit = hasRole("maintenance");
+  const demoReadOnly = useDemoReadOnly();
+  const isAdmin = user?.role === "admin" && !demoReadOnly;
+  const canEdit = !demoReadOnly && hasRole("maintenance");
   const [allTanks, setAllTanks] = useState<Tank[]>([]);
   const [authMode, setAuthMode] = useState<"shared" | "device" | "hybrid" | null>(null);
   const [gaugeForm, setGaugeForm] = useState<{ open: boolean; sensor: Sensor | null }>({
@@ -230,7 +232,7 @@ const Sensors: React.FC = () => {
     );
   }
 
-  if (error) {
+  if (error && loadedAt === null) {
     return (
       <div className="text-center py-12">
         <AlertTriangle className="h-12 w-12 text-destructive mx-auto mb-4" />
@@ -272,6 +274,15 @@ const Sensors: React.FC = () => {
           </button>
         </div>
       </div>
+
+      {error && (
+        <p
+          role="alert"
+          className="rounded-lg border border-destructive/20 bg-destructive/5 p-3 text-xs text-destructive"
+        >
+          {t("sensors.errorMsg")} {t("common.staleData")}
+        </p>
+      )}
 
       {/* Faixa AO VIVO */}
       <div className="card px-4 py-3">
@@ -437,7 +448,7 @@ const Sensors: React.FC = () => {
       )}
 
       <GaugeFormDialog
-        open={gaugeForm.open}
+        open={gaugeForm.open && !demoReadOnly}
         sensor={gaugeForm.sensor}
         tanks={allTanks}
         canManageCredentials={isAdmin}
