@@ -16,15 +16,39 @@ describe('AlertsService.createAutomaticAlert', () => {
     findOne: jest.fn(async () => ({ id: 'tank-1', name: 'FK-01' })),
   };
   const sensors = { findOne: jest.fn(async () => ({ id: 'sensor-1' })) };
+  const manager = {
+    query: jest.fn(),
+    getRepository: jest.fn((entity: { name: string }) =>
+      ({ Alert: alerts, Tank: tanks, Sensor: sensors })[entity.name],
+    ),
+  };
+  let transactionQueue = Promise.resolve();
+  const dataSource = {
+    transaction: jest.fn(async (work: (manager: unknown) => unknown) => {
+      const previous = transactionQueue;
+      let release: () => void;
+      transactionQueue = new Promise<void>((resolve) => {
+        release = resolve;
+      });
+      await previous;
+      try {
+        return await work(manager);
+      } finally {
+        release!();
+      }
+    }),
+  };
   let service: AlertsService;
 
   beforeEach(() => {
     jest.clearAllMocks();
+    transactionQueue = Promise.resolve();
     service = new AlertsService(
       alerts as never,
       tanks as never,
       sensors as never,
       {} as never,
+      dataSource as never,
     );
   });
 
@@ -97,6 +121,24 @@ describe('AlertsService.createAutomaticAlert', () => {
       60 * 60 * 1000,
     );
 
+  it('serializes concurrent trips of the same condition', async () => {
+    let created: { id: string; status: AlertStatus } | null = null;
+    alerts.findOne.mockImplementation(async () => created);
+    alerts.save.mockImplementationOnce(async (value: object) => {
+      created = { id: 'new-alert', ...value };
+      return created;
+    });
+
+    await Promise.all([trip(), trip()]);
+
+    expect(alerts.save).toHaveBeenCalledTimes(1);
+    expect(manager.query).toHaveBeenCalledTimes(2);
+    expect(manager.query).toHaveBeenCalledWith(
+      'SELECT pg_advisory_xact_lock(hashtext($1))',
+      [JSON.stringify([AlertType.HIGH_LEVEL, AlertSeverity.MEDIUM, 'tank-1', 'sensor-1'])],
+    );
+  });
+
   it('opens only one incident for a persistent predictive condition', async () => {
     alerts.findOne
       .mockResolvedValueOnce(null)
@@ -121,6 +163,7 @@ describe('AlertsService.createAutomaticAlert', () => {
       tanks as never,
       sensors as never,
       {} as never,
+      dataSource as never,
     );
 
     await expect(predictiveTrip(restarted)).resolves.toBe(recent);

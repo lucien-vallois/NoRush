@@ -5,7 +5,14 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { In, IsNull, Repository, SelectQueryBuilder } from 'typeorm';
+import {
+  DataSource,
+  EntityManager,
+  In,
+  IsNull,
+  Repository,
+  SelectQueryBuilder,
+} from 'typeorm';
 import {
   Alert,
   AlertStatus,
@@ -31,20 +38,27 @@ export class AlertsService {
     private sensorRepository: Repository<Sensor>,
     @InjectRepository(User)
     private userRepository: Repository<User>,
+    private dataSource: DataSource,
   ) {}
 
-  async create(createAlertDto: CreateAlertDto): Promise<Alert> {
+  async create(
+    createAlertDto: CreateAlertDto,
+    manager?: EntityManager,
+  ): Promise<Alert> {
     const { tankId, sensorId } = createAlertDto;
+    const alertRepository =
+      manager?.getRepository(Alert) ?? this.alertRepository;
+    const tankRepository = manager?.getRepository(Tank) ?? this.tankRepository;
+    const sensorRepository =
+      manager?.getRepository(Sensor) ?? this.sensorRepository;
 
-    // Verificar se o tanque existe
-    const tank = await this.tankRepository.findOne({ where: { id: tankId } });
+    const tank = await tankRepository.findOne({ where: { id: tankId } });
     if (!tank) {
       throw new NotFoundException({ code: 'tankNotFound', id: tankId });
     }
 
-    // Verificar se o sensor existe (se fornecido)
     if (sensorId) {
-      const sensor = await this.sensorRepository.findOne({
+      const sensor = await sensorRepository.findOne({
         where: { id: sensorId },
       });
       if (!sensor) {
@@ -52,12 +66,12 @@ export class AlertsService {
       }
     }
 
-    const alert = this.alertRepository.create({
+    const alert = alertRepository.create({
       ...createAlertDto,
       status: AlertStatus.ACTIVE,
     });
 
-    const savedAlert = await this.alertRepository.save(alert);
+    const savedAlert = await alertRepository.save(alert);
 
     this.logger.log(
       `Novo alerta criado: ${savedAlert.type} - ${savedAlert.title} (Tanque: ${tank.name})`,
@@ -335,60 +349,63 @@ export class AlertsService {
     metadata?: Record<string, any>,
     cooldownMs?: number,
   ): Promise<Alert> {
-    // One open alert per condition: while the same alarm is still active or
-    // acknowledged on this tank/gauge, a repeat trip is not a new incident.
-    // Without this, a level that stays past its limit (or a gauge that stays
-    // offline) opens a fresh alert every cooldown and floods the alert center.
-    const open = await this.alertRepository.findOne({
-      where: {
-        type,
-        severity,
-        tankId,
-        sensorId: sensorId ?? IsNull(),
-        status: In([AlertStatus.ACTIVE, AlertStatus.ACKNOWLEDGED]),
-      },
-      order: { createdAt: 'DESC' },
-    });
-    if (open) return open;
+    const lockKey = JSON.stringify([type, severity, tankId, sensorId ?? null]);
+    return this.dataSource.transaction(async (manager) => {
+      await manager.query('SELECT pg_advisory_xact_lock(hashtext($1))', [
+        lockKey,
+      ]);
+      const alertRepository = manager.getRepository(Alert);
 
-    if (cooldownMs != null && cooldownMs > 0) {
-      const latest = await this.alertRepository.findOne({
+      // A consulta e a criação ficam sob o mesmo lock entre réplicas.
+      const open = await alertRepository.findOne({
         where: {
           type,
           severity,
           tankId,
           sensorId: sensorId ?? IsNull(),
+          status: In([AlertStatus.ACTIVE, AlertStatus.ACKNOWLEDGED]),
         },
         order: { createdAt: 'DESC' },
       });
-      const age = latest?.createdAt
-        ? Date.now() - new Date(latest.createdAt).getTime()
-        : Infinity;
-      if (latest && age < cooldownMs) return latest;
-    }
+      if (open) return open;
 
-    // Gerar título e mensagem baseada no tipo
-    const alertInfo = this.generateAlertInfo(
-      type,
-      tankId,
-      currentLevel,
-      thresholdValue,
-    );
+      if (cooldownMs != null && cooldownMs > 0) {
+        const latest = await alertRepository.findOne({
+          where: {
+            type,
+            severity,
+            tankId,
+            sensorId: sensorId ?? IsNull(),
+          },
+          order: { createdAt: 'DESC' },
+        });
+        const age = latest?.createdAt
+          ? Date.now() - new Date(latest.createdAt).getTime()
+          : Infinity;
+        if (latest && age < cooldownMs) return latest;
+      }
 
-    const alertDto: CreateAlertDto = {
-      type,
-      severity,
-      title: alertInfo.title,
-      message: alertInfo.message,
-      tankId,
-      sensorId,
-      currentLevel,
-      currentVolume,
-      thresholdValue,
-      metadata,
-    };
+      const alertInfo = this.generateAlertInfo(
+        type,
+        tankId,
+        currentLevel,
+        thresholdValue,
+      );
+      const alertDto: CreateAlertDto = {
+        type,
+        severity,
+        title: alertInfo.title,
+        message: alertInfo.message,
+        tankId,
+        sensorId,
+        currentLevel,
+        currentVolume,
+        thresholdValue,
+        metadata,
+      };
 
-    return this.create(alertDto);
+      return this.create(alertDto, manager);
+    });
   }
 
   async bulkAcknowledge(
