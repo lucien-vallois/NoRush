@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { randomUUID } from "node:crypto";
 import { setTimeout as delay } from "node:timers/promises";
 import { io } from "socket.io-client";
 
@@ -187,18 +188,28 @@ try {
     socket = await socketConnection(token);
   });
   await check(
-    "HTTP telemetry is persisted and delivered over authenticated WebSocket",
+    "HTTP telemetry is idempotent and delivered once over authenticated WebSocket",
     async () => {
+      const payload = {
+        sensorId: sensor.sensorId,
+        messageId: randomUUID(),
+        level: 1.25,
+        timestamp: new Date().toISOString(),
+        authToken: process.env.IOT_INGEST_KEY,
+        metadata: { rawData: { source: "norush-smoke", simulated: true } },
+      };
+      const isTestReading = (message) =>
+        message.payload?.sensorId === payload.sensorId &&
+        message.payload?.level === payload.level &&
+        new Date(message.payload?.timestamp).getTime() ===
+          new Date(payload.timestamp).getTime();
       const event = new Promise((resolve, reject) => {
         const timer = setTimeout(
           () => reject(new Error("No matching reading event")),
           8000,
         );
         const listener = (message) => {
-          if (
-            message.payload?.sensorId === sensor.sensorId &&
-            message.payload?.level === 1.25
-          ) {
+          if (isTestReading(message)) {
             clearTimeout(timer);
             socket.off("reading", listener);
             resolve(message.payload);
@@ -206,23 +217,45 @@ try {
         };
         socket.on("reading", listener);
       });
-      const result = await request("/iot/sensors/data", {
-        body: {
-          sensorId: sensor.sensorId,
-          level: 1.25,
-          timestamp: new Date().toISOString(),
-          authToken: process.env.IOT_INGEST_KEY,
-          metadata: { rawData: { source: "norush-smoke", simulated: true } },
-        },
-      });
+      const result = await request("/iot/sensors/data", { body: payload });
       assert.equal(result.processed, true, result.errors?.join(", "));
-      assert.equal((await event).level, 1.25);
+      assert.equal((await event).level, payload.level);
       const rows = await request(
-        `/readings/sensor/${sensor.id}/latest?limit=1`,
+        `/readings/sensor/${sensor.id}/latest?limit=100`,
         { token },
       );
-      assert.equal(Number(rows[0].level), 1.25);
-      assert(Number(rows[0].volume) > 0);
+      const stored = rows.filter((row) => row.messageId === payload.messageId);
+      assert.equal(stored.length, 1);
+      assert.equal(Number(stored[0].level), payload.level);
+      assert(Number(stored[0].volume) > 0);
+
+      let duplicateEvents = 0;
+      const duplicateListener = (message) => {
+        if (isTestReading(message)) duplicateEvents++;
+      };
+      socket.on("reading", duplicateListener);
+      try {
+        const duplicate = await request("/iot/sensors/data", { body: payload });
+        assert.equal(
+          duplicate.processed,
+          true,
+          duplicate.errors?.join(", "),
+        );
+        assert.equal(duplicate.alert, undefined);
+        await delay(300);
+      } finally {
+        socket.off("reading", duplicateListener);
+      }
+      assert.equal(duplicateEvents, 0);
+      const afterRetry = await request(
+        `/readings/sensor/${sensor.id}/latest?limit=100`,
+        { token },
+      );
+      const duplicates = afterRetry.filter(
+        (row) => row.messageId === payload.messageId,
+      );
+      assert.equal(duplicates.length, 1);
+      assert.equal(duplicates[0].id, stored[0].id);
 
       const fleetState = await request("/tanks/state", { token });
       assert.equal(typeof fleetState.generatedAt, "string");
