@@ -26,6 +26,7 @@ interface ProcessedMessage {
   sensor: Sensor | null;
   reading: Partial<Reading> | null;
   isValid: boolean;
+  retryable: boolean;
   validationErrors: string[];
   requiresAlert: boolean;
   alertReason?: string;
@@ -183,6 +184,7 @@ export class MessageProcessorService {
         sensor,
         reading,
         isValid: validationErrors.length === 0,
+        retryable: false,
         validationErrors,
         requiresAlert: alertCheck.requiresAlert,
         alertReason: alertCheck.reason,
@@ -192,8 +194,10 @@ export class MessageProcessorService {
         `Erro ao processar mensagem do sensor ${message.sensorId}:`,
         error,
       );
-      validationErrors.push(`Erro interno: ${error.message}`);
-      return this.createErrorResult(message, validationErrors);
+      return {
+        ...this.createErrorResult(message, ['Temporary processing failure']),
+        retryable: true,
+      };
     }
   }
 
@@ -243,21 +247,14 @@ export class MessageProcessorService {
   private async findAndValidateSensor(
     sensorId: string,
   ): Promise<Sensor | null> {
-    try {
-      // credentialHash fica fora do SELECT padrão; autenticação por
-      // dispositivo precisa dele explicitamente.
-      const sensor = await this.sensorRepository
-        .createQueryBuilder('sensor')
-        .addSelect('sensor.credentialHash')
-        .leftJoinAndSelect('sensor.tank', 'tank')
-        .where('sensor.sensorId = :sensorId', { sensorId })
-        .getOne();
-
-      return sensor;
-    } catch (error) {
-      this.logger.error(`Erro ao buscar sensor ${sensorId}:`, error);
-      return null;
-    }
+    // credentialHash fica fora do SELECT padrão; autenticação por
+    // dispositivo precisa dele explicitamente.
+    return this.sensorRepository
+      .createQueryBuilder('sensor')
+      .addSelect('sensor.credentialHash')
+      .leftJoinAndSelect('sensor.tank', 'tank')
+      .where('sensor.sensorId = :sensorId', { sensorId })
+      .getOne();
   }
 
   private validateSensorData(
@@ -563,6 +560,7 @@ export class MessageProcessorService {
       sensor: null,
       reading: null,
       isValid: false,
+      retryable: false,
       validationErrors: errors,
       requiresAlert: false,
     };

@@ -23,6 +23,7 @@ describe('Telemetry ingestion boundaries', () => {
   const alertProcessor = { processReadingForAlerts: jest.fn() };
   let service: MessageProcessorService;
   let sensor: any;
+  let lookupError: Error | null = null;
 
   const makeRepo = () => ({
     findOne: sensors.findOne,
@@ -31,7 +32,9 @@ describe('Telemetry ingestion boundaries', () => {
       addSelect: jest.fn().mockReturnThis(),
       leftJoinAndSelect: jest.fn().mockReturnThis(),
       where: jest.fn().mockReturnThis(),
-      getOne: jest.fn().mockResolvedValue(sensor),
+      getOne: jest.fn(() =>
+        lookupError ? Promise.reject(lookupError) : Promise.resolve(sensor),
+      ),
     }),
   });
 
@@ -52,6 +55,7 @@ describe('Telemetry ingestion boundaries', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
+    lookupError = null;
     sensor = {
       id: 'sensor-1',
       sensorId: 'SENSOR-001',
@@ -78,6 +82,23 @@ describe('Telemetry ingestion boundaries', () => {
     expect(queue.emit).not.toHaveBeenCalled();
     expect(emitter.emitReading).not.toHaveBeenCalled();
   };
+
+  it('classifies a database lookup failure as retryable without exposing it', async () => {
+    lookupError = new Error('database connection reset');
+
+    const result = await service.processSensorMessage({
+      sensorId: 'SENSOR-001',
+      level: 1,
+    });
+
+    expect(result).toMatchObject({
+      isValid: false,
+      retryable: true,
+      validationErrors: ['Temporary processing failure'],
+    });
+    expect(JSON.stringify(result)).not.toContain('database connection reset');
+    assertNoSideEffects();
+  });
 
   it.each([-1, NaN, Infinity, '1.5', undefined])(
     'rejects invalid levels without writing or broadcasting: %s',

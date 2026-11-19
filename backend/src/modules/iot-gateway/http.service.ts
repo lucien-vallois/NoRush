@@ -3,6 +3,7 @@ import {
   Logger,
   BadRequestException,
   NotFoundException,
+  ServiceUnavailableException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -32,6 +33,12 @@ export class HttpService {
     const result =
       await this.messageProcessor.processSensorMessage(sensorMessage);
     if (result.isValid) this.acceptedRequests++;
+    if (result.retryable) {
+      throw new ServiceUnavailableException({
+        code: 'ingestionUnavailable',
+        message: 'Telemetry processing is temporarily unavailable',
+      });
+    }
 
     if (!result.isValid) {
       this.logger.warn(
