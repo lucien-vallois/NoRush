@@ -1,8 +1,9 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Activity, TrendingUp, TrendingDown, Droplets, Layers } from 'lucide-react';
 import { currentLocale } from '../../i18n';
-import { fmtNum } from './TimeseriesChart';
+import { subscribeUnitSystem } from '../../i18n/units.ts';
+import { levelValue, unitSuffixes, volumeValue } from '../../utils/units.ts';
 
 export interface PeriodStats {
   avgLevel: number;
@@ -41,6 +42,9 @@ const StatCard: React.FC<{
 
 const StatsStrip: React.FC<StatsStripProps> = ({ stats, loading }) => {
   const { t } = useTranslation();
+  const [, setUnitsTick] = useState(0);
+  useEffect(() => subscribeUnitSystem(() => setUnitsTick((tick) => tick + 1)), []);
+  const units = unitSuffixes();
 
   if (loading) {
     return (
@@ -61,10 +65,10 @@ const StatsStrip: React.FC<StatsStripProps> = ({ stats, loading }) => {
 
   return (
     <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
-      <StatCard label={t('readings.statAvgLevel')} value={fmtNum(stats.avgLevel)} unit="m" icon={Activity} />
-      <StatCard label={t('readings.statMaxLevel')} value={fmtNum(stats.maxLevel)} unit="m" icon={TrendingUp} />
-      <StatCard label={t('readings.statMinLevel')} value={fmtNum(stats.minLevel)} unit="m" icon={TrendingDown} />
-      <StatCard label={t('readings.statAvgVolume')} value={fmtNum(stats.avgVolume, 0)} unit="L" icon={Droplets} />
+      <StatCard label={t('readings.statAvgLevel')} value={levelValue(stats.avgLevel)} unit={units.level} icon={Activity} />
+      <StatCard label={t('readings.statMaxLevel')} value={levelValue(stats.maxLevel)} unit={units.level} icon={TrendingUp} />
+      <StatCard label={t('readings.statMinLevel')} value={levelValue(stats.minLevel)} unit={units.level} icon={TrendingDown} />
+      <StatCard label={t('readings.statAvgVolume')} value={volumeValue(stats.avgVolume)} unit={units.volume} icon={Droplets} />
       <StatCard
         label={t('readings.statSamples')}
         value={stats.samples.toLocaleString(currentLocale())}

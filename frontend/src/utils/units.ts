@@ -73,6 +73,15 @@ export function formatVolumeL(
   return `${l} L (~${m3} m³)`;
 }
 
+/** Só o número do volume em L convertido para a unidade ativa. */
+export function volumeValue(liters: number | null | undefined): string {
+  if (liters == null || !Number.isFinite(Number(liters))) return "—";
+  const value = Number(liters);
+  return imperial()
+    ? localeFmt(value / L_PER_BBL, 0, 1)
+    : localeFmt(value, 0, 0);
+}
+
 /** Capacidade/total em m³ vindo da API: imperial → bbl. */
 export function formatCapacityM3(
   m3: number | null | undefined,

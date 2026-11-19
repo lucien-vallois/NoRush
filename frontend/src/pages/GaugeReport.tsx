@@ -1,10 +1,11 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { ChevronLeft, ChevronRight, Download, Printer, RefreshCw } from "lucide-react";
 import { apiService } from "../services/api";
 import { currentLocale } from "../i18n";
 import { subscribeUnitSystem } from "../i18n/units.ts";
 import { formatGauge, reportUnits, reportVolume } from "../utils/units.ts";
+import { isLatestRequest } from "../utils/request.ts";
 import { apiErrorMessage } from "../utils/apiError";
 import LoadingSpinner from "../components/common/LoadingSpinner";
 import type { GaugeReport as Report, GaugeReportPeriod, GaugeReportTank } from "../types";
@@ -49,21 +50,29 @@ export default function GaugeReport() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [downloading, setDownloading] = useState(false);
+  const requestId = useRef(0);
   const tz = useMemo(browserTimeZone, []);
 
   useEffect(() => subscribeUnitSystem(() => setUnitsTick((n) => n + 1)), []);
+  useEffect(() => () => {
+    requestId.current += 1;
+  }, []);
 
   const load = useCallback(async () => {
+    const current = ++requestId.current;
     setLoading(true);
     setError(null);
     try {
       const data = await apiService.getGaugeReport({ period, date, startHour, tz });
+      if (!isLatestRequest(current, requestId.current)) return;
       setReport(data);
       if (!date) setDate(data.period.date);
     } catch (err) {
-      setError(apiErrorMessage(err, t("gaugeReport.error")));
+      if (isLatestRequest(current, requestId.current)) {
+        setError(apiErrorMessage(err, t("gaugeReport.error")));
+      }
     } finally {
-      setLoading(false);
+      if (isLatestRequest(current, requestId.current)) setLoading(false);
     }
   }, [period, date, startHour, tz, t]);
 

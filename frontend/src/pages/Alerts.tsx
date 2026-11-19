@@ -18,6 +18,9 @@ import { Alert, AlertSeverity, AlertStatus } from "../types";
 import { currentLocale } from "../i18n";
 import { formatLevel } from "../utils/units.ts";
 import LoadingSpinner from "../components/common/LoadingSpinner";
+import { useWebSocketEvent } from "../hooks/useWebSocketEvent";
+
+const REFRESH_INTERVAL_MS = 30_000;
 
 const STATUS_KEYS: Record<AlertStatus, string> = {
   active: "alertStatus.active",
@@ -190,7 +193,12 @@ export default function Alerts() {
   }, [page, status, severity, query]);
   useEffect(() => {
     void load();
+    const timer = setInterval(() => void load(), REFRESH_INTERVAL_MS);
+    return () => clearInterval(timer);
   }, [load]);
+  useWebSocketEvent("alert", () => {
+    void load();
+  });
 
   // Mensagens de alerta vêm traduzidas do backend (Accept-Language) e na
   // unidade ativa (units): troca de idioma ou de unidades → refaz a consulta

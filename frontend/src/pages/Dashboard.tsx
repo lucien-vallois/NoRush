@@ -547,7 +547,9 @@ export default function Dashboard() {
             <span className="w-4 border-t border-dashed border-amber-500" />
             {t("dashboard.legendMax")}
           </span>
-          <span className="ml-auto">{t("dashboard.legendAxis")}</span>
+          <span className="ml-auto">
+            {t("dashboard.legendAxis", { unit: unitSuffixes().level })}
+          </span>
         </div>
       </section>
       <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_320px]">
@@ -643,7 +645,7 @@ export default function Dashboard() {
                       fontSize: 10,
                       fill: "hsl(var(--muted-foreground))",
                     }}
-                    tickFormatter={(value) => `${value}m`}
+                    tickFormatter={(value: number) => formatLevel(value)}
                     axisLine={false}
                     tickLine={false}
                   />

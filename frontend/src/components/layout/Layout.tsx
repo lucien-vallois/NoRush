@@ -1,18 +1,30 @@
-import React, { Suspense, useEffect, useState } from "react";
+import React, { Suspense, useEffect, useRef, useState } from "react";
 import { Outlet } from "react-router";
 import { useTranslation } from "react-i18next";
 import { Eye } from "lucide-react";
 import { useAuth } from "../../contexts/AuthContext";
 import { apiService } from "../../services/api";
+import { useWebSocketEvent } from "../../hooks/useWebSocketEvent";
+import { AlertEventPayload, LiveAlert } from "../../types";
 import Sidebar from "./Sidebar";
 import Header from "./Header";
 import LoadingSpinner from "../common/LoadingSpinner";
+import AlertToasts from "../dashboard/AlertToasts";
 
 const Layout: React.FC = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [demoReadOnly, setDemoReadOnly] = useState(false);
+  const [liveAlerts, setLiveAlerts] = useState<LiveAlert[]>([]);
+  const nextAlertId = useRef(0);
   const { user } = useAuth();
   const { t } = useTranslation();
+
+  useWebSocketEvent<AlertEventPayload>("alert", (payload) => {
+    const id = ++nextAlertId.current;
+    setLiveAlerts((previous) =>
+      [...previous, { ...payload, id, receivedAtMs: Date.now() }].slice(-20),
+    );
+  });
 
   useEffect(() => {
     let active = true;
@@ -69,11 +81,12 @@ const Layout: React.FC = () => {
                 </div>
               }
             >
-              <Outlet />
+              <Outlet context={{ demoReadOnly }} />
             </Suspense>
           </div>
         </main>
       </div>
+      <AlertToasts alerts={liveAlerts} />
     </div>
   );
 };

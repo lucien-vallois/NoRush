@@ -33,6 +33,18 @@ export function toFinite(value: unknown): number | null {
   return value != null && isFinite(numeric) ? numeric : null;
 }
 
+export function tankChartYMax(tank: Tank, maxLevelPoint: number): number {
+  const height = toFinite(tank.dimensions?.height);
+  const overflow = toFinite(tank.overflowThreshold);
+  const maxLevel = toFinite(tank.maxLevelThreshold);
+  return Math.max(
+    height != null && height > 0 ? height : 0,
+    overflow ?? 0,
+    maxLevel ?? 0,
+    Number.isFinite(maxLevelPoint) ? maxLevelPoint * 1.1 : 0,
+  );
+}
+
 export function buildTankView(
   tank: Tank,
   state?: TankOperationalState,

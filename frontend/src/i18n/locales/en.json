@@ -126,7 +126,7 @@
     "tankRecent": "Fresh telemetry",
     "legendRecent": "Recent reading",
     "legendMax": "Configured maximum limit",
-    "legendAxis": "Level in meters / occupancy relative to height",
+    "legendAxis": "Level in {{unit}} / occupancy relative to height",
     "chartTitle": "Level trend",
     "chartSub": "Last 24 hours · 5-minute bucket average",
     "chartLink": "Investigate history",

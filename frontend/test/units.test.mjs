@@ -13,7 +13,17 @@ const {
   formatRateMH,
   formatRateM3H,
   formatDimension,
+  volumeValue,
 } = await import("../src/utils/units.ts");
+
+test("stats de volume convertem L para bbl sem fixar a unidade", () => {
+  setUnitSystem("imperial");
+  assert.ok(volumeValue(158.9873 * 2).startsWith("2"));
+  setUnitSystem("metric");
+  assert.ok(["1,590", "1.590"].includes(volumeValue(1589.873)));
+  assert.equal(volumeValue(null), "—");
+  setUnitSystem("imperial");
+});
 
 test("padrao e imperial (mercado US)", () => {
   assert.equal(getUnitSystem(), "imperial");

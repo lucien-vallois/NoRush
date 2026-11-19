@@ -1,6 +1,11 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { buildTankView, sortTankViews } from "../src/utils/tankView.ts";
+import {
+  buildTankView,
+  sortTankViews,
+  tankChartYMax,
+  toFinite,
+} from "../src/utils/tankView.ts";
 
 const tank = {
   id: "tank-1",
@@ -363,5 +368,25 @@ test("sorting follows marker severity, risk and fresh ETA", () => {
   assert.deepEqual(
     sorted.map((view) => view.tank.code),
     ["F-alarm", "E-above", "D-eta", "B-maintenance", "C-stale", "A-green"],
+  );
+});
+
+test("null chart thresholds stay absent and never become zero", () => {
+  const withoutThresholds = {
+    ...tank,
+    dimensions: { ...tank.dimensions, height: null },
+    maxLevelThreshold: null,
+    overflowThreshold: null,
+  };
+
+  assert.equal(toFinite(null), null);
+  assert.equal(toFinite(undefined), null);
+  assert.equal(toFinite(Infinity), null);
+  assert.equal(toFinite(0), 0);
+  assert.equal(tankChartYMax(withoutThresholds, 4), 4.4);
+  assert.equal(tankChartYMax(withoutThresholds, 0), 0);
+  assert.equal(
+    tankChartYMax({ ...withoutThresholds, maxLevelThreshold: 0 }, 4),
+    4.4,
   );
 });

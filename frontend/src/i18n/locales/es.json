@@ -126,7 +126,7 @@
     "tankRecent": "Telemetría reciente",
     "legendRecent": "Lectura reciente",
     "legendMax": "Límite máximo configurado",
-    "legendAxis": "Nivel en metros / ocupación relativa a la altura",
+    "legendAxis": "Nivel en {{unit}} / ocupación relativa a la altura",
     "chartTitle": "Tendencia de nivel",
     "chartSub": "Últimas 24 horas · promedio por intervalo de 5 minutos",
     "chartLink": "Investigar historial",

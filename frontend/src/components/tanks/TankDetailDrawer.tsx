@@ -23,6 +23,7 @@ import {
   levelValue,
   unitSuffixes,
 } from "../../utils/units.ts";
+import { tankChartYMax, toFinite } from "../../utils/tankView.ts";
 import LoadingSpinner from "../common/LoadingSpinner";
 import LevelBar from "./LevelBar";
 import TankReadingSummary from "./TankReadingSummary";
@@ -160,19 +161,12 @@ const TankDetailDrawer: React.FC<TankDetailDrawerProps> = ({
   if (!view) return null;
 
   const { tank, forecast, level, etaOverflowHours, critical } = view;
-  const height = Number(tank?.dimensions?.height);
-  const hasHeight = isFinite(height) && height > 0;
-  const overflow = Number(tank?.overflowThreshold);
-  const maxLevel = Number(tank?.maxLevelThreshold);
+  const overflow = toFinite(tank?.overflowThreshold);
+  const maxLevel = toFinite(tank?.maxLevelThreshold);
 
   // Escala Y do gráfico: altura do tanque (ou o maior valor visível)
   const maxLevelPoint = points.reduce((m, p) => Math.max(m, p.level), 0);
-  const yMax = Math.max(
-    hasHeight ? height : 0,
-    isFinite(overflow) ? overflow : 0,
-    isFinite(maxLevel) ? maxLevel : 0,
-    maxLevelPoint * 1.1,
-  );
+  const yMax = tankChartYMax(tank, maxLevelPoint);
 
   const etaMin =
     forecast?.trend === "falling" && forecast?.etaMinLevelHours != null
@@ -401,7 +395,7 @@ const TankDetailDrawer: React.FC<TankDetailDrawerProps> = ({
                           fontSize: 12,
                         }}
                       />
-                      {isFinite(maxLevel) && (
+                      {maxLevel !== null && (
                         <ReferenceLine
                           y={maxLevel}
                           stroke="#f59e0b"
@@ -414,7 +408,7 @@ const TankDetailDrawer: React.FC<TankDetailDrawerProps> = ({
                           }}
                         />
                       )}
-                      {isFinite(overflow) && (
+                      {overflow !== null && (
                         <ReferenceLine
                           y={overflow}
                           stroke="#ef4444"
