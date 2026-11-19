@@ -6,6 +6,7 @@ import {
   Min,
   Max,
   IsDateString,
+  IsUUID,
 } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
@@ -127,6 +128,14 @@ export class SensorMessageDto {
   @IsOptional()
   @IsDateString()
   timestamp?: string;
+
+  @ApiPropertyOptional({
+    description: 'ID estável da mensagem para deduplicar reenvios',
+    example: '8f2aa0d2-52f4-4e8f-b72d-e2c09b1a672f',
+  })
+  @IsOptional()
+  @IsUUID()
+  messageId?: string;
 
   @ApiPropertyOptional({
     description: 'Versão do protocolo/firmware',

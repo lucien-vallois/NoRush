@@ -268,6 +268,7 @@ export class MqttService implements OnModuleInit, OnModuleDestroy {
         batteryLevel: data.batteryLevel,
         metadata: data.metadata,
         timestamp: data.timestamp || new Date().toISOString(),
+        messageId: data.messageId,
         version: data.version,
         authToken: data.authToken,
       };

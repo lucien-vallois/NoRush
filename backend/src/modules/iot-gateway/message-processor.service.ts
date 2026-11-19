@@ -135,22 +135,27 @@ export class MessageProcessorService {
       if (validationErrors.length)
         return this.createErrorResult(message, validationErrors);
 
-      // 6. Processar dados e criar leitura
-      const processedData = await this.processSensorData(sensor, message);
-
-      // 7. Verificar se precisa gerar alerta
+      const { reading: processedData, anomaly } =
+        await this.processSensorData(sensor, message);
       const alertCheck = this.checkAlertConditions(sensor, processedData);
+      const { reading, inserted } = await this.saveReading(
+        sensor,
+        processedData,
+      );
 
-      // 8. Salvar leitura no banco
-      const reading = await this.saveReading(sensor, processedData);
+      if (!inserted) {
+        return {
+          sensor,
+          reading,
+          isValid: true,
+          retryable: false,
+          validationErrors: [],
+          requiresAlert: false,
+        };
+      }
 
-      // 9. Atualizar status do sensor
       await this.updateSensorStatus(sensor, message);
-
-      // 10. Publicar mensagem para processamento adicional
       this.publishToQueue(sensor, reading, message);
-
-      // 11. Push em tempo real via WebSocket
       this.wsEmitter.emitReading({
         sensorId: sensor.sensorId,
         tankId: sensor.tankId,
@@ -158,8 +163,18 @@ export class MessageProcessorService {
         volume: reading.volume,
         timestamp: reading.timestamp,
       });
+      if (anomaly) {
+        this.wsEmitter.emit('anomaly', {
+          sensorId: sensor.sensorId,
+          tankId: sensor.tankId,
+          level: message.level,
+          zScore: Number(anomaly.zScore.toFixed(2)),
+          mean: Number(anomaly.mean.toFixed(3)),
+          timestamp: new Date().toISOString(),
+        });
+      }
 
-      // 12. Avaliar e disparar alertas em tempo real
+      // Avaliar e disparar alertas em tempo real
       if (alertCheck.requiresAlert) {
         await this.alertProcessor.processReadingForAlerts(reading);
         // Payload estruturado (type/threshold/level) para clientes comporem
@@ -327,7 +342,10 @@ export class MessageProcessorService {
   private async processSensorData(
     sensor: Sensor,
     message: SensorMessageDto,
-  ): Promise<Partial<Reading>> {
+  ): Promise<{
+    reading: Partial<Reading>;
+    anomaly: { zScore: number; mean: number } | null;
+  }> {
     const timestamp = message.timestamp
       ? new Date(message.timestamp)
       : new Date();
@@ -356,6 +374,7 @@ export class MessageProcessorService {
           }
         : undefined,
       metadata: message.metadata,
+      messageId: message.messageId,
       timestamp,
       processedAt: new Date(),
       isCalibrated:
@@ -367,7 +386,6 @@ export class MessageProcessorService {
       quality: this.calculateDataQuality(message),
     };
 
-    // Detecção de anomalia: z-score da leitura contra o histórico recente do sensor
     const anomaly = await this.detectAnomaly(sensor.id, message.level);
     if (anomaly) {
       reading.metadata = {
@@ -378,17 +396,9 @@ export class MessageProcessorService {
       this.logger.warn(
         `Anomalia detectada: sensor=${sensor.sensorId} nível=${message.level}m z=${anomaly.zScore.toFixed(2)} (média ${anomaly.mean.toFixed(2)}m)`,
       );
-      this.wsEmitter.emit('anomaly', {
-        sensorId: sensor.sensorId,
-        tankId: sensor.tankId,
-        level: message.level,
-        zScore: Number(anomaly.zScore.toFixed(2)),
-        mean: Number(anomaly.mean.toFixed(3)),
-        timestamp: new Date().toISOString(),
-      });
     }
 
-    return reading;
+    return { reading, anomaly };
   }
 
   /**
@@ -451,16 +461,41 @@ export class MessageProcessorService {
   private async saveReading(
     sensor: Sensor,
     readingData: Partial<Reading>,
-  ): Promise<Reading> {
-    // insert() em vez de save(): com PK composta, save() interpretaria a
-    // entidade como update (timestamp sempre preenchido). id gerado aqui.
+  ): Promise<{ reading: Reading; inserted: boolean }> {
+    // Com PK composta, save() interpretaria a entidade como update. O ID da
+    // mensagem permite que retries confirmem a gravação sem repetir efeitos.
     const reading = this.readingRepository.create({
       id: randomUUID(),
       sensorId: sensor.id,
       ...readingData,
     });
-    await this.readingRepository.insert(reading);
-    return reading;
+    if (!reading.messageId) {
+      await this.readingRepository.insert(reading);
+      return { reading, inserted: true };
+    }
+
+    const result = await this.readingRepository
+      .createQueryBuilder()
+      .insert()
+      .into(Reading)
+      .values(reading)
+      .orIgnore()
+      .returning('id')
+      .execute();
+    const inserted = Array.isArray(result.raw)
+      ? result.raw.length > 0
+      : result.identifiers.length > 0;
+    if (inserted) return { reading, inserted: true };
+
+    const existing = await this.readingRepository.findOne({
+      where: {
+        sensorId: sensor.id,
+        messageId: reading.messageId,
+        timestamp: reading.timestamp,
+      },
+    });
+    if (!existing) throw new Error('Deduplicated reading could not be loaded');
+    return { reading: existing, inserted: false };
   }
 
   private async updateSensorStatus(

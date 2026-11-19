@@ -5,10 +5,21 @@ import { createHash } from 'crypto';
 
 describe('Telemetry ingestion boundaries', () => {
   const sensors = { findOne: jest.fn(), update: jest.fn() };
+  const insertExecution = jest.fn();
+  const insertQuery = {
+    insert: jest.fn().mockReturnThis(),
+    into: jest.fn().mockReturnThis(),
+    values: jest.fn().mockReturnThis(),
+    orIgnore: jest.fn().mockReturnThis(),
+    returning: jest.fn().mockReturnThis(),
+    execute: insertExecution,
+  };
   const readings = {
     find: jest.fn(),
+    findOne: jest.fn(),
     create: jest.fn((value: unknown) => value),
     insert: jest.fn(),
+    createQueryBuilder: jest.fn(() => insertQuery),
   };
   const queue = {
     emit: jest.fn((_pattern: string, _payload: any) => ({
@@ -98,6 +109,39 @@ describe('Telemetry ingestion boundaries', () => {
     });
     expect(JSON.stringify(result)).not.toContain('database connection reset');
     assertNoSideEffects();
+  });
+
+  it('accepts a retried message without repeating persistence or side effects', async () => {
+    const message = {
+      sensorId: 'SENSOR-001',
+      level: 1,
+      timestamp: '2026-01-01T00:00:00.000Z',
+      messageId: '8f2aa0d2-52f4-4e8f-b72d-e2c09b1a672f',
+    };
+    insertExecution
+      .mockResolvedValueOnce({ raw: [{ id: 'reading-new' }], identifiers: [] })
+      .mockResolvedValueOnce({ raw: [], identifiers: [] });
+    readings.findOne.mockResolvedValue({
+      id: 'reading-existing',
+      sensorId: sensor.id,
+      messageId: message.messageId,
+      timestamp: new Date(message.timestamp),
+      level: 1,
+    });
+
+    const first = await service.processSensorMessage(message);
+    const retry = await service.processSensorMessage(message);
+
+    expect(first.isValid).toBe(true);
+    expect(retry).toMatchObject({ isValid: true, retryable: false });
+    expect(retry.reading?.id).toBe('reading-existing');
+    expect(insertQuery.orIgnore).toHaveBeenCalledTimes(2);
+    expect(insertExecution).toHaveBeenCalledTimes(2);
+    expect(sensors.update).toHaveBeenCalledTimes(1);
+    expect(queue.emit).toHaveBeenCalledTimes(1);
+    expect(emitter.emitReading).toHaveBeenCalledTimes(1);
+    expect(emitter.emitAlert).not.toHaveBeenCalled();
+    expect(alertProcessor.processReadingForAlerts).not.toHaveBeenCalled();
   });
 
   it.each([-1, NaN, Infinity, '1.5', undefined])(

@@ -30,6 +30,9 @@ export interface ReadingMetadata {
 @Entity('readings')
 @Index(['sensorId', 'timestamp'])
 @Index(['timestamp'])
+@Index('UQ_readings_sensor_message_timestamp', ['sensorId', 'messageId', 'timestamp'], {
+  unique: true,
+})
 export class Reading {
   // PK composta (id, timestamp) — exigência do TimescaleDB: índices únicos em
   // hypertable precisam incluir a coluna de particionamento. O id segue único
@@ -39,6 +42,9 @@ export class Reading {
 
   @Column('uuid')
   sensorId: string;
+
+  @Column('uuid', { nullable: true })
+  messageId?: string;
 
   @ManyToOne(() => Sensor, (sensor) => sensor.readings, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'sensorId' })

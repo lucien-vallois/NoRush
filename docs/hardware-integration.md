@@ -97,6 +97,7 @@ All accept `X-Device-Token`. For LTE-M, NB-IoT or IP satellite, HTTPS is usually
 ```json
 {
   "sensorId": "SENSOR-101",
+  "messageId": "0a33dcd6-62a2-4f4e-97f2-cfb7d84d0c0f",
   "authToken": "nrk_...",
   "level": 3.452,
   "oilWaterInterface": {
@@ -118,8 +119,9 @@ Rules checked by the API. A message that breaks one is rejected **before** it is
 - `batteryLevel`: 0–100.
 - `timestamp`: ISO 8601 UTC, no more than 30 s in the future. If omitted, the time of receipt is used.
 - `sensorId` must match the topic (MQTT) and an **active** sensor.
+- `messageId`: a stable UUID generated when the reading is created. HTTP retries must reuse it so the server can deduplicate delivery.
 
-HTTP success: `{ "processed": true, "requestId": "..." }`. Validation failure: `processed: false` with `errors[]`. Do not retry the same payload: fix the cause.
+HTTP success: `{ "processed": true, "requestId": "..." }`. An explicit validation or credential refusal returns `processed: false` with `errors[]`; do not retry it. Retry network failures, timeouts, HTTP 408, 429 and 5xx (including 503 temporary failure), and malformed 2xx responses, always with the same `messageId`. Other 4xx responses are final.
 
 ## 6. Heartbeat
 
@@ -129,7 +131,7 @@ On `devices/{sensorId}/status` or `POST /iot/sensors/heartbeat`. A sign of life 
 { "sensorId": "SENSOR-101", "authToken": "nrk_...", "batteryLevel": 87.5, "firmwareVersion": "0.9.0", "signalStrength": -72 }
 ```
 
-It updates `lastTransmissionAt` (the console shows a device as online for 5 minutes after it), battery, firmware and signal. Recommended: one heartbeat every 3–4 measurement cycles, and after events (boot, reconnection, sensor error).
+It updates `lastTransmissionAt` (the console shows a device as online for 5 minutes after it), battery, firmware and signal. Recommended: one heartbeat every 3–4 measurement cycles, and after events (boot, reconnection, sensor error). HTTP `{ "received": true }` is success and `{ "received": false }` is a final refusal; apply the same temporary-failure and malformed-2xx retry rules as for readings.
 
 ## 7. Commands
 

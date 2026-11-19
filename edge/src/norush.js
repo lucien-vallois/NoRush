@@ -1,3 +1,5 @@
+import { randomUUID } from "node:crypto";
+
 /**
  * Cliente do contrato de dispositivo do NoRush (docs/hardware-integration.md):
  *   POST /iot/sensors/data       leitura
@@ -6,7 +8,7 @@
  *
  * Resultado:
  *   { ok: true }                         aceito e processado
- *   { ok: false, retry: true, reason }   rede, timeout, 429 ou 5xx — guardar e reenviar
+ *   { ok: false, retry: true, reason }   rede, timeout, 408, 429, 5xx ou 2xx malformado — guardar e reenviar
  *   { ok: false, retry: false, reason }  recusado (credencial, validação) — não adianta repetir
  */
 
@@ -20,9 +22,10 @@ export class NoRushClient {
     this.fetch = fetchImpl;
   }
 
-  async sendReading(gauge, sample, timestamp) {
+  async sendReading(gauge, sample, timestamp, messageId = randomUUID()) {
     const body = {
       sensorId: gauge.sensorId,
+      messageId,
       level: sample.level,
       timestamp,
       version: CLIENT_VERSION,
@@ -34,8 +37,11 @@ export class NoRushClient {
     if (!res.ok) return res;
     // A API responde 200 também quando recusa: o resultado vem em `processed`
     if (res.json?.processed === true) return { ok: true };
-    const errors = Array.isArray(res.json?.errors) ? res.json.errors.join("; ") : "not processed";
-    return { ok: false, retry: false, reason: errors };
+    if (res.json?.processed === false) {
+      const errors = Array.isArray(res.json.errors) ? res.json.errors.join("; ") : "not processed";
+      return { ok: false, retry: false, reason: errors };
+    }
+    return { ok: false, retry: true, reason: "malformed reading response" };
   }
 
   async sendHeartbeat(gauge, info) {
@@ -45,7 +51,10 @@ export class NoRushClient {
     const res = await this.post("/iot/sensors/heartbeat", gauge.token, body);
     if (!res.ok) return res;
     if (res.json?.received === true) return { ok: true };
-    return { ok: false, retry: false, reason: res.json?.reason ?? "heartbeat refused" };
+    if (res.json?.received === false) {
+      return { ok: false, retry: false, reason: res.json.reason ?? "heartbeat refused" };
+    }
+    return { ok: false, retry: true, reason: "malformed heartbeat response" };
   }
 
   async post(path, token, body) {
@@ -68,7 +77,7 @@ export class NoRushClient {
       } catch {
         json = null;
       }
-      if (response.status === 429 || response.status >= 500) {
+      if (response.status === 408 || response.status === 429 || response.status >= 500) {
         return { ok: false, retry: true, reason: `HTTP ${response.status}` };
       }
       if (!response.ok) {

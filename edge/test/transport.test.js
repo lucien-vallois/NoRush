@@ -7,6 +7,7 @@ import { join } from "node:path";
 import { NoRushClient } from "../src/norush.js";
 import { ReadingBuffer } from "../src/buffer.js";
 import { normalizeConfig } from "../src/config.js";
+import { Runner } from "../src/runner.js";
 
 /** Servidor HTTP local que responde como a API do NoRush. */
 async function fakeApi(handler) {
@@ -34,25 +35,27 @@ const sample = {
   metadata: { temperature: 18.5 },
 };
 
-test("reading goes to /iot/sensors/data with the device token header", async () => {
+test("reading goes to /iot/sensors/data with the device token header and messageId", async () => {
   const api = await fakeApi(() => [200, { sensorId: "FS-24117", received: true, processed: true }]);
   const client = new NoRushClient({ url: api.url });
-  const res = await client.sendReading(gauge, sample, "2026-11-04T10:00:00.000Z");
+  const messageId = "0a33dcd6-62a2-4f4e-97f2-cfb7d84d0c0f";
+  const res = await client.sendReading(gauge, sample, "2026-11-04T10:00:00.000Z", messageId);
   assert.deepEqual(res, { ok: true });
   const [req] = api.requests;
   assert.equal(req.url, "/iot/sensors/data");
   assert.equal(req.headers["x-device-token"], "nrk_test_token");
   assert.equal(req.body.authToken, undefined); // segredo só no header
+  assert.equal(req.body.messageId, messageId);
   assert.equal(req.body.level, 3.048);
   assert.equal(req.body.timestamp, "2026-11-04T10:00:00.000Z");
   assert.deepEqual(req.body.oilWaterInterface, sample.oilWaterInterface);
   await api.close();
 });
 
-test("a refused reading is final; 5xx and a dead server are retried", async () => {
+test("explicit reading and heartbeat refusals are final", async () => {
   const api = await fakeApi((req) =>
-    req.body.level > 4
-      ? [503, { message: "down" }]
+    req.url.endsWith("heartbeat")
+      ? [200, { received: false, reason: "disabled" }]
       : [200, { processed: false, errors: ["Autenticação recusada (invalidDeviceCredential)"] }],
   );
   const client = new NoRushClient({ url: api.url });
@@ -60,11 +63,39 @@ test("a refused reading is final; 5xx and a dead server are retried", async () =
   assert.equal(refused.ok, false);
   assert.equal(refused.retry, false);
   assert.match(refused.reason, /invalidDeviceCredential/);
-  const down = await client.sendReading(gauge, { ...sample, level: 5 }, new Date().toISOString());
-  assert.equal(down.retry, true);
+  const heartbeat = await client.sendHeartbeat(gauge, {});
+  assert.equal(heartbeat.retry, false);
+  assert.equal(heartbeat.reason, "disabled");
+  await api.close();
+});
+
+test("408, 429 and 5xx are retried for readings and heartbeats", async () => {
+  let status;
+  const api = await fakeApi(() => [status, { message: "temporary" }]);
+  const client = new NoRushClient({ url: api.url });
+  for (status of [408, 429, 503]) {
+    const reading = await client.sendReading(gauge, sample, new Date().toISOString());
+    assert.equal(reading.retry, true);
+    assert.equal(reading.reason, `HTTP ${status}`);
+    const heartbeat = await client.sendHeartbeat(gauge, {});
+    assert.equal(heartbeat.retry, true);
+    assert.equal(heartbeat.reason, `HTTP ${status}`);
+  }
   await api.close();
   const dead = await new NoRushClient({ url: api.url, timeoutMs: 2000 }).sendReading(gauge, sample, new Date().toISOString());
   assert.equal(dead.retry, true);
+});
+
+test("malformed 2xx responses are retried for readings and heartbeats", async () => {
+  const api = await fakeApi(() => [200, {}]);
+  const client = new NoRushClient({ url: api.url });
+  const reading = await client.sendReading(gauge, sample, new Date().toISOString());
+  assert.equal(reading.retry, true);
+  assert.match(reading.reason, /malformed/);
+  const heartbeat = await client.sendHeartbeat(gauge, {});
+  assert.equal(heartbeat.retry, true);
+  assert.match(heartbeat.reason, /malformed/);
+  await api.close();
 });
 
 test("heartbeat goes to /iot/sensors/heartbeat", async () => {
@@ -74,6 +105,47 @@ test("heartbeat goes to /iot/sensors/heartbeat", async () => {
   assert.equal(api.requests[0].url, "/iot/sensors/heartbeat");
   assert.equal(api.requests[0].body.signalStrength, -71);
   await api.close();
+});
+
+test("a reading keeps the same messageId on its initial retry", async () => {
+  const path = join(mkdtempSync(join(tmpdir(), "norush-edge-id-")), "buffer.jsonl");
+  const buffer = new ReadingBuffer(path);
+  const messageIds = [];
+  let attempts = 0;
+  const client = {
+    async sendReading(g, s, timestamp, messageId) {
+      messageIds.push(messageId);
+      return ++attempts === 1 ? { ok: false, retry: true, reason: "HTTP 503" } : { ok: true };
+    },
+  };
+  const runner = new Runner({ config: { gauges: [gauge] }, gateway: {}, client, buffer, log: () => {} });
+  await runner.deliver(gauge, sample, "t1");
+  assert.equal(buffer.size, 1);
+  assert.match(new ReadingBuffer(path).peek(1)[0].messageId, /^[0-9a-f-]{36}$/);
+  await runner.flushBuffer();
+  assert.equal(messageIds.length, 2);
+  assert.equal(messageIds[0], messageIds[1]);
+  assert.equal(buffer.size, 0);
+});
+
+test("a legacy buffered reading gets one persistent messageId", async () => {
+  const path = join(mkdtempSync(join(tmpdir(), "norush-edge-legacy-")), "buffer.jsonl");
+  const buffer = new ReadingBuffer(path);
+  buffer.push({ sensorId: gauge.sensorId, sample, timestamp: "t0" });
+  const messageIds = [];
+  const client = {
+    async sendReading(g, s, timestamp, messageId) {
+      messageIds.push(messageId);
+      return { ok: false, retry: true, reason: "HTTP 503" };
+    },
+  };
+  const runner = new Runner({ config: { gauges: [gauge] }, gateway: {}, client, buffer, log: () => {} });
+  await runner.flushBuffer();
+  await runner.flushBuffer();
+  assert.equal(messageIds.length, 2);
+  assert.equal(messageIds[0], messageIds[1]);
+  assert.match(messageIds[0], /^[0-9a-f-]{36}$/);
+  assert.equal(new ReadingBuffer(path).peek(1)[0].messageId, messageIds[0]);
 });
 
 test("buffer survives a restart, tolerates a torn line and caps its size", () => {

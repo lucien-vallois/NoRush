@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import { GaugeState, interpret, decide } from "./gauge.js";
 
 /**
@@ -66,13 +67,14 @@ export class Runner {
     const action = decide(state, result, now, this.config);
     if (action === "reading") {
       const timestamp = new Date(now).toISOString();
+      const messageId = randomUUID();
       state.lastReadingSentAt = now;
       // Se há fila, a leitura nova entra no fim para manter a ordem
       if (this.buffer.size > 0) {
-        this.buffer.push({ sensorId: gauge.sensorId, sample: result.sample, timestamp });
+        this.buffer.push({ sensorId: gauge.sensorId, sample: result.sample, timestamp, messageId });
         await this.flushBuffer();
       } else {
-        await this.deliver(gauge, result.sample, timestamp);
+        await this.deliver(gauge, result.sample, timestamp, messageId);
       }
     } else if (action === "heartbeat") {
       state.lastHeartbeatAt = now;
@@ -85,13 +87,13 @@ export class Runner {
     return { ...result, action };
   }
 
-  async deliver(gauge, sample, timestamp) {
-    const res = await this.client.sendReading(gauge, sample, timestamp);
+  async deliver(gauge, sample, timestamp, messageId = randomUUID()) {
+    const res = await this.client.sendReading(gauge, sample, timestamp, messageId);
     if (res.ok) {
       this.log("info", `${gauge.sensorId}: level ${sample.level} m${sample.oilWaterInterface ? `, interface ${sample.oilWaterInterface.interfaceLevel} m` : ""} sent`);
     } else if (res.retry) {
       this.log("warn", `${gauge.sensorId}: server unreachable (${res.reason}); buffering`);
-      this.buffer.push({ sensorId: gauge.sensorId, sample, timestamp });
+      this.buffer.push({ sensorId: gauge.sensorId, sample, timestamp, messageId });
     } else {
       this.log("error", `${gauge.sensorId}: reading refused by server (${res.reason})`);
     }
@@ -108,7 +110,11 @@ export class Runner {
         this.buffer.shift(1);
         continue;
       }
-      const res = await this.client.sendReading(gauge, entry.sample, entry.timestamp);
+      if (!entry.messageId) {
+        entry.messageId = randomUUID();
+        this.buffer.rewrite();
+      }
+      const res = await this.client.sendReading(gauge, entry.sample, entry.timestamp, entry.messageId);
       if (res.ok) {
         this.buffer.shift(1);
       } else if (res.retry) {
