@@ -18,8 +18,9 @@ describe('AlertsService.createAutomaticAlert', () => {
   const sensors = { findOne: jest.fn(async () => ({ id: 'sensor-1' })) };
   const manager = {
     query: jest.fn(),
-    getRepository: jest.fn((entity: { name: string }) =>
-      ({ Alert: alerts, Tank: tanks, Sensor: sensors })[entity.name],
+    getRepository: jest.fn(
+      (entity: { name: string }) =>
+        ({ Alert: alerts, Tank: tanks, Sensor: sensors })[entity.name],
     ),
   };
   let transactionQueue = Promise.resolve();
@@ -135,7 +136,14 @@ describe('AlertsService.createAutomaticAlert', () => {
     expect(manager.query).toHaveBeenCalledTimes(2);
     expect(manager.query).toHaveBeenCalledWith(
       'SELECT pg_advisory_xact_lock(hashtext($1))',
-      [JSON.stringify([AlertType.HIGH_LEVEL, AlertSeverity.MEDIUM, 'tank-1', 'sensor-1'])],
+      [
+        JSON.stringify([
+          AlertType.HIGH_LEVEL,
+          AlertSeverity.MEDIUM,
+          'tank-1',
+          'sensor-1',
+        ]),
+      ],
     );
   });
 

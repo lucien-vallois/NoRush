@@ -135,8 +135,10 @@ export class MessageProcessorService {
       if (validationErrors.length)
         return this.createErrorResult(message, validationErrors);
 
-      const { reading: processedData, anomaly } =
-        await this.processSensorData(sensor, message);
+      const { reading: processedData, anomaly } = await this.processSensorData(
+        sensor,
+        message,
+      );
       const alertCheck = this.checkAlertConditions(sensor, processedData);
       const { reading, inserted } = await this.saveReading(
         sensor,
