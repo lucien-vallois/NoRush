@@ -57,7 +57,7 @@ says so once; that warning is expected.
 | `IOT_INGEST_KEY` | random | Shared ingestion key, also given to the simulator |
 | `IOT_AUTH_MODE` | `shared` | |
 | `CORS_ORIGIN` | `https://<console>.up.railway.app` | Comma-separated if there is more than one |
-| `DEMO_AUTO_SEED` | `true` | Seeds tanks, gauges and the demo accounts on the first start |
+| `DEMO_AUTO_SEED` | `false` | Production refuses to boot with automatic demo seeding; seed explicitly as described below |
 | `DEMO_READ_ONLY` | `true` | Visitors share accounts: refuse setup changes (see below) |
 | `MQTT_ENABLED` | `false` | No broker in this deployment; health shows MQTT as "disabled" |
 | `RABBITMQ_ENABLED` | `false` | No broker; readings are stored either way |
@@ -71,9 +71,10 @@ rate limit sees each visitor's IP.
 
 With `DEMO_READ_ONLY=true` the API refuses every write (403, translated
 message) except signing in and out, token refresh, device ingestion (so the
-simulator keeps working) and acknowledging or resolving alerts. Visitors can
-open every form, but nobody can delete tanks, revoke gauge credentials or
-create users for the next visitor. The console shows a banner explaining it.
+simulator keeps working) and acknowledging or resolving alerts. Setup actions
+are hidden or disabled in the console, so visitors cannot delete tanks, revoke
+gauge credentials or create users for the next visitor. Alerts remain
+actionable, and a banner explains the restriction.
 
 Signing out ends only the visitor's own session, so people sharing a demo
 account do not sign each other out.
@@ -119,8 +120,17 @@ No public networking: the worker only makes outbound calls.
 
 ## 5. Demo data
 
-`DEMO_AUTO_SEED=true` creates six tanks (FK-01 to FK-06), one dual-float gauge
-per tank and two accounts, the first time the API starts on an empty database:
+Production never seeds demo data automatically and refuses to boot with
+`DEMO_AUTO_SEED=true`. After the API has applied its migrations, explicitly run
+this command once from a shell in the `api` service (`railway ssh`):
+
+```bash
+# Seed only an empty database
+npm run seed:prod --workspace=backend
+```
+
+This creates six tanks (FK-01 to FK-06), one dual-float gauge per tank and two
+accounts:
 
 - `operador@flowback.com` / `operador123` (operator)
 - `admin@flowback.com` / `admin123` (admin)
@@ -128,7 +138,7 @@ per tank and two accounts, the first time the API starts on an empty database:
 These passwords are public. Use them only with `DEMO_READ_ONLY=true`, and never
 seed a real installation.
 
-Optional, from a shell in the `api` service (`railway ssh`):
+Optional, from the same shell:
 
 ```bash
 # 14 days of history, so the charts and the gauge report are full on day one
@@ -143,7 +153,7 @@ FORCE_SEED=1 npm run seed:prod --workspace=backend
 1. `https://<api>.up.railway.app/health` answers `"status": "ok"` with MQTT `disabled`.
 2. The console opens on the login page; *Fill demo credentials* signs in.
 3. The dashboard shows the six tanks and the 24-hour chart starts moving.
-4. Saving a tank shows the read-only message; acknowledging an alert works.
+4. Tank setup actions are hidden or disabled; acknowledging an alert works.
 5. The browser console shows no CORS errors.
 6. Try it in a private window, then add a *Live demo* section with the URL to
    the README.

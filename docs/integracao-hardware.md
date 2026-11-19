@@ -120,6 +120,7 @@ bridge no formato HTTP acima (payload JSON no body).
 ```json
 {
   "sensorId": "SENSOR-101",
+  "messageId": "0a33dcd6-62a2-4f4e-97f2-cfb7d84d0c0f",
   "authToken": "nrk_...",
   "level": 3.452,
   "oilWaterInterface": {
@@ -147,10 +148,14 @@ Regras validadas pelo gateway (rejeitadas **antes** de gravar/emitir):
 - `timestamp`: ISO 8601 UTC; não mais que 30 s no futuro. Omitir = horário
   de recepção.
 - `sensorId` deve corresponder ao tópico (MQTT) e a um sensor **ativo**.
+- `messageId`: UUID estável gerado ao criar a leitura. Reenvios HTTP devem
+  reutilizá-lo para que o servidor deduplique a entrega.
 
 Resposta HTTP de sucesso: `{ "processed": true, "requestId": "..." }`;
-falha de validação: `processed: false` + `errors[]` (não retente o mesmo
-payload — corrija a causa).
+recusa explícita de validação ou credencial: `processed: false` + `errors[]`
+(não retente o mesmo payload — corrija a causa). Repita falhas de rede,
+timeouts, HTTP 408, 429 e 5xx (inclusive 503 temporário) e respostas 2xx
+malformadas, sempre com o mesmo `messageId`. Outros 4xx são definitivos.
 
 ## 6. Heartbeat (`devices/{sensorId}/status` ou `POST /iot/sensors/heartbeat`)
 

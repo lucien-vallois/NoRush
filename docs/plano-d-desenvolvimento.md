@@ -52,17 +52,16 @@ O NoRush é a **camada de software** sobre esse equipamento:
 
 1. **Servidor:** VPS pequeno (~US$ 6/mês) e um domínio, com o `docker-compose` existente.
 2. **HTTPS:** Caddy ou nginx com Let's Encrypt. Abrir só a porta 443; a 8883 com TLS só quando houver um dispositivo real.
-3. **Pré-requisito técnico:** o backend só cria as tabelas sozinho fora de `NODE_ENV=production` (`synchronize`), e o repositório **não tem migrations**. Antes de subir em modo produção é preciso:
-   - gerar a migration inicial do TypeORM;
-   - incluir os comandos do TimescaleDB, que hoje rodam no boot.
+3. **Banco:** as migrations versionadas criam o esquema em produção, incluindo os agregados do TimescaleDB quando a extensão está disponível e views equivalentes sem ela. O boot aplica as migrations; ainda falta validar o deploy público e o restore de um backup na infraestrutura escolhida.
 4. **Dados da demo:** o simulador roda continuamente no servidor, em intervalos longos, e o histórico vem do `backfill`.
 5. **Acesso:**
-   - conta de demonstração **somente leitura**: hoje os papéis são `admin`, `operator` e `maintenance`, então o papel de leitura ainda precisa ser criado, ou a demo precisa ser reiniciada periodicamente;
+   - `DEMO_READ_ONLY=true` protege os cadastros das contas compartilhadas, sem exigir um papel readonly nem reiniciar a demo; alertas continuam acionáveis;
+   - `DEMO_AUTO_SEED=false` em produção: o seed de demonstração é executado manualmente e de forma explícita;
    - segredos gerados no servidor;
    - `IOT_AUTH_MODE=device`.
-6. **Backup:** `pg_dump` diário.
+6. **Backup:** `pg_dump` diário e teste documentado de restauração.
 
-**Entregável:** URL pública com o console e link para o repositório. **Custo:** ~US$ 7/mês.
+**Entregável pendente:** URL pública com o console e link para o repositório, validada com o checklist de deploy e restore. **Custo estimado:** ~US$ 7/mês.
 
 ---
 
@@ -90,8 +89,10 @@ O NoRush é a **camada de software** sobre esse equipamento:
 **Feito em 2026-11-04 — [`norush-edge`](../edge/README.md):**
 - adaptador que roda no pad e lê o gateway por Modbus TCP, RTU (RS-485) ou RTU sobre TCP;
 - envia por HTTPS com a credencial de cada haste e guarda em disco quando a internet cai;
+- gera um `messageId` estável por amostra, persistido no buffer e reutilizado nos retries, para deduplicação idempotente na API;
+- repete falhas de rede, HTTP 408/429/5xx e respostas 2xx malformadas, sem reenviar recusas definitivas;
 - perfil do Float Stick transcrito do manual de interface do fabricante (Rev 1.1, págs. 9–10);
-- detecção da ordem das palavras dos floats, sentinela de erro `999.9999`, códigos de status, timeout do gateway e tipo de dispositivo;
+- validação fail-closed da ordem das palavras dos floats, sentinela de erro `999.9999`, códigos de status, timeout do gateway e tipo de dispositivo, incluindo a rejeição de interface inválida nas duas boias;
 - comandos de comissionamento: `check`, `check --send` e `read`.
 
 Testado contra o layout de registradores do manual e de ponta a ponta com o servidor em modo produção.

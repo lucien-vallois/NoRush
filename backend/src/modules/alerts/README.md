@@ -32,6 +32,9 @@ Tank limits are measured from the tank bottom, in the order
 - While an alert of the same type and severity is pending or acknowledged on
   the same tank and gauge, a repeat trip returns that alert instead of opening
   another. Once it is resolved, the next crossing opens a new one.
+- Automatic creation runs in a transaction with a PostgreSQL advisory lock for
+  that condition, so simultaneous readings cannot both pass the open-alert check
+  and create duplicates.
 
 Forecast-based overflow alerts come from the predictions module: a linear fit
 reaching the overflow limit within 6 hours (critical within 2 hours). They use

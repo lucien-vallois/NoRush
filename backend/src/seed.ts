@@ -11,7 +11,7 @@ import { SeedRepos, seedDatabase } from './seed-data';
 
 /**
  * CLI do seed de demonstração. A lógica fica em seed-data.ts e também roda
- * automaticamente na API quando DEMO_AUTO_SEED=true (banco vazio).
+ * automaticamente fora de produção quando DEMO_AUTO_SEED=true (banco vazio).
  *
  * Uso: npm run seed        (semeia se o banco estiver vazio)
  *      FORCE_SEED=1 npm run seed   (apaga e semeia novamente)

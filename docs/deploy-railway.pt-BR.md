@@ -57,7 +57,7 @@ inicialização avisa isso uma vez; o aviso é esperado.
 | `IOT_INGEST_KEY` | aleatório | Chave de ingestão compartilhada, também usada pelo simulador |
 | `IOT_AUTH_MODE` | `shared` | |
 | `CORS_ORIGIN` | `https://<console>.up.railway.app` | Separe por vírgula se houver mais de uma |
-| `DEMO_AUTO_SEED` | `true` | Cria tanques, hastes e as contas de demo na primeira subida |
+| `DEMO_AUTO_SEED` | `false` | Produção recusa o boot com seed automático; execute o seed explicitamente como descrito abaixo |
 | `DEMO_READ_ONLY` | `true` | Visitantes compartilham contas: recusa alterações de cadastro (veja abaixo) |
 | `MQTT_ENABLED` | `false` | Sem broker neste deploy; o health mostra MQTT como "disabled" |
 | `RABBITMQ_ENABLED` | `false` | Sem broker; as leituras são gravadas do mesmo jeito |
@@ -71,9 +71,10 @@ limit enxerga o IP de cada visitante.
 
 Com `DEMO_READ_ONLY=true` a API recusa toda escrita (403, mensagem traduzida),
 exceto entrar e sair, renovar token, ingestão de dispositivos (o simulador
-continua funcionando) e reconhecer ou resolver alertas. O visitante abre todos
-os formulários, mas ninguém apaga tanques, revoga credenciais de hastes ou cria
-usuários para o próximo visitante. O console mostra um aviso explicando isso.
+continua funcionando) e reconhecer ou resolver alertas. As ações de cadastro
+ficam ocultas ou desabilitadas no console, impedindo que visitantes apaguem
+tanques, revoguem credenciais de hastes ou criem usuários para o próximo
+visitante. Alertas continuam acionáveis, e um aviso explica a restrição.
 
 Sair encerra só a sessão do próprio visitante: quem compartilha uma conta de
 demo não derruba os outros.
@@ -119,8 +120,17 @@ Sem rede pública: o worker só faz chamadas de saída.
 
 ## 5. Dados de demonstração
 
-`DEMO_AUTO_SEED=true` cria seis tanques (FK-01 a FK-06), uma haste de duas
-boias por tanque e duas contas, na primeira subida da API com o banco vazio:
+Produção nunca executa o seed de demonstração automaticamente e recusa o boot
+com `DEMO_AUTO_SEED=true`. Depois que a API aplicar as migrations, execute este
+comando explicitamente uma vez num shell do serviço `api` (`railway ssh`):
+
+```bash
+# Semeia somente um banco vazio
+npm run seed:prod --workspace=backend
+```
+
+Isso cria seis tanques (FK-01 a FK-06), uma haste de duas boias por tanque e
+duas contas:
 
 - `operador@flowback.com` / `operador123` (operador)
 - `admin@flowback.com` / `admin123` (admin)
@@ -128,7 +138,7 @@ boias por tanque e duas contas, na primeira subida da API com o banco vazio:
 Essas senhas são públicas. Use-as só com `DEMO_READ_ONLY=true` e nunca semeie
 uma instalação real.
 
-Opcional, num shell do serviço `api` (`railway ssh`):
+Opcional, no mesmo shell:
 
 ```bash
 # 14 dias de histórico, para gráficos e boletim cheios desde o primeiro dia
@@ -143,7 +153,7 @@ FORCE_SEED=1 npm run seed:prod --workspace=backend
 1. `https://<api>.up.railway.app/health` responde `"status": "ok"` com MQTT `disabled`.
 2. O console abre no login; *Fill demo credentials* entra.
 3. O dashboard mostra os seis tanques e o gráfico de 24 h começa a se mover.
-4. Salvar um tanque mostra a mensagem de somente leitura; reconhecer um alerta funciona.
+4. As ações de cadastro de tanques ficam ocultas ou desabilitadas; reconhecer um alerta funciona.
 5. O console do navegador não mostra erros de CORS.
 6. Teste numa janela anônima e depois adicione uma seção *Live demo* com o URL
    ao README.
