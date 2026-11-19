@@ -10,7 +10,8 @@ import { seedDatabase } from './seed-data';
 
 /**
  * Semeia os dados de demonstração na primeira subida quando o banco está
- * vazio (DEMO_AUTO_SEED=true). Nunca derruba a API: falha no seed vira log.
+ * vazio (DEMO_AUTO_SEED=true). Produção recusa essa configuração; fora dela,
+ * falha no seed vira log sem derrubar a API.
  */
 @Injectable()
 export class DemoSeedService implements OnModuleInit {
@@ -27,6 +28,9 @@ export class DemoSeedService implements OnModuleInit {
 
   async onModuleInit(): Promise<void> {
     if (process.env.DEMO_AUTO_SEED !== 'true') return;
+    if (process.env.NODE_ENV === 'production') {
+      throw new Error('DEMO_AUTO_SEED cannot be enabled in production');
+    }
 
     try {
       const existing = await this.tankRepo.count();
