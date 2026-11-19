@@ -7,7 +7,7 @@
     "The gateway buffers the last check-in of each node (typically every 1-5 minutes). A request it cannot answer from the buffer returns a Modbus exception.",
     "Single-float sticks return 0 for the interface level. Every reading becomes 999.9999 when the node cannot talk to the stick; the communication status then holds the cause.",
     "Float word order is not stated in the manual; the adapter detects it from the span register (stick length in inches) unless wordOrder is set.",
-    "The node status registers (49988-49999) depend on gateway firmware; when the gateway rejects that block the adapter keeps going without battery, signal and timeout data."
+    "The node status registers (49988-49999) depend on gateway firmware. Slave ID, timeout and device type are required, so a gateway without that block cannot produce a reading."
   ],
   "function": "holding",
   "blocks": [
@@ -35,6 +35,7 @@
     "minutesToTimeout": "minutesToTimeout",
     "commStatus": "commStatus"
   },
+  "requiredValues": ["commStatus", "slaveIdReadback", "minutesToTimeout", "deviceType"],
   "expect": {
     "deviceType": 52
   },

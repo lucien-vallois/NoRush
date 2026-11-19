@@ -73,13 +73,48 @@ test("a node the gateway timed out is stale, a wrong Slave ID is rejected", () =
   const wrong = interpret(new GaugeState(gauge, profile), floatStickRegisters({ deviceType: 51 }));
   assert.equal(wrong.status, "wrongDevice");
   assert.match(wrong.detail, /Slave ID \(11\)/);
+  const wrongUnit = interpret(new GaugeState(gauge, profile), floatStickRegisters({ unitId: 12 }));
+  assert.equal(wrongUnit.status, "wrongDevice");
+  assert.match(wrongUnit.detail, /slaveIdReadback is 12, expected 11/);
 });
 
-test("without the optional status block the reading still goes out", () => {
-  const state = new GaugeState(gauge, profile);
-  const r = interpret(state, floatStickRegisters({ status: false }));
-  assert.equal(r.status, "ok");
-  assert.equal(r.sample.metadata.signalStrength, undefined);
+test("SignalFire rejects a missing optional status block and each required value", () => {
+  const withoutBlock = interpret(new GaugeState(gauge, profile), floatStickRegisters({ status: false }));
+  assert.equal(withoutBlock.status, "sensorError");
+  assert.match(withoutBlock.detail, /slaveIdReadback/);
+
+  const required = [
+    ["commStatus", [1016, 1017]],
+    ["slaveIdReadback", [9993]],
+    ["minutesToTimeout", [9996]],
+    ["deviceType", [9998]],
+  ];
+  for (const [name, addresses] of required) {
+    const registers = floatStickRegisters();
+    addresses.forEach((address) => registers.delete(address));
+    const result = interpret(new GaugeState(gauge, profile), registers);
+    assert.equal(result.status, "sensorError");
+    assert.match(result.detail, new RegExp(name));
+  }
+});
+
+test("a dual-float gauge rejects a missing, non-finite or negative interface", () => {
+  const missing = floatStickRegisters();
+  missing.delete(1004);
+  missing.delete(1005);
+  for (const registers of [missing, floatStickRegisters({ iface: Number.NaN }), floatStickRegisters({ iface: -1 })]) {
+    const result = interpret(new GaugeState(gauge, profile), registers);
+    assert.equal(result.status, "sensorError");
+    assert.equal(result.sample, undefined);
+  }
+});
+
+test("a generic profile without required values remains permissive", () => {
+  const generic = { ...profile, requiredValues: [], expect: {} };
+  const result = interpret(new GaugeState(gauge, generic), floatStickRegisters({ status: false }));
+  assert.equal(result.status, "ok");
+  assert.equal(result.minutesToTimeout, undefined);
+  assert.equal(result.sample.metadata.signalStrength, undefined);
 });
 
 test("an unreadable word order asks the installer to set it", () => {
@@ -107,7 +142,7 @@ test("buffered gateway: a repeated check-in is sent once, then heartbeats", () =
   assert.equal(step(floatStickRegisters({ minutes: 9 }), at(3)), "reading");
   // nível mudou
   assert.equal(step(floatStickRegisters({ minutes: 8, product: 121 }), at(4)), "reading");
-  // sem contador (bloco de status ausente) e nada mudou: leitura forçada a cada 10 min
-  assert.equal(step(floatStickRegisters({ status: false, product: 121 }), at(5)), "heartbeat");
-  assert.equal(step(floatStickRegisters({ status: false, product: 121 }), at(14.5)), "reading");
+  // mesmo check-in e nada mudou: leitura forçada a cada 10 min
+  assert.equal(step(floatStickRegisters({ minutes: 7, product: 121 }), at(5)), "heartbeat");
+  assert.equal(step(floatStickRegisters({ minutes: 7, product: 121 }), at(14.5)), "reading");
 });

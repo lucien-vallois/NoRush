@@ -71,6 +71,12 @@ export function validateProfile(p, where = "profile") {
   for (const key of Object.keys(map)) {
     if (!p.values?.[map[key]]) fail(`map.${key} names unknown value ${map[key]}`);
   }
+  if (p.requiredValues !== undefined && !Array.isArray(p.requiredValues)) {
+    fail("requiredValues must be an array");
+  }
+  for (const name of p.requiredValues ?? []) {
+    if (!p.values?.[name]) fail(`requiredValues names unknown value ${name}`);
+  }
   if (p.defaultWordOrder && !WORD_ORDERS.includes(p.defaultWordOrder)) {
     fail(`defaultWordOrder must be one of ${WORD_ORDERS.join(", ")}`);
   }

@@ -64,16 +64,29 @@ export function interpret(state, registers) {
   }
   const map = profile.map;
   const pick = (key) => (map[key] ? values[map[key]] : undefined);
+  const required = new Set([...(profile.requiredValues ?? []), ...Object.keys(profile.expect ?? {})]);
+  for (const name of required) {
+    if (values[name] === undefined) {
+      return { status: "sensorError", values, detail: `required value ${name} was not read` };
+    }
+  }
 
   // Equipamento certo no Slave ID certo?
   for (const [name, expected] of Object.entries(profile.expect ?? {})) {
-    if (values[name] !== undefined && values[name] !== expected) {
+    if (values[name] !== expected) {
       return {
         status: "wrongDevice",
         values,
         detail: `${name} is ${values[name]}, expected ${expected}: check the Slave ID (${gauge.unitId}) of ${gauge.sensorId}`,
       };
     }
+  }
+  if (values.slaveIdReadback !== undefined && values.slaveIdReadback !== gauge.unitId) {
+    return {
+      status: "wrongDevice",
+      values,
+      detail: `slaveIdReadback is ${values.slaveIdReadback}, expected ${gauge.unitId}: check the Slave ID of ${gauge.sensorId}`,
+    };
   }
 
   // Erro do sensor: valor sentinela ou status de comunicação ≠ 0
@@ -110,15 +123,16 @@ export function interpret(state, registers) {
   if (map.interface && (gauge.floats ?? 2) >= 2) {
     const idef = profile.values[map.interface];
     let iface = toMeters(pick("interface"), idef.unit);
-    if (Number.isFinite(iface) && iface >= 0) {
-      // ruído na boia: a interface nunca fica acima do nível total
-      iface = round(Math.min(iface, level), 4);
-      oilWaterInterface = {
-        oilLevel: round(level - iface, 4),
-        waterLevel: iface,
-        interfaceLevel: iface,
-      };
+    if (!Number.isFinite(iface) || iface < 0) {
+      return { status: "sensorError", values, detail: `interface ${iface} m is not valid` };
     }
+    // ruído na boia: a interface nunca fica acima do nível total
+    iface = round(Math.min(iface, level), 4);
+    oilWaterInterface = {
+      oilLevel: round(level - iface, 4),
+      waterLevel: iface,
+      interfaceLevel: iface,
+    };
   }
 
   const metadata = { rawData: { source: "norush-edge", profile: profile.id, unitId: gauge.unitId, wordOrder: state.wordOrder } };

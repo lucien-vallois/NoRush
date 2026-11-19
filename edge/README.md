@@ -174,9 +174,11 @@ sudo systemctl enable --now norush-edge
 - **Stale and failed gauges are not sent.**
   - If the gateway timed the node out (counter at 0), or answers with a Modbus exception, the adapter logs it and sends nothing. NoRush then shows the gauge as offline.
   - If the stick reports an error (`999.9999` and a communication status), it logs the cause from the manual and sends nothing.
-- **Wrong gauge protection.** The device-type register must say Float Stick (52). Otherwise the adapter refuses to read that Slave ID as a tank level.
-- **Internet down.** Readings go to the buffer file with their original time and are delivered in order when the server is back. The buffer survives a restart.
-- **Refused readings are not retried.** For example a revoked credential, or a level above the tank height. The adapter logs the server's reason.
+  - SignalFire readings require communication status, Slave ID readback, timeout and device type. An unavailable optional status block therefore rejects the reading. A missing, non-finite or negative interface is also rejected on a dual-float gauge.
+- **Wrong gauge protection.** The device-type register must say Float Stick (52), and the Slave ID readback must match `unitId`. Otherwise the adapter refuses to read that Slave ID as a tank level.
+- **Internet down.** Readings go to the buffer file with their original time and a stable UUID `messageId`, and are delivered in order when the server is back. The same ID is used on every retry. The buffer survives a restart; legacy entries without an ID receive one and are rewritten before their first delivery attempt.
+- **Temporary failures are retried.** Network errors, timeouts, HTTP 408, 429 and 5xx, and malformed 2xx responses remain buffered for readings and reported for retry on heartbeats.
+- **Explicit refusals are not retried.** For example a revoked credential, a level above the tank height, `{ "processed": false }`, or `{ "received": false }`. The adapter logs the server's reason.
 
 ### What reaches NoRush
 
@@ -214,7 +216,8 @@ A profile is a JSON file that describes where a gateway keeps one gauge's values
 | `blocks` | Ranges read in one request each: `{ "address": <0-based offset>, "count": <1-125>, "optional": <bool> }`. A rejected optional block is skipped. |
 | `values` | Named values: `{ "address": <offset>, "type": "float32" \| "int32" \| "uint32" \| "int16" \| "uint16", "unit": "in" \| "ft" \| "m" \| "cm" \| "mm" \| "degC" \| "degF", "scale": <factor>, "offset": <add> }`. Register 41003 is offset 1002. |
 | `map` | Which value is `level`, `interface`, `temperature`, `batteryMv`, `signal`, `minutesToTimeout`, `commStatus`. |
-| `expect` | Values that must match, to catch the wrong Slave ID. Example: `{ "deviceType": 52 }`. |
+| `requiredValues` | Value names that must be present, including values in optional blocks. Omit it or use `[]` for a permissive generic profile. SignalFire requires `commStatus`, `slaveIdReadback`, `minutesToTimeout` and `deviceType`. |
+| `expect` | Values that must be present and match, to catch the wrong Slave ID. Example: `{ "deviceType": 52 }`. |
 | `errorValue` | The number the device puts in every reading when it fails. |
 | `commStatusCodes` | Text for each non-zero status. |
 | `wordOrderProbe` | A value with a known range, used to detect the 32-bit word order. |

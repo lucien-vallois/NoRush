@@ -63,8 +63,7 @@ async function captureApi() {
 test("reads two gauges over Modbus TCP and posts their readings", async (t) => {
   const nodes = new Map([
     [11, floatStickRegisters({ product: 120, iface: 84, order: "CDAB", unitId: 11 })],
-    // nó 12 com gateway sem o bloco de status (firmware antigo)
-    [12, floatStickRegisters({ product: 60, iface: 10, order: "CDAB", status: false, unitId: 12 })],
+    [12, floatStickRegisters({ product: 60, iface: 10, order: "CDAB", unitId: 12 })],
   ]);
   const gw = await gatewayFixture(nodes);
   const api = await captureApi();
@@ -105,7 +104,10 @@ test("reads two gauges over Modbus TCP and posts their readings", async (t) => {
   assert.equal(a.body.metadata.rawData.wordOrder, "CDAB");
   const b = readings.find((p) => p.body.sensorId === "FS-24118");
   assert.equal(b.body.level, 1.524);
-  assert.equal(b.body.metadata.signalStrength, undefined);
+  assert.equal(b.body.metadata.signalStrength, -71);
+  assert.match(a.body.messageId, /^[0-9a-f-]{36}$/);
+  assert.match(b.body.messageId, /^[0-9a-f-]{36}$/);
+  assert.notEqual(a.body.messageId, b.body.messageId);
   assert.ok(logs.some((l) => /FS-24119 \(unit 13\).*illegal data address/.test(l)), logs.join("\n"));
 
   // segundo ciclo, mesmo buffer do gateway: sem leitura repetida
